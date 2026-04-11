@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cheat Sheet — Django, Next.js & Node.js</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; }
+    .command-code { font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; }
+    .category-panel { display: none; }
+    .category-panel.active { display: block; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-slate-100 min-h-screen">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <!-- Header -->
+    <header class="mb-6 sm:mb-8">
+      <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+        Cheat Sheet
+      </h1>
+      <p class="mt-2 text-slate-400 text-sm sm:text-base">
+        Comandos esenciales para Django, Next.js y Node.js
+      </p>
+    </header>
+
+    <!-- Category buttons -->
+    <nav class="flex flex-wrap gap-2 sm:gap-3 mb-6" role="tablist">
+      <button type="button" class="category-btn active px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors bg-emerald-600 text-white ring-2 ring-emerald-400/50" data-category="npm" aria-selected="true">
+        Node & NPM
+      </button>
+      <button type="button" class="category-btn px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border border-zinc-600" data-category="nextjs" aria-selected="false">
+        Next.js
+      </button>
+      <button type="button" class="category-btn px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border border-zinc-600" data-category="python" aria-selected="false">
+        Python & Venv
+      </button>
+      <button type="button" class="category-btn px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border border-zinc-600" data-category="django" aria-selected="false">
+        Django
+      </button>
+    </nav>
+
+    <!-- Node & NPM -->
+    <section id="panel-npm" class="category-panel active">
+      <div class="space-y-4">
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-emerald-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">npm install &lt;paquete&gt;</code>
+              <p class="mt-2 text-sm text-slate-300">Instala dependencias en el proyecto</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors border border-emerald-500" data-cmd="npm install <paquete>">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-emerald-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">npm update</code>
+              <p class="mt-2 text-sm text-slate-300">Actualiza los paquetes a su última versión segura permitida en el package.json</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors border border-emerald-500" data-cmd="npm update">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-emerald-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">npm cache clean --force</code>
+              <p class="mt-2 text-sm text-slate-300">Fuerza la limpieza de la caché de npm. Útil ante errores extraños de instalación de paquetes</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors border border-emerald-500" data-cmd="npm cache clean --force">Copiar</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Next.js -->
+    <section id="panel-nextjs" class="category-panel">
+      <div class="space-y-4">
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-indigo-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">npx create-next-app@latest</code>
+              <p class="mt-2 text-sm text-slate-300">Genera la estructura base de un proyecto Next.js nuevo</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors border border-indigo-500" data-cmd="npx create-next-app@latest">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-indigo-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">npm run dev</code>
+              <p class="mt-2 text-sm text-slate-300">Levanta el servidor de desarrollo local</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors border border-indigo-500" data-cmd="npm run dev">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-indigo-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">npm run build</code>
+              <p class="mt-2 text-sm text-slate-300">Compila y optimiza la aplicación para subirla a producción</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors border border-indigo-500" data-cmd="npm run build">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-indigo-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">npm run start</code>
+              <p class="mt-2 text-sm text-slate-300">Levanta el servidor de producción (requiere haber ejecutado el build antes)</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors border border-indigo-500" data-cmd="npm run start">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-indigo-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">rmdir /s /q .next</code>
+              <p class="mt-2 text-sm text-slate-300">Elimina la carpeta de caché de Next.js. Esencial cuando hay errores de compilación corrupta o los cambios no se ven reflejados</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors border border-indigo-500" data-cmd="rmdir /s /q .next">Copiar</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Python & Entornos Virtuales -->
+    <section id="panel-python" class="category-panel">
+      <div class="space-y-4">
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-amber-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">python -m venv venv</code>
+              <p class="mt-2 text-sm text-slate-300">Crea un entorno virtual aislado. Obligatorio antes de instalar dependencias</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-400 rounded-lg transition-colors border border-amber-400" data-cmd="python -m venv venv">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-amber-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">venv\Scripts\activate</code>
+              <p class="mt-2 text-sm text-slate-300">Activa el entorno virtual</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-400 rounded-lg transition-colors border border-amber-400" data-cmd="venv\Scripts\activate">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-amber-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">pip install -r requirements.txt</code>
+              <p class="mt-2 text-sm text-slate-300">Instala todas las dependencias listadas en el archivo</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-400 rounded-lg transition-colors border border-amber-400" data-cmd="pip install -r requirements.txt">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-amber-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">pip freeze > requirements.txt</code>
+              <p class="mt-2 text-sm text-slate-300">Guarda el listado exacto de dependencias instaladas actualmente en el entorno</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-400 rounded-lg transition-colors border border-amber-400" data-cmd="pip freeze > requirements.txt">Copiar</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Django -->
+    <section id="panel-django" class="category-panel">
+      <div class="space-y-4">
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-green-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">django-admin startproject &lt;nombre&gt;</code>
+              <p class="mt-2 text-sm text-slate-300">Crea la estructura inicial del backend</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors border border-green-500" data-cmd="django-admin startproject <nombre>">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-green-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">python manage.py startapp &lt;nombre&gt;</code>
+              <p class="mt-2 text-sm text-slate-300">Crea una aplicación/módulo nuevo dentro del proyecto principal</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors border border-green-500" data-cmd="python manage.py startapp <nombre>">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-green-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">python manage.py makemigrations</code>
+              <p class="mt-2 text-sm text-slate-300">Analiza los cambios en los modelos y prepara las instrucciones SQL</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors border border-green-500" data-cmd="python manage.py makemigrations">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-green-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">python manage.py migrate</code>
+              <p class="mt-2 text-sm text-slate-300">Ejecuta las migraciones y aplica los cambios en la base de datos</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors border border-green-500" data-cmd="python manage.py migrate">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-green-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">python manage.py createsuperuser</code>
+              <p class="mt-2 text-sm text-slate-300">Crea un administrador para entrar al panel admin nativo</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors border border-green-500" data-cmd="python manage.py createsuperuser">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-green-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">python manage.py runserver</code>
+              <p class="mt-2 text-sm text-slate-300">Levanta el servidor de desarrollo</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors border border-green-500" data-cmd="python manage.py runserver">Copiar</button>
+          </div>
+        </article>
+        <article class="bg-zinc-800 rounded-xl border-2 border-zinc-600 overflow-hidden">
+          <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <code class="command-code block text-sm sm:text-base text-green-300 bg-zinc-900 px-3 py-2 rounded-lg break-all border border-zinc-600">python manage.py shell</code>
+              <p class="mt-2 text-sm text-slate-300">Abre la consola interactiva de Python con todo el contexto de Django cargado para probar queries</p>
+            </div>
+            <button type="button" class="copy-btn shrink-0 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors border border-green-500" data-cmd="python manage.py shell">Copiar</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <footer class="text-center text-sm text-slate-500 pt-8 mt-8 border-t border-zinc-700">
+      Cheat Sheet
+    </footer>
+  </div>
+
+  <script>
+    (function() {
+      const COPY_FEEDBACK_MS = 1000;
+      const CATEGORY_STYLES = {
+        npm: 'bg-emerald-600 text-white ring-2 ring-emerald-400/50',
+        nextjs: 'bg-indigo-600 text-white ring-2 ring-indigo-400/50',
+        python: 'bg-amber-500 text-white ring-2 ring-amber-400/50',
+        django: 'bg-green-600 text-white ring-2 ring-green-400/50'
+      };
+      const INACTIVE_STYLE = 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border border-zinc-600';
+
+      function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          return navigator.clipboard.writeText(text);
+        }
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          return Promise.resolve();
+        } finally {
+          document.body.removeChild(textarea);
+        }
+      }
+
+      function showCopiedFeedback(btn) {
+        const originalText = btn.textContent;
+        btn.textContent = '¡Copiado!';
+        btn.disabled = true;
+        setTimeout(function() {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, COPY_FEEDBACK_MS);
+      }
+
+      document.querySelectorAll('.copy-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const cmd = this.getAttribute('data-cmd');
+          if (!cmd) return;
+          copyToClipboard(cmd).then(function() {
+            showCopiedFeedback(btn);
+          }).catch(function() {
+            btn.textContent = 'Error';
+            setTimeout(function() { btn.textContent = 'Copiar'; }, COPY_FEEDBACK_MS);
+          });
+        });
+      });
+
+      document.querySelectorAll('.category-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const cat = this.getAttribute('data-category');
+          if (!cat) return;
+
+          document.querySelectorAll('.category-panel').forEach(function(panel) {
+            panel.classList.remove('active');
+          });
+          document.querySelectorAll('.category-btn').forEach(function(b) {
+            b.className = 'category-btn px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors ' + INACTIVE_STYLE;
+            b.setAttribute('aria-selected', 'false');
+          });
+
+          var panel = document.getElementById('panel-' + cat);
+          if (panel) panel.classList.add('active');
+
+          this.className = 'category-btn active px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors ' + (CATEGORY_STYLES[cat] || INACTIVE_STYLE);
+          this.setAttribute('aria-selected', 'true');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
