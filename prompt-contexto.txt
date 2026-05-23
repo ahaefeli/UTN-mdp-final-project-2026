@@ -1,0 +1,59 @@
+================================================================================
+CONTEXTO DE DESARROLLO: PLATAFORMA LIGA NECOHENSE DE VÓLEY (LNV)
+================================================================================
+
+[OBJETIVO DEL DOCUMENTO]
+Este archivo sirve como ancla de contexto absoluto para Gemini CLI. Todo el código, 
+diseño de componentes, vistas y modelos generados a partir de ahora deben respetar 
+estrictamente las especificaciones técnicas, visuales y de negocio aquí descritas.
+
+--------------------------------------------------------------------------------
+1. ESPECIFICACIONES TÉCNICAS Y ARQUITECTURA
+--------------------------------------------------------------------------------
+- Frontend: React.js con Next.js (App Router).
+- Backend: Django tradicional (Sin Django REST Framework - DRF). La comunicación 
+  se realizará mediante endpoints que retornen JsonResponse o procesamiento directo de formularios/fetch.
+- Base de Datos: PostgreSQL.
+- Arquitectura de Datos: Multi-tenant basada en Organizaciones (ej: "Liga Necochana", 
+  "Liga de Mar del Plata"). Cada Organización (Tenant) aísla completamente sus datos.
+
+--------------------------------------------------------------------------------
+2. GUÍA DE ESTILO VISUAL (UI/UX - SEGÚN DIAPOSITIVAS)
+--------------------------------------------------------------------------------
+La interfaz debe ser idéntica a las maquetas aprobadas. Estilo moderno, deportivo 
+y de analítica de datos.
+
+- Paleta de Colores Básica:
+  * Fondo General Publico: Tonos oscuros/grises profundos combinados con azul deportivo.
+  * Fondo Dashboard: Blanco y gris muy claro (#F8FAFC / #F1F5F9) para una lectura limpia de gestión.
+  * Colores de Acento: Azul eléctrico/frances para botones primarios y elementos activos; Verde para estados aprobados (Apto físico OK); Rojo/Naranja para alertas o documentación pendiente.
+- Tipografía: Sans-serif limpia, moderna y de alta legibilidad (ej: Inter o Roboto).
+- Componentes Clave a Respetar:
+  * Navbar: Con logo de la LNV, links de navegación (Inicio, Torneos, Equipos, Resultados, Reglamento, Comunidad) y botón de "Mi Panel".
+  * Sección Sponsors: Grilla limpia en la parte inferior de la landing page con logos monocromáticos o con opacidad integrada.
+  * Dashboard Layout: Barra lateral (Sidebar) fija a la izquierda con opciones colapsables según el rol del usuario, área central de contenido con tarjetas de métricas rápidas (KPIs) arriba y tablas de datos abajo.
+  * Tablas de Gestión: Bordes redondeados sutiles, encabezados en gris claro, badges de colores para estados (ej: "Apto Médico: Vencido" en rojo).
+
+--------------------------------------------------------------------------------
+3. MODELO DE NEGOCIO Y JERARQUÍA DE DATOS
+--------------------------------------------------------------------------------
+Estructura relacional estricta:
+Organización (Tenant) -> Ciudades -> Clubes -> Equipos (Clasificados por Rama: Masculino/Femenino y Categoría: Sub-14, Sub-16, Primera, Maxi, etc.).
+
+--------------------------------------------------------------------------------
+4. MATRIZ DE ROLES Y PERMISOS (GESTIÓN DE ACCESOS)
+--------------------------------------------------------------------------------
+- Owner (Desarrolladores): Control total del sistema. Capacidad de crear nuevos Admins de Organizaciones (ej: dar de alta el Tenant de Mar del Plata).
+- Admin (Liga): Acceso total a los datos de SU tenant vinculado. Gestiona canchas, horarios, genera el fixture (cruces de partidos, asignación de fecha y hora), controla árbitros y penalizaciones.
+- Entrenador: Vinculado a un Club/Equipo. Gestiona el alta de sus jugadores y arma la lista de buena fe (plantel) para la temporada actual.
+- Árbitro: Carga disponibilidad horaria y honorarios. Es el encargado de validar y dar la "habilitación final" a los resultados de los partidos cargados previamente.
+- Planillero: Rol operativo en cancha. Lectura de partidos asignados y carga en tiempo real (o diferido) de los resultados por set.
+- Jugador: Perfil personal. Visualiza fixture, tablas de posiciones y estadísticas. Su panel requiere la carga de documentación obligatoria: Seguro, Número de Federado y el archivo/fecha del Apto Físico.
+
+--------------------------------------------------------------------------------
+5. REGLAS PARA LA GENERACIÓN DE CÓDIGO CON GEMINI CLI
+--------------------------------------------------------------------------------
+- Modularidad Absoluta: Todo componente de React debe ser autocontenido, modular y enfocado en una sola tarea (Single Responsibility).
+- Sin DRF: Al pedir vistas de Django, estructurarlas usando las clases nativas de Django (View, TemplateView) devolviendo diccionarios serializados en JsonResponse cuando se requiera asincronismo en Next.js.
+- Estilo Declarativo: Priorizar el uso de Tailwind CSS para replicar con exactitud los espaciados, sombras y layouts de las diapositivas compartidas.
+================================================================================
