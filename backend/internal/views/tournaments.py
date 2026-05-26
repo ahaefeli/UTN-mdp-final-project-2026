@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from .base import BaseCrudView, parse_body
-from ..models import Tournament, TournamentEnrollment, TournamentStage, Team, Match
+from core.models import Tournament, TournamentEnrollment, TournamentStage, Team, Match
 
 def serialize_tournament(t):
     return {'id': t.id, 'name': t.name, 'year': t.year, 'start_date': t.start_date.isoformat() if t.start_date else None, 'end_date': t.end_date.isoformat() if t.end_date else None, 'category': t.category, 'branch': t.branch, 'status': t.status}

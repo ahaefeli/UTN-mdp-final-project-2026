@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.forms.models import model_to_dict
 from .base import BaseCrudView, parse_body
-from ..models import User
+from core.models import User
 
 def serialize_user(user):
     data = model_to_dict(user)

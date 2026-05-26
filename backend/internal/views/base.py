@@ -39,7 +39,7 @@ class BaseCrudView(View):
         return JsonResponse({'data': data}, status=200)
 
     def post(self, request):
-        from ..models import User
+        from core.models import User
         data = parse_body(request)
         try:
             obj = self.model.objects.create(**data)
@@ -51,7 +51,7 @@ class BaseCrudView(View):
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def put(self, request):
-        from ..models import User
+        from core.models import User
         obj_id = self._get_id_from_params(request)
         if not obj_id: return JsonResponse({'error': 'Missing id parameter'}, status=400)
         data = parse_body(request)
