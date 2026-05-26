@@ -98,16 +98,6 @@ class Migration(migrations.Migration):
                 ('scorer', models.ForeignKey(blank=True, limit_choices_to={'role': 'SCORER'}, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='scored_matches', to=settings.AUTH_USER_MODEL)),
             ],
         ),
-        migrations.CreateModel(
-            name='GameSet',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('set_number', models.IntegerField()),
-                ('local_points', models.IntegerField(default=0)),
-                ('visitor_points', models.IntegerField(default=0)),
-                ('match', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sets', to='internal.match')),
-            ],
-        ),
         migrations.AddField(
             model_name='club',
             name='organization',

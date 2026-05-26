@@ -5,7 +5,7 @@ from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from .base import BaseCrudView, parse_body
-from core.models import Match, GameSet
+from core.models import Match
 
 def serialize_match_detail(m):
     d = {'id': m.id, 'tournament_stage_id': m.tournament_stage_id, 'local_team_id': m.local_team_id, 'local_team_name': m.local_team.name, 'visitor_team_id': m.visitor_team_id, 'visitor_team_name': m.visitor_team.name, 'court_id': m.court_id, 'court_name': m.court.name if m.court else None, 'match_datetime': m.match_datetime.isoformat() if m.match_datetime else None, 'referee_id': m.referee_id, 'referee_name': f"{m.referee.first_name} {m.referee.last_name}".strip() if m.referee else None, 'scorer_id': m.scorer_id, 'scorer_name': f"{m.scorer.first_name} {m.scorer.last_name}".strip() if m.scorer else None, 'status': m.status, 'score_summary': m.score_summary, 'sets': [{'set_number': s.set_number, 'local_points': s.local_points, 'visitor_points': s.visitor_points} for s in m.sets.all().order_by('set_number')]}
@@ -72,7 +72,8 @@ class MatchFinishView(View):
             m = Match.objects.get(id=mid); m.status = 'FINISHED'; parts = []
             for s in score_detail:
                 lp, vp = s.get('local_points', 0), s.get('visitor_points', 0); parts.append(f"{lp}-{vp}")
-                GameSet.objects.update_or_create(match=m, set_number=s['set_number'], defaults={'local_points': lp, 'visitor_points': vp})
+                # TODO: Hay que reemplazar esto por el JSON field sets_data
+                # GameSet.objects.update_or_create(match=m, set_number=s['set_number'], defaults={'local_points': lp, 'visitor_points': vp})
             if parts: m.score_summary = ", ".join(parts)
             m.save(); return JsonResponse({'data': serialize_match_detail(m)}, status=200)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
