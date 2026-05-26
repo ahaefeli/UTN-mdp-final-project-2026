@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -36,22 +37,24 @@ class Organization(models.Model):
         return self.name
 
 class User(AbstractUser):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     phone = models.CharField(max_length=20, null=True, blank=True)
     dni = models.CharField(max_length=20, unique=True, null=True, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
-    deleted_by = models.ForeignKey('User', on_delete=models.CASCADE, null=True, blank=True)
+    deleted_by = models.ForeignKey('User', on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_users')
     deleted_at = models.DateTimeField(null=True, blank=True)
 
 class Club(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=255, null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
-    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_clubs')
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -62,13 +65,14 @@ class Court(models.Model):
     name = models.CharField(max_length=100)
     enabled = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
-    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_courts')
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.name
 
 class Tournament(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     year = models.IntegerField()
     start_date = models.DateField(null=True, blank=True)
@@ -77,22 +81,23 @@ class Tournament(models.Model):
     branch = models.CharField(max_length=10, choices=BRANCH_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PREPARATION')
     is_deleted = models.BooleanField(default=False)
-    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_tournaments')
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} - {self.year}"
 
 class Team(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     club = models.ForeignKey(Club, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     branch = models.CharField(max_length=10, choices=BRANCH_CHOICES)
     tournament = models.ForeignKey(Tournament, on_delete=models.SET_NULL, null=True, blank=True, related_name='teams')
-    coach = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'role': 'COACH'})
+    coach = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'role': 'COACH'}, related_name='coached_teams')
     is_deleted = models.BooleanField(default=False)
-    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_teams')
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -111,6 +116,7 @@ class TournamentStage(models.Model):
     name = models.CharField(max_length=50)
 
 class Match(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tournament_stage = models.ForeignKey(TournamentStage, on_delete=models.CASCADE)
     local_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='local_matches')
     visitor_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='visitor_matches')
@@ -122,5 +128,5 @@ class Match(models.Model):
     score_summary = models.CharField(max_length=100, blank=True, null=True)
     sets_data = models.JSONField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
-    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_matches')
     deleted_at = models.DateTimeField(null=True, blank=True)
