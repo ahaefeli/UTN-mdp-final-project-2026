@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from .base import BaseCrudView, parse_body
-from ..models import Team
+from core.models import Team
 
 def serialize_team(t):
     return {'id': t.id, 'name': t.name, 'category': t.category, 'branch': t.branch, 'club_id': t.club_id, 'organization_id': t.organization_id, 'coach_id': t.coach_id, 'coach_name': f"{t.coach.first_name} {t.coach.last_name}".strip() if t.coach else None, 'tournament_id': t.tournament_id}

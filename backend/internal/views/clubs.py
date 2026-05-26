@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from .base import BaseCrudView, parse_body
-from ..models import Club
+from core.models import Club
 
 def serialize_club(club):
     return {'id': club.id, 'name': club.name, 'address': club.address, 'phone': club.phone, 'email': club.email, 'organization_id': club.organization_id}

@@ -30,7 +30,7 @@ INSTALLED_APPS = [
     'core'
 ]
 
-AUTH_USER_MODEL = 'internal.User'
+AUTH_USER_MODEL = 'core.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -70,7 +70,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'voley_lnv_db',
         'USER': 'postgres',
-        'PASSWORD': '12345678',
+        'PASSWORD': '0102',
         'HOST': 'localhost',
         'PORT': '5432',
     }
