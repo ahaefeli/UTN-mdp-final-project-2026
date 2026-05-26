@@ -1,11 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-class Organization(models.Model):
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
+# // Choices --------------------------------------------
 
 class ROLE_CHOICES(models.TextChoices):
     ADMIN = 'ADMIN', 'Admin'
@@ -14,11 +10,39 @@ class ROLE_CHOICES(models.TextChoices):
     REFEREE = 'REFEREE', 'Referee'
     SCORER = 'SCORER', 'Scorer'
 
+class CATEGORY_CHOICES(models.TextChoices):
+    SUB_14 = 'SUB_14', 'Sub 14'
+    SUB_16 = 'SUB_16', 'Sub 16'
+    SUB_18 = 'SUB_18', 'Sub 18'
+    SUB_21 = 'SUB_21', 'Sub 21'
+    PRIMERA = 'PRIMERA', 'Primera'
+    MAXI = 'MAXI', 'Maxi'
+
+class BRANCH_CHOICES(models.TextChoices):
+    MALE = 'MALE', 'Male'
+    FEMALE = 'FEMALE', 'Female'
+
+class STATUS_CHOICES(models.TextChoices):
+    PREPARATION = 'PREPARATION', 'Preparation'
+    IN_PROGRESS = 'IN_PROGRESS', 'In Progress'
+    FINISHED = 'FINISHED', 'Finished'
+
+# // Models --------------------------------------------
+
+class Organization(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
 class User(AbstractUser):
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_CHOICES.PLAYER)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     phone = models.CharField(max_length=20, null=True, blank=True)
     dni = models.CharField(max_length=20, unique=True, null=True, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True, blank=True)
+    is_deleted = models.BooleanField(default=False)
+    deleted_by = models.ForeignKey('User', on_delete=models.CASCADE, null=True, blank=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
 class Club(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
@@ -43,23 +67,6 @@ class Court(models.Model):
 
     def __str__(self):
         return self.name
-
-class CATEGORY_CHOICES(models.TextChoices):
-    SUB_14 = 'SUB_14', 'Sub 14'
-    SUB_16 = 'SUB_16', 'Sub 16'
-    SUB_18 = 'SUB_18', 'Sub 18'
-    SUB_21 = 'SUB_21', 'Sub 21'
-    PRIMERA = 'PRIMERA', 'Primera'
-    MAXI = 'MAXI', 'Maxi'
-
-class BRANCH_CHOICES(models.TextChoices):
-    MALE = 'MALE', 'Male'
-    FEMALE = 'FEMALE', 'Female'
-
-class STATUS_CHOICES(models.TextChoices):
-    PREPARATION = 'PREPARATION', 'Preparation'
-    IN_PROGRESS = 'IN_PROGRESS', 'In Progress'
-    FINISHED = 'FINISHED', 'Finished'
 
 class Tournament(models.Model):
     name = models.CharField(max_length=100)
