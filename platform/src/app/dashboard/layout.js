@@ -1,19 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({ children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const pathname = usePathname();
 
   const menuItems = [
     {
       name: "Panel Principal",
-      active: true,
+      href: "/dashboard",
       icon: (
         <svg
-          className="w-5 h-5 mr-3 transition-colors text-blue-900"
+          className="w-5 h-5 mr-3 transition-colors"
           fill="none"
           stroke="currentColor"
           strokeWidth="2.5"
@@ -29,10 +31,10 @@ export default function DashboardLayout({ children }) {
     },
     {
       name: "Mis Jugadores",
-      active: false,
+      href: "/dashboard/jugadores",
       icon: (
         <svg
-          className="w-5 h-5 mr-3 transition-colors text-slate-500 group-hover:text-slate-700"
+          className="w-5 h-5 mr-3 transition-colors"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
@@ -48,10 +50,10 @@ export default function DashboardLayout({ children }) {
     },
     {
       name: "Inscripciones",
-      active: false,
+      href: "/dashboard/inscripciones",
       icon: (
         <svg
-          className="w-5 h-5 mr-3 transition-colors text-slate-500 group-hover:text-slate-700"
+          className="w-5 h-5 mr-3 transition-colors"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
@@ -102,37 +104,40 @@ export default function DashboardLayout({ children }) {
 
       {/* Navigation Menu */}
       <nav className="flex-1 py-6 space-y-1">
-        {menuItems.map((item) => (
-          <div key={item.name} className="px-3">
-            <a
-              href="#"
-              onClick={(e) => e.preventDefault()}
-              className={`flex items-center px-4 py-3 text-sm font-bold rounded-r-none transition-all duration-200 group ${
-                item.active
-                  ? "bg-white text-blue-900 border-l-[4px] border-orange-500 shadow-sm rounded-lg"
-                  : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-800 rounded-lg"
-              }`}
-            >
-              <span
-                className={`transition-transform duration-200 group-hover:scale-105 ${
-                  item.active ? "text-blue-900" : "text-slate-400 group-hover:text-slate-600"
+        {menuItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <div key={item.name} className="px-3">
+              <a
+                href={item.href}
+                onClick={item.href === "#" ? (e) => e.preventDefault() : undefined}
+                className={`flex items-center px-4 py-3 text-sm font-bold rounded-r-none transition-all duration-200 group ${
+                  isActive
+                    ? "bg-white text-blue-950 border-l-[5px] border-orange-500 shadow-sm rounded-lg"
+                    : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-800 rounded-lg"
                 }`}
               >
-                {item.icon}
-              </span>
-              {item.name}
-            </a>
-          </div>
-        ))}
+                <span
+                  className={`transition-transform duration-200 group-hover:scale-105 ${
+                    isActive ? "text-[#002F87]" : "text-slate-400 group-hover:text-slate-600"
+                  }`}
+                >
+                  {item.icon}
+                </span>
+                {item.name}
+              </a>
+            </div>
+          );
+        })}
       </nav>
 
     </div>
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden font-sans w-full">
       {/* Desktop Sidebar (Left) */}
-      <aside className="hidden md:flex md:flex-col md:w-64 flex-shrink-0 border-r border-slate-200/50 shadow-sm z-30">
+      <aside className="hidden md:flex md:flex-col md:fixed md:top-0 md:left-0 md:h-screen md:w-64 flex-shrink-0 border-r border-slate-200/50 shadow-sm z-40">
         <SidebarContent />
       </aside>
 
@@ -169,9 +174,13 @@ export default function DashboardLayout({ children }) {
       )}
 
       {/* Main Right Area */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
+      <div className="flex flex-col flex-1 min-w-0 md:ml-64 overflow-y-auto overflow-x-hidden bg-slate-50">
         {/* Header (Top) */}
-        <header className="sticky top-4 z-40 flex items-center justify-between py-4 md:py-5 px-4 lg:px-8 mx-4 lg:mx-8 my-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+        <header className={`sticky top-0 z-30 flex items-center justify-between transition-all duration-200 ${
+          pathname?.startsWith("/dashboard/jugadores") || pathname?.startsWith("/dashboard/inscripciones")
+            ? "bg-slate-50/90 backdrop-blur-md border-b border-slate-200/30 py-4 md:py-5 px-4 md:px-8 mx-auto max-w-7xl w-full"
+            : "bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-sm py-4 md:py-5 px-4 lg:px-8 mx-4 lg:mx-8 my-4"
+        }`}>
           {/* Left: Mobile Menu Button + Title "DASHBOARD CENTRAL" in Italic, Bold, Dark Blue */}
           <div className="flex items-center gap-1.5 sm:gap-3">
             <button
@@ -182,9 +191,29 @@ export default function DashboardLayout({ children }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
-            <h1 className="text-[#002F87] font-extrabold italic tracking-wider text-sm sm:text-lg md:text-xl lg:text-3xl uppercase leading-none select-none">
-              DASHBOARD CENTRAL
-            </h1>
+            {pathname?.startsWith("/dashboard/jugadores") ? (
+              <div className="flex flex-col gap-1">
+                <span className="text-[9px] font-black text-orange-500 tracking-widest uppercase select-none leading-none">
+                  PLANTEL ACTIVO
+                </span>
+                <h1 className="text-blue-950 font-black tracking-tight text-xl md:text-3xl select-none leading-none">
+                  Mis Jugadores
+                </h1>
+              </div>
+            ) : pathname?.startsWith("/dashboard/inscripciones") ? (
+              <div className="flex flex-col gap-1">
+                <span className="text-[9px] font-black text-orange-500 tracking-widest uppercase select-none leading-none">
+                  PROCESO DE REGISTRO
+                </span>
+                <h1 className="text-blue-950 font-black tracking-tight text-xl md:text-3xl select-none leading-none">
+                  Nueva Inscripción
+                </h1>
+              </div>
+            ) : (
+              <h1 className="text-[#002F87] font-extrabold italic tracking-wider text-sm sm:text-lg md:text-xl lg:text-3xl uppercase leading-none select-none">
+                DASHBOARD CENTRAL
+              </h1>
+            )}
           </div>
 
           {/* Right: Search, Notifications, Profile */}
