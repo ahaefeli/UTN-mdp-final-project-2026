@@ -115,7 +115,7 @@ export default function PlayersPage() {
               className={`px-4 py-2 text-xs font-black tracking-wider rounded-full transition-all duration-200 cursor-pointer ${
                 isActive
                   ? "bg-[#002F87] text-white shadow-sm shadow-blue-950/15"
-                  : "bg-white hover:bg-slate-50 text-slate-650 border border-slate-200/50"
+                  : "bg-white hover:bg-slate-50 text-slate-500 border border-slate-200/50"
               }`}
             >
               {cat.label}
@@ -187,7 +187,7 @@ export default function PlayersPage() {
 
                   {/* Column 2: Category & Role */}
                   <div className="col-span-12 md:col-span-3 flex flex-col items-start gap-1">
-                    <span className="text-[9px] font-black tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-[4px] select-none">
+                    <span className="text-[9px] font-black tracking-wider text-slate-700 bg-slate-100 px-2 py-0.5 rounded-[4px] select-none">
                       {player.category}
                     </span>
                     <span className="text-xs text-slate-500 font-medium md:pl-0.5">
