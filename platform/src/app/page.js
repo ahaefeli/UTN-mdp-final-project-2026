@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 // MOCK DATA (ESTRICTO SEGÚN ESPECIFICACIÓN Y DISEÑO DE IMAGEN)
 const categories = [
@@ -57,6 +59,7 @@ const mockSponsors = [
 ];
 
 export default function LandingPage() {
+  const pathname = usePathname();
   const [emailInput, setEmailInput] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -80,25 +83,39 @@ export default function LandingPage() {
         
         {/* Left: Logo LNV - "LIGA NECOCHENSE DE VOLEY" */}
         <div className="flex items-center">
-          <span className="font-black italic text-[#001F54] text-sm md:text-base lg:text-xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none">
-            LIGA NECOCHENSE DE VOLEY
-          </span>
+          <Link href="/" className="flex items-center">
+            <span className="font-black italic text-[#001F54] text-sm md:text-base lg:text-xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer">
+              LIGA NECOCHENSE DE VOLEY
+            </span>
+          </Link>
         </div>
 
         {/* Center: Navigation Links */}
         <nav className="hidden md:flex items-center gap-6 lg:gap-10">
-          <a href="#torneos" className="text-sm font-bold text-[#001F54] border-b-2 border-orange-500 pb-1 transition-colors duration-200">
+          <Link 
+            href="/torneos" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/torneos' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
             Torneos
-          </a>
-          <a href="#categorias" className="text-sm font-semibold text-slate-600 hover:text-[#001F54] border-b-2 border-transparent pb-1 transition-colors duration-200">
+          </Link>
+          <Link 
+            href="/equipos" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/equipos' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
             Equipos
-          </a>
-          <a href="#torneos" className="text-sm font-semibold text-slate-600 hover:text-[#001F54] border-b-2 border-transparent pb-1 transition-colors duration-200">
+          </Link>
+          <Link 
+            href="/resultados" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
             Resultados
-          </a>
-          <a href="#" onClick={(e) => e.preventDefault()} className="text-sm font-semibold text-slate-600 hover:text-[#001F54] border-b-2 border-transparent pb-1 transition-colors duration-200">
+          </Link>
+          <Link 
+            href="/reglamento" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/reglamento' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
             Reglamento
-          </a>
+          </Link>
         </nav>
 
         {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
@@ -137,18 +154,18 @@ export default function LandingPage() {
         {/* Mobile Dropdown Menu */}
         {isMobileMenuOpen && (
           <div className="absolute top-20 left-0 w-full bg-white shadow-lg flex-col p-6 z-40 flex flex-col gap-4">
-            <a href="#torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+            <Link href="/torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Torneos
-            </a>
-            <a href="#categorias" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+            </Link>
+            <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
-            </a>
-            <a href="#torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+            </Link>
+            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Resultados
-            </a>
-            <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); }} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+            </Link>
+            <Link href="/reglamento" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Reglamento
-            </a>
+            </Link>
             <hr />
             <a
               href="/login"
@@ -263,19 +280,15 @@ export default function LandingPage() {
                 <p className="text-xs sm:text-sm text-blue-100/70 font-semibold leading-relaxed max-w-md mt-0.5">
                   {cat.description}
                 </p>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert(`Navegando a la sección ${cat.branch}`);
-                  }}
+                <Link
+                  href="/torneos"
                   className="mt-3.5 text-xs font-black text-white group-hover:text-[#FF8A00] transition-colors uppercase tracking-widest flex items-center gap-2 cursor-pointer"
                 >
                   {cat.linkText}
                   <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
-                </a>
+                </Link>
               </div>
 
             </div>
@@ -462,7 +475,7 @@ export default function LandingPage() {
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
                 <li><a href="#" className="hover:text-white transition-colors duration-200">SITEMAP</a></li>
                 <li><a href="#" className="hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</a></li>
-                <li><a href="#" className="hover:text-white transition-colors duration-200">CONTACTO</a></li>
+                <li><Link href="/contacto" className="hover:text-white transition-colors duration-200">CONTACTO</Link></li>
                 <li><a href="#" className="hover:text-white transition-colors duration-200">FEDERACIÓN PROVINCIAL</a></li>
               </ul>
             </div>
