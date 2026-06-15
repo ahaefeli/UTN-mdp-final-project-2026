@@ -126,7 +126,7 @@ export default function TorneosPage() {
             Acceso Clubes
           </a>
           <a href="/login" onClick={navigateToLogin} className="hidden sm:block flex-shrink-0">
-            <svg className="w-6 h-6 text-[#001F54] cursor-pointer hover:opacity-80 transition-opacity" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-[#001F54] cursor-pointer hover:opacity-80 transition-opacity shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </a>
@@ -394,10 +394,10 @@ export default function TorneosPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
-                <li><a href="#" className="hover:text-white transition-colors duration-200">SITEMAP</a></li>
-                <li><a href="#" className="hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</a></li>
+                <li><Link href="/sitemap" className="hover:text-white transition-colors duration-200">SITEMAP</Link></li>
+                <li><Link href="/privacidad" className="hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
                 <li><Link href="/contacto" className="hover:text-white transition-colors duration-200">CONTACTO</Link></li>
-                <li><a href="#" className="hover:text-white transition-colors duration-200">FEDERACIÓN PROVINCIAL</a></li>
+                <li><a href="https://feva.org.ar/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-200">FEVA</a></li>
               </ul>
             </div>
 
