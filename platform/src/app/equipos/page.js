@@ -124,7 +124,7 @@ export default function EquiposPage() {
             Acceso Clubes
           </a>
           <a href="/login" onClick={navigateToLogin} className="hidden sm:block flex-shrink-0">
-            <svg className="w-6 h-6 text-[#001F54] cursor-pointer hover:opacity-80 transition-opacity" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-[#001F54] cursor-pointer hover:opacity-80 transition-opacity shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </a>
@@ -179,20 +179,19 @@ export default function EquiposPage() {
       </header>
 
       {/* 2. HERO SECTION */}
-      <section
+      <section 
         style={{ backgroundImage: "url('/images/equipos/clubesafiliados.jpg')" }}
-        className="relative bg-cover bg-center py-16 px-6 lg:px-16 border-b border-slate-100 flex flex-col items-center text-center select-none"
+        className="relative w-full h-[220px] md:h-[250px] overflow-hidden flex items-center justify-center bg-cover bg-center"
       >
-        <div className="absolute inset-0 bg-slate-50/85"></div>
-        
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <span className="text-orange-500 uppercase text-xs sm:text-sm font-black tracking-widest mb-2">
-            LA FUERZA DE LA LIGA
-          </span>
+        {/* Capa Superpuesta (Overlay) */}
+        <div className="absolute inset-0 w-full h-full bg-slate-50/85"></div>
+
+        {/* Posición del Texto */}
+        <div className="relative z-10 flex flex-col items-center text-center px-4 w-full">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#001F54] uppercase tracking-tight leading-none mb-4">
             CLUBES AFILIADOS
           </h1>
-          <p className="text-slate-500 text-sm sm:text-base font-semibold max-w-2xl leading-relaxed">
+          <p className="text-slate-800 text-sm sm:text-base font-medium max-w-2xl leading-relaxed">
             Conocé las instituciones deportivas que forman la Liga Necochense de Vóley. Su historia, categorías y participación oficial en la región.
           </p>
         </div>
@@ -394,10 +393,10 @@ export default function EquiposPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
-                <li><a href="#" className="hover:text-white transition-colors duration-200">SITEMAP</a></li>
-                <li><a href="#" className="hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</a></li>
+                <li><Link href="/sitemap" className="hover:text-white transition-colors duration-200">SITEMAP</Link></li>
+                <li><Link href="/privacidad" className="hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
                 <li><Link href="/contacto" className="hover:text-white transition-colors duration-200">CONTACTO</Link></li>
-                <li><a href="#" className="hover:text-white transition-colors duration-200">FEDERACIÓN PROVINCIAL</a></li>
+                <li><a href="https://feva.org.ar/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-200">FEVA</a></li>
               </ul>
             </div>
 
