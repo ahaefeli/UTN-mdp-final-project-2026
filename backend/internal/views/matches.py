@@ -6,15 +6,17 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from .base import BaseCrudView, parse_body
 from core.models import Match
+from core.auth import jwt_required
 
 def serialize_match_detail(m):
-    d = {'id': m.id, 'tournament_stage_id': m.tournament_stage_id, 'local_team_id': m.local_team_id, 'local_team_name': m.local_team.name, 'visitor_team_id': m.visitor_team_id, 'visitor_team_name': m.visitor_team.name, 'court_id': m.court_id, 'court_name': m.court.name if m.court else None, 'match_datetime': m.match_datetime.isoformat() if m.match_datetime else None, 'referee_id': m.referee_id, 'referee_name': f"{m.referee.first_name} {m.referee.last_name}".strip() if m.referee else None, 'scorer_id': m.scorer_id, 'scorer_name': f"{m.scorer.first_name} {m.scorer.last_name}".strip() if m.scorer else None, 'status': m.status, 'score_summary': m.score_summary, 'sets': [{'set_number': s.set_number, 'local_points': s.local_points, 'visitor_points': s.visitor_points} for s in m.sets.all().order_by('set_number')]}
+    d = {'id': m.id, 'tournament_stage_id': m.tournament_stage_id, 'local_team_id': m.local_team_id, 'local_team_name': m.local_team.name, 'visitor_team_id': m.visitor_team_id, 'visitor_team_name': m.visitor_team.name, 'court_id': m.court_id, 'court_name': m.court.name if m.court else None, 'match_datetime': m.match_datetime.isoformat() if m.match_datetime else None, 'referee_id': m.referee_id, 'referee_name': f"{m.referee.first_name} {m.referee.last_name}".strip() if m.referee else None, 'scorer_id': m.scorer_id, 'scorer_name': f"{m.scorer.first_name} {m.scorer.last_name}".strip() if m.scorer else None, 'status': m.status, 'score_summary': m.score_summary, 'sets': [{'set_number': s.set_number, 'local_points': s.local_points, 'visitor_points': s.visitor_points} for s in m.sets.all().order_by('set_number')] if hasattr(m, 'sets') else []}
     return d
 
 class MatchView(BaseCrudView):
     model = Match
-    def get(self, request):
-        mid, did = request.GET.get('match_id'), request.GET.get('date_id')
+    def get(self, request, obj_id=None, *args, **kwargs):
+        mid = obj_id or request.GET.get('match_id')
+        did = request.GET.get('date_id')
         if mid:
             try: return JsonResponse({'data': serialize_match_detail(self.model.objects.get(id=mid))}, status=200)
             except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
@@ -30,14 +32,14 @@ class MatchView(BaseCrudView):
             return JsonResponse({'data': [serialize_match_detail(m) for m in p_o], 'pagination': {'total_pages': p.num_pages, 'current_page': p_o.number, 'total_items': p.count}}, status=200)
         return JsonResponse({'data': [serialize_match_detail(m) for m in qs]}, status=200)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         data = parse_body(request)
         if data.get('local_team_id') == data.get('visitor_team_id'): return JsonResponse({'error': 'Same team'}, status=400)
         try: data['status'] = 'PENDING'; return JsonResponse({'data': serialize_match_detail(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def put(self, request):
-        mid = request.GET.get('match_id')
+    def put(self, request, obj_id=None, *args, **kwargs):
+        mid = obj_id or request.GET.get('match_id')
         if not mid: return JsonResponse({'error': 'Missing match_id'}, status=400)
         data = parse_body(request)
         try:
@@ -47,12 +49,12 @@ class MatchView(BaseCrudView):
             o.save(); return JsonResponse({'data': serialize_match_detail(o)}, status=200)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def delete(self, request):
-        mid = request.GET.get('match_id')
+    def delete(self, request, obj_id=None, *args, **kwargs):
+        mid = obj_id or request.GET.get('match_id')
         try: self.model.objects.get(id=mid).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(jwt_required, name='dispatch')
 class MatchRescheduleView(View):
     def post(self, request):
         data = parse_body(request); mid = data.get('match_id')
@@ -64,7 +66,7 @@ class MatchRescheduleView(View):
             m.save(); return JsonResponse({'data': serialize_match_detail(m)}, status=200)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(jwt_required, name='dispatch')
 class MatchFinishView(View):
     def post(self, request):
         data = parse_body(request); mid = data.get('match_id'); score_detail = data.get('score_detail') or data.get('scores', [])

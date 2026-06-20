@@ -1,0 +1,441 @@
+/* CSS Module para el Dashboard de Prueba - Estética VoleyHub */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+.header {
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.brand {
+  font-size: 1.8rem;
+  font-weight: 900;
+  font-style: italic;
+  color: #002F87;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.brandHighlight {
+  position: relative;
+  display: inline-block;
+  margin-right: 0.3rem;
+}
+
+.brandHighlight::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 4px;
+  background-color: #FF8A00;
+  border-radius: 2px;
+}
+
+.authCard {
+  background: white;
+  border-radius: 1rem;
+  padding: 2.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 47, 135, 0.1), 0 8px 10px -6px rgba(0, 47, 135, 0.05);
+  border: 1px solid #e2e8f0;
+  max-width: 480px;
+  margin: 4rem auto;
+  transition: transform 0.2s ease;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #002F87;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.cardSubtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.25rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  font-size: 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background-color: #f8fafc;
+  color: #334155;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #002F87;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(0, 47, 135, 0.15);
+}
+
+.btn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: white;
+  background-color: #002F87;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 47, 135, 0.15);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn:hover {
+  background-color: #00216b;
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btnDanger {
+  background-color: #ef4444;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.15);
+}
+
+.btnDanger:hover {
+  background-color: #dc2626;
+}
+
+.btnOutline {
+  background-color: transparent;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  box-shadow: none;
+  width: auto;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+}
+
+.btnOutline:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #1e293b;
+  transform: none;
+}
+
+.userPanel {
+  background-color: #f1f5f9;
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  background-color: #FF8A00;
+  color: white;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(255, 138, 0, 0.2);
+}
+
+.userName {
+  font-weight: 800;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.userRole {
+  font-size: 0.75rem;
+  color: #FF8A00;
+  font-weight: 900;
+  margin: 0.1rem 0 0 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .dashboardGrid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.matchList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.matchCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.matchCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 47, 135, 0.05);
+  border-color: rgba(0, 47, 135, 0.2);
+}
+
+.matchHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.matchTeams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.teamName {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1e293b;
+  max-width: 42%;
+}
+
+.localTeam {
+  text-align: right;
+}
+
+.visitorTeam {
+  text-align: left;
+}
+
+.vsContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.vsText {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #FF8A00;
+  background-color: rgba(255, 138, 0, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.score {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: 0.05em;
+}
+
+.matchFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.refereeInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.statusBadge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.statusFinished {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+}
+
+.statusPending {
+  background-color: rgba(234, 179, 8, 0.1);
+  color: #a16207;
+}
+
+.statusLive {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  animation: pulseAnimation 1.5s infinite;
+}
+
+@keyframes pulseAnimation {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  border: 1px solid transparent;
+}
+
+.alertError {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.alertSuccess {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.alertInfo {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.emptyState {
+  background: white;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  padding: 3rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.emptyText {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.spinner {
+  border: 3px solid rgba(0, 47, 135, 0.1);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border-left-color: #002F87;
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.tokenBox {
+  background-color: #1e293b;
+  color: #38bdf8;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  overflow-x: auto;
+  border: 1px solid #334155;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.tokenBoxTitle {
+  color: #94a3b8;
+  font-weight: 800;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.tokenContent {
+  word-break: break-all;
+  white-space: pre-wrap;
+}

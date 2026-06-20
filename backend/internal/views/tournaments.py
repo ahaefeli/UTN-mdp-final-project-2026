@@ -14,8 +14,8 @@ def serialize_stage(s):
 
 class TournamentView(BaseCrudView):
     model = Tournament
-    def get(self, request):
-        tid = request.GET.get('tournament_id')
+    def get(self, request, obj_id=None, *args, **kwargs):
+        tid = obj_id or request.GET.get('tournament_id')
         if tid:
             try: return JsonResponse({'data': serialize_tournament(self.model.objects.get(id=tid))}, status=200)
             except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
@@ -29,14 +29,14 @@ class TournamentView(BaseCrudView):
             return JsonResponse({'data': [serialize_tournament(t) for t in p_o], 'pagination': {'total_pages': p.num_pages, 'current_page': p_o.number, 'total_items': p.count}}, status=200)
         return JsonResponse({'data': [serialize_tournament(t) for t in qs]}, status=200)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         data = parse_body(request)
         if not all(k in data for k in ['name', 'year', 'category', 'branch']): return JsonResponse({'error': 'Missing fields'}, status=400)
         try: data['status'] = 'PREPARATION'; return JsonResponse({'data': serialize_tournament(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def put(self, request):
-        tid = request.GET.get('tournament_id')
+    def put(self, request, obj_id=None, *args, **kwargs):
+        tid = obj_id or request.GET.get('tournament_id')
         if not tid: return JsonResponse({'error': 'Missing tournament_id'}, status=400)
         data = parse_body(request)
         try:
@@ -47,21 +47,28 @@ class TournamentView(BaseCrudView):
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def delete(self, request):
-        tid = request.GET.get('tournament_id')
+    def delete(self, request, obj_id=None, *args, **kwargs):
+        tid = obj_id or request.GET.get('tournament_id')
         if not tid: return JsonResponse({'error': 'Missing tournament_id'}, status=400)
         try: self.model.objects.get(id=tid).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
         except Exception: return JsonResponse({'error': 'Cannot delete tournament with associated data'}, status=400)
 
 class TournamentEnrollmentView(BaseCrudView):
     model = TournamentEnrollment
-    def get(self, request):
-        tid, tmid = request.GET.get('tournament_id'), request.GET.get('team_id')
+    def get(self, request, tournament_id=None, team_id=None, *args, **kwargs):
+        tid = tournament_id or request.GET.get('tournament_id')
+        tmid = team_id or request.GET.get('team_id')
+        if tid and tmid:
+            try:
+                enroll = self.model.objects.get(tournament_id=tid, team_id=tmid)
+                return JsonResponse({'data': serialize_enrollment(enroll)}, status=200)
+            except self.model.DoesNotExist:
+                return JsonResponse({'error': 'Not found'}, status=404)
         if tid: return JsonResponse({'data': [serialize_enrollment(e) for e in self.model.objects.filter(tournament_id=tid)]}, status=200)
         if tmid: return JsonResponse({'data': [serialize_enrollment(e) for e in self.model.objects.filter(team_id=tmid)]}, status=200)
         return JsonResponse({'error': 'Missing id'}, status=400)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         data = parse_body(request); tid, tmid = data.get('tournament_id'), data.get('team_id')
         if not tid or not tmid: return JsonResponse({'error': 'Missing ids'}, status=400)
         try:
@@ -71,26 +78,27 @@ class TournamentEnrollmentView(BaseCrudView):
             return JsonResponse({'data': serialize_enrollment(self.model.objects.create(tournament=t, team=tm))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def delete(self, request):
-        tid, tmid = request.GET.get('tournament_id'), request.GET.get('team_id')
+    def delete(self, request, tournament_id=None, team_id=None, *args, **kwargs):
+        tid = tournament_id or request.GET.get('tournament_id')
+        tmid = team_id or request.GET.get('team_id')
         try: self.model.objects.get(tournament_id=tid, team_id=tmid).delete(); return JsonResponse({'message': 'Unenrolled'}, status=200)
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
 
 class TournamentStageView(BaseCrudView):
     model = TournamentStage
-    def get(self, request):
-        tid = request.GET.get('tournament_id')
+    def get(self, request, obj_id=None, *args, **kwargs):
+        tid = obj_id or request.GET.get('tournament_id')
         if not tid: return JsonResponse({'error': 'Missing tournament_id'}, status=400)
         return JsonResponse({'data': [serialize_stage(s) for s in self.model.objects.filter(tournament_id=tid).order_by('date')]}, status=200)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         data = parse_body(request)
         if not all(k in data for k in ['tournament_id', 'date', 'name']): return JsonResponse({'error': 'Missing fields'}, status=400)
         try: return JsonResponse({'data': serialize_stage(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def delete(self, request):
-        sid = request.GET.get('id') or request.GET.get('date_id')
+    def delete(self, request, obj_id=None, *args, **kwargs):
+        sid = obj_id or request.GET.get('id') or request.GET.get('date_id')
         try:
             s = self.model.objects.get(id=sid)
             if Match.objects.filter(tournament_stage=s).exists(): return JsonResponse({'error': 'Has matches'}, status=400)

@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }) {
   const menuItems = [
     {
       name: "Panel Principal",
-      href: "/dashboard",
+      href: "/",
       icon: (
         <svg
           className="w-5 h-5 mr-3 transition-colors"

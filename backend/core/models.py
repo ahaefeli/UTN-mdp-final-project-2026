@@ -111,6 +111,7 @@ class Team(models.Model):
     branch = models.CharField(max_length=10, choices=BRANCH_CHOICES)
     #tournament = models.ForeignKey(Tournament, on_delete=models.SET_NULL, null=True, blank=True, related_name='teams')
     coach = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'role': 'COACH'}, related_name='coached_teams')
+    players = models.ManyToManyField(User, related_name='teams_playing', limit_choices_to={'role': 'PLAYER'}, blank=True)
     
     is_deleted = models.BooleanField(default=False)
     deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_teams')

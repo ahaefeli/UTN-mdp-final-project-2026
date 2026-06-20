@@ -8,8 +8,8 @@ def serialize_club(club):
 
 class ClubView(BaseCrudView):
     model = Club
-    def get(self, request):
-        cid = request.GET.get('club_id')
+    def get(self, request, obj_id=None, *args, **kwargs):
+        cid = obj_id or request.GET.get('club_id')
         if cid:
             try: return JsonResponse({'data': serialize_club(self.model.objects.get(id=cid))}, status=200)
             except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
@@ -20,14 +20,14 @@ class ClubView(BaseCrudView):
             return JsonResponse({'data': [serialize_club(c) for c in p_o], 'pagination': {'total_pages': p.num_pages, 'current_page': p_o.number, 'total_items': p.count}}, status=200)
         return JsonResponse({'data': [serialize_club(c) for c in qs]}, status=200)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         data = parse_body(request)
         if 'name' not in data or 'organization_id' not in data: return JsonResponse({'error': 'Missing fields'}, status=400)
         try: return JsonResponse({'data': serialize_club(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def put(self, request):
-        cid = request.GET.get('club_id')
+    def put(self, request, obj_id=None, *args, **kwargs):
+        cid = obj_id or request.GET.get('club_id')
         if not cid: return JsonResponse({'error': 'Missing club_id'}, status=400)
         data = parse_body(request)
         try:
@@ -38,8 +38,8 @@ class ClubView(BaseCrudView):
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def delete(self, request):
-        cid = request.GET.get('club_id')
+    def delete(self, request, obj_id=None, *args, **kwargs):
+        cid = obj_id or request.GET.get('club_id')
         if not cid: return JsonResponse({'error': 'Missing club_id'}, status=400)
         try: self.model.objects.get(id=cid).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)

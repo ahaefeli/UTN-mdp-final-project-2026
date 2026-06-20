@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import authService from "../../services/authService";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -23,28 +24,21 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    // Simulate standard 1 second auth delay
-    setTimeout(() => {
-      if (dni.trim() === "35.123.456") {
-        // Successful login
-        const mockUserSession = {
-          id: "123e4567-e89b-12d3-a456-426614174000",
-          name: "Marcos Valenzuela",
-          role: selectedRole, // dynamic selection from tabs
-          dni: "35.123.456"
-        };
-        
-        // Save session in localStorage
-        localStorage.setItem("lnv_session", JSON.stringify(mockUserSession));
-        
-        // Redirect to dashboard
-        router.push("/dashboard");
-      } else {
-        // Validation failed
-        setError("Credenciales inválidas");
-        setIsLoading(false);
+    try {
+      // Iniciar sesión real a través de authService (hace POST a Django y guarda el JWT)
+      await authService.login(dni.trim(), password);
+      
+      // Redirigir al dashboard real (ruta raíz)
+      router.push("/");
+    } catch (err) {
+      console.error("Login failure:", err);
+      let errorMsg = "Credenciales inválidas o error de conexión con el backend.";
+      if (err.response && err.response.data && err.response.data.error) {
+        errorMsg = err.response.data.error;
       }
-    }, 1000);
+      setError(errorMsg);
+      setIsLoading(false);
+    }
   };
 
   return (

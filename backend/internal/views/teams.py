@@ -8,8 +8,8 @@ def serialize_team(t):
 
 class TeamView(BaseCrudView):
     model = Team
-    def get(self, request):
-        tid = request.GET.get('team_id')
+    def get(self, request, obj_id=None, *args, **kwargs):
+        tid = obj_id or request.GET.get('team_id')
         if tid:
             try: return JsonResponse({'data': serialize_team(self.model.objects.get(id=tid, is_deleted=False))}, status=200)
             except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
@@ -22,14 +22,14 @@ class TeamView(BaseCrudView):
             return JsonResponse({'data': [serialize_team(t) for t in p_o], 'pagination': {'total_pages': p.num_pages, 'current_page': p_o.number, 'total_items': p.count}}, status=200)
         return JsonResponse({'data': [serialize_team(t) for t in qs]}, status=200)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         data = parse_body(request)
         if not all(k in data for k in ['club_id', 'organization_id', 'name', 'category', 'branch']): return JsonResponse({'error': 'Missing fields'}, status=400)
         try: return JsonResponse({'data': serialize_team(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def put(self, request):
-        tid = request.GET.get('team_id')
+    def put(self, request, obj_id=None, *args, **kwargs):
+        tid = obj_id or request.GET.get('team_id')
         if not tid: return JsonResponse({'error': 'Missing team_id'}, status=400)
         data = parse_body(request)
         try:
@@ -40,8 +40,8 @@ class TeamView(BaseCrudView):
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
-    def delete(self, request):
-        tid = request.GET.get('team_id')
+    def delete(self, request, obj_id=None, *args, **kwargs):
+        tid = obj_id or request.GET.get('team_id')
         if not tid: return JsonResponse({'error': 'Missing team_id'}, status=400)
         try:
             t = self.model.objects.get(id=tid); t.is_deleted = True; t.save()
