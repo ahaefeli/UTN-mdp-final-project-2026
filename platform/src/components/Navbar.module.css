@@ -1,0 +1,120 @@
+/* Estilo modular para la barra de navegación persistente */
+
+.navbar {
+  height: 70px;
+  background-color: white;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+  box-sizing: border-box;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #002F87 0%, #1e1b4b 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 47, 135, 0.1);
+}
+
+.brandText {
+  font-weight: 900;
+  color: #002F87;
+  font-size: 1rem;
+  text-transform: uppercase;
+  font-style: italic;
+  letter-spacing: 0.05em;
+  margin: 0;
+  line-height: 1;
+}
+
+.brandTextHighlight {
+  color: #FF8A00;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navLink {
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #64748b;
+  transition: color 0.2s ease;
+  padding: 0.25rem 0;
+}
+
+.navLink:hover {
+  color: #002F87;
+}
+
+.navLinkActive {
+  color: #002F87;
+  border-bottom: 2px solid #FF8A00;
+}
+
+.profileArea {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profileInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  background-color: #FF8A00;
+  color: white;
+  font-weight: 800;
+  font-size: 0.875rem;
+  box-shadow: 0 2px 4px rgba(255, 138, 0, 0.2);
+}
+
+.profileName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.btnLogout {
+  background-color: transparent;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnLogout:hover {
+  background-color: #f1f5f9;
+  color: #ef4444;
+  border-color: #fecaca;
+}

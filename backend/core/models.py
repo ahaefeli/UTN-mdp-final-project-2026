@@ -44,6 +44,8 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     phone = models.CharField(max_length=20, null=True, blank=True)
     dni = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    medical_certificate = models.URLField(null=True, blank=True)
+    coach_certificate = models.URLField(null=True, blank=True)
     
     is_deleted = models.BooleanField(default=False)
     deleted_by = models.ForeignKey('User', on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_users')

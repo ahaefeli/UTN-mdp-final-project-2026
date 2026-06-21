@@ -2,10 +2,12 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import authService from "../../services/authService";
+import apiClient from "../../services/apiClient";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [selectedRole, setSelectedRole] = useState("JUGADOR");
   const [dni, setDni] = useState("");
   const [password, setPassword] = useState("");
@@ -25,15 +27,18 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Iniciar sesión real a través de authService (hace POST a Django y guarda el JWT)
-      await authService.login(dni.trim(), password);
+      // Iniciar sesión real a través de apiClient y actualizar el AuthContext
+      const response = await apiClient.post("auth/login/", { email: dni.trim(), password });
+      const { token, user } = response.data;
+      
+      login(token, user);
       
       // Redirigir al dashboard real (ruta raíz)
       router.push("/");
     } catch (err) {
       console.error("Login failure:", err);
       let errorMsg = "Credenciales inválidas o error de conexión con el backend.";
-      if (err.response && err.response.data && err.response.data.error) {
+      if (err && err.response && err.response.data && err.response.data.error) {
         errorMsg = err.response.data.error;
       }
       setError(errorMsg);

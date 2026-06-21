@@ -70,6 +70,27 @@ export const userService = {
   },
 
   /**
+   * Actualiza el perfil de un usuario soportando carga de archivos (FormData).
+   * @param {string} id - ID del usuario.
+   * @param {FormData} formData - Datos de formulario multipart.
+   * @returns {Promise<object>} Usuario modificado.
+   */
+  async updateProfile(id, formData) {
+    try {
+      const response = await apiClient.put('internal/usuarios/', formData, {
+        params: { user_id: id },
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error al actualizar perfil de usuario con ID ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Elimina un usuario.
    * @param {string} id - ID del usuario.
    * @returns {Promise<object>} Confirmación de eliminación.

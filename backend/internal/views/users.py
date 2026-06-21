@@ -11,7 +11,9 @@ def serialize_user(user):
         'id': str(user.id),
         'name': f"{user.first_name} {user.last_name}".strip(),
         'enable': user.is_active,
-        'dni': user.dni
+        'dni': user.dni,
+        'medical_certificate': user.medical_certificate,
+        'coach_certificate': user.coach_certificate
     })
     return data
 
@@ -53,19 +55,38 @@ class UserView(BaseCrudView):
     def put(self, request, obj_id=None, *args, **kwargs):
         user_id = obj_id or request.GET.get('user_id')
         if not user_id: return JsonResponse({'error': 'Missing user_id'}, status=400)
-        data = parse_body(request)
+        
+        is_multipart = request.content_type and request.content_type.startswith('multipart/form-data')
+        if is_multipart:
+            from django.http.multipartparser import MultiPartParser
+            data, files = MultiPartParser(request.META, request, request.upload_handlers).parse()
+            data = data.dict()
+        else:
+            data = parse_body(request)
+            files = {}
+            
         try:
             u = User.objects.get(id=user_id)
             if 'enable' in data:
                 if (data.get('requester_role') or getattr(request.user, 'role', None)) != 'ADMIN':
                     return JsonResponse({'error': 'Admin only'}, status=403)
-                u.is_active = data.pop('enable')
+                u.is_active = data.pop('enable') in [True, 'true', 'True', '1']
             if 'name' in data:
                 n = data.pop('name'); u.first_name = n.split(' ')[0]; u.last_name = ' '.join(n.split(' ')[1:]) if ' ' in n else ''
             if 'password' in data: u.set_password(data.pop('password'))
             if 'user' in data: u.username = data.pop('user')
+            
             for k, v in data.items():
                 if hasattr(u, k): setattr(u, k, v)
+                
+            from core.utils.storage import upload_to_gcs
+            if 'medical_certificate' in files:
+                url = upload_to_gcs(files['medical_certificate'], files['medical_certificate'].name)
+                u.medical_certificate = url
+            if 'coach_certificate' in files:
+                url = upload_to_gcs(files['coach_certificate'], files['coach_certificate'].name)
+                u.coach_certificate = url
+                
             u.save(); return JsonResponse({'data': serialize_user(u)}, status=200)
         except User.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
