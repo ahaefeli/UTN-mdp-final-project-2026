@@ -295,7 +295,7 @@ export default function DashboardLayout({ children }) {
                     }}
                     className="flex items-center px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors"
                   >
-                    Cerrar Sesión
+                  <i className="bi bi-door-open"></i>  
                   </a>
                 </div>
               )}

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import authService from '../services/authService';
 import matchService from '../services/matchService';
+import userService from '../services/userService';
+import { ROLE_TRANSLATIONS } from '../utils/roles';
 
 export default function RootDashboardPage() {
   const router = useRouter();
@@ -12,10 +14,13 @@ export default function RootDashboardPage() {
   // Estados reactivos
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [userDetails, setUserDetails] = useState(null);
   const [matches, setMatches] = useState([]);
+  const [upcomingMatches, setUpcomingMatches] = useState([]);
   
   // Estados de carga y error
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
   const [error, setError] = useState('');
 
   // Validación de la sesión en el cliente
@@ -23,13 +28,31 @@ export default function RootDashboardPage() {
     if (!authService.isAuthenticated()) {
       router.push('/login');
     } else {
+      const currentUser = authService.getCurrentUser();
       setIsAuthenticated(true);
-      setUser(authService.getCurrentUser());
+      setUser(currentUser);
       loadMatches();
+      if (currentUser && currentUser.id) {
+        loadUserDetails(currentUser.id);
+      }
     }
   }, [router]);
 
-  // Carga de partidos desde el servicio
+  // Carga de perfil completo de usuario para obtener team_id y club_name
+  const loadUserDetails = async (userId) => {
+    try {
+      const response = await userService.getUserById(userId);
+      const details = response.data || null;
+      setUserDetails(details);
+      if (details && details.team_id) {
+        loadUpcomingMatches(details.team_id);
+      }
+    } catch (err) {
+      console.error('Error al cargar perfil completo de usuario:', err);
+    }
+  };
+
+  // Carga de partidos oficiales generales
   const loadMatches = async () => {
     setIsLoading(true);
     setError('');
@@ -44,6 +67,19 @@ export default function RootDashboardPage() {
     }
   };
 
+  // Carga de partidos futuros filtrados por team_id
+  const loadUpcomingMatches = async (teamId) => {
+    setIsLoadingUpcoming(true);
+    try {
+      const response = await matchService.getMatches({ upcoming: 'true', team_id: teamId });
+      setUpcomingMatches(response.data || []);
+    } catch (err) {
+      console.error('Error al cargar próximas fechas del equipo:', err);
+    } finally {
+      setIsLoadingUpcoming(false);
+    }
+  };
+
   // Cierre de sesión y limpieza de JWT
   const handleLogout = () => {
     authService.logout();
@@ -52,7 +88,7 @@ export default function RootDashboardPage() {
 
   if (!isAuthenticated) {
     return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
         <div className={styles.spinner} />
       </div>
     );
@@ -71,53 +107,109 @@ export default function RootDashboardPage() {
             </p>
           </div>
 
-          {/* Grid */}
+          {/* Grid de 2 Columnas */}
           <div className={styles.grid}>
-            {/* Sección de Partidos */}
-            <section className={styles.card}>
-              <div className={styles.sectionHeader}>
-                <h3 className={styles.sectionTitle}>Partidos Oficiales</h3>
-                <button onClick={loadMatches} className={styles.refreshButton} disabled={isLoading}>
-                  {isLoading ? 'Sincronizando...' : 'Sincronizar'}
-                </button>
-              </div>
-
-              {isLoading && <div className={styles.spinner} />}
-
-              {error && <div className={styles.errorBox}>{error}</div>}
-
-              {!isLoading && !error && matches.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', fontSize: '0.85rem' }}>
-                  No hay partidos programados disponibles en el sistema.
+            {/* Columna Izquierda: Contenido Principal */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Sección de Partidos Oficiales */}
+              <section className={styles.card}>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>Partidos Recientes</h3>
+                  <button onClick={loadMatches} className={styles.refreshButton} disabled={isLoading}>
+                    {isLoading ? 'Sincronizando...' : 'Sincronizar'}
+                  </button>
                 </div>
-              )}
 
-              {!isLoading && !error && matches.length > 0 && (
-                <div className={styles.matchList}>
-                  {matches.map((match) => (
-                    <div key={match.id} className={styles.matchItem}>
-                      <div className={styles.matchTeams}>
-                        <span className={`${styles.team} ${styles.localTeam}`}>{match.local_team_name}</span>
-                        <div className={styles.scoreArea}>
-                          <span className={styles.vsBadge}>VS</span>
-                          {match.score_summary && <span className={styles.scoreText}>{match.score_summary}</span>}
+                {isLoading && <div className={styles.spinner} />}
+
+                {error && <div className={styles.errorBox}>{error}</div>}
+
+                {!isLoading && !error && matches.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', fontSize: '0.85rem' }}>
+                    No hay partidos programados disponibles en el sistema.
+                  </div>
+                )}
+
+                {!isLoading && !error && matches.length > 0 && (
+                  <div className={styles.matchList}>
+                    {matches.map((match) => (
+                      <div key={match.id} className={styles.matchItem}>
+                        <div className={styles.matchTeams}>
+                          <span className={`${styles.team} ${styles.localTeam}`}>{match.local_team_name}</span>
+                          <div className={styles.scoreArea}>
+                            <span className={styles.vsBadge}>VS</span>
+                            {match.score_summary && <span className={styles.scoreText}>{match.score_summary}</span>}
+                          </div>
+                          <span className={`${styles.team} ${styles.visitorTeam}`}>{match.visitor_team_name}</span>
                         </div>
-                        <span className={`${styles.team} ${styles.visitorTeam}`}>{match.visitor_team_name}</span>
-                      </div>
 
-                      <div className={styles.matchFooter}>
-                        <span>Árbitro: {match.referee_name || 'Sin asignar'}</span>
-                        <span className={`${styles.statusBadge} ${
-                          match.status === 'FINISHED' ? styles.badgeFinished : styles.badgePending
-                        }`}>
-                          {match.status}
-                        </span>
+                        <div className={styles.matchFooter}>
+                          <span>Árbitro: {match.referee_name || 'Sin asignar'}</span>
+                          <span className={`${styles.statusBadge} ${
+                            match.status === 'FINISHED' ? styles.badgeFinished : styles.badgePending
+                          }`}>
+                            {match.status}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+
+            {/* Columna Derecha: Tarjetas del Sidebar */}
+            <aside className={styles.sidebarCards}>
+              {/* Tarjeta Próximas Fechas */}
+              <section className={styles.card}>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>Próximas Fechas</h3>
                 </div>
-              )}
-            </section>
+                {isLoadingUpcoming ? (
+                  <div className={styles.spinner} />
+                ) : upcomingMatches.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', fontSize: '0.85rem' }}>
+                    No hay partidos programados próximamente.
+                  </div>
+                ) : (
+                  <div className={styles.matchList}>
+                    {upcomingMatches.slice(0, 3).map((match) => (
+                      <div key={match.id} className={styles.matchItem} style={{ padding: '0.75rem', gap: '0.5rem' }}>
+                        <div className={styles.matchMeta} style={{ fontSize: '0.65rem' }}>
+                          <span>{match.match_datetime ? new Date(match.match_datetime).toLocaleDateString() : 'A confirmar'}</span>
+                        </div>
+                        <div className={styles.matchTeams} style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#334155' }}>
+                          <span>{match.local_team_name} vs {match.visitor_team_name}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Tarjeta Mi Club */}
+              <section className={styles.card}>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>Mi Club</h3>
+                </div>
+                <div className={styles.techInfoList}>
+                  <div className={styles.techItem}>
+                    <span className={styles.techLabel}>Institución</span>
+                    <span className={styles.techValue} style={{ color: '#002F87', fontWeight: 'bold' }}>
+                      {userDetails?.club_name || 'Club no asignado'}
+                    </span>
+                  </div>
+                  <div className={styles.techItem}>
+                    <span className={styles.techLabel}>Asociado</span>
+                    <span className={styles.techValue}>{userDetails?.name || user?.name || user?.username}</span>
+                  </div>
+                  <div className={styles.techItem}>
+                    <span className={styles.techLabel}>Rol</span>
+                    <span className={styles.techValue} style={{ color: '#FF8A00' }}>{ROLE_TRANSLATIONS[userDetails?.role || user?.role] || userDetails?.role || user?.role}</span>
+                  </div>
+                </div>
+              </section>
+            </aside>
           </div>
         </div>
       </div>

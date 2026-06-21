@@ -1,19 +1,41 @@
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.forms.models import model_to_dict
+from django.db.models import Q
 from .base import BaseCrudView, parse_body
 from core.models import User
 
 def serialize_user(user):
     data = model_to_dict(user)
     if 'password' in data: del data['password']
+    
+    club_id, club_name = None, None
+    team_id = None
+    if user.role == 'COACH':
+        team = user.coached_teams.first()
+        if team:
+            team_id = str(team.id)
+            if team.club:
+                club_id = str(team.club.id)
+                club_name = team.club.name
+    elif user.role == 'PLAYER':
+        team = user.teams_playing.first()
+        if team:
+            team_id = str(team.id)
+            if team.club:
+                club_id = str(team.club.id)
+                club_name = team.club.name
+            
     data.update({
         'id': str(user.id),
         'name': f"{user.first_name} {user.last_name}".strip(),
         'enable': user.is_active,
         'dni': user.dni,
         'medical_certificate': user.medical_certificate,
-        'coach_certificate': user.coach_certificate
+        'coach_certificate': user.coach_certificate,
+        'club_id': club_id,
+        'club_name': club_name,
+        'team_id': team_id
     })
     return data
 
@@ -32,6 +54,14 @@ class UserView(BaseCrudView):
         team_id = request.GET.get('team_id')
         if team_id:
             qs = qs.filter(teams_playing__id=team_id)
+            
+        search = request.GET.get('search')
+        if search:
+            qs = qs.filter(Q(first_name__icontains=search) | Q(last_name__icontains=search) | Q(dni__icontains=search))
+            
+        club_id = request.GET.get('club_id')
+        if club_id:
+            qs = qs.filter(Q(teams_playing__club_id=club_id) | Q(coached_teams__club_id=club_id)).distinct()
 
         page = request.GET.get('page')
         if page:

@@ -108,7 +108,7 @@ export default function DashboardPage() {
             </div>
             <span className={styles.profileName}>{user?.name || user?.username}</span>
             <button onClick={handleLogout} className={styles.btnLogout}>
-              Cerrar Sesión
+            <i className="bi bi-door-open"></i>
             </button>
           </div>
         </header>
@@ -188,7 +188,7 @@ export default function DashboardPage() {
                   </div>
                   <div className={styles.detailItem}>
                     <span className={styles.detailLabel}>DNI</span>
-                    <span className={styles.detailValue}>{user?.dni || 'No provisto'}</span>
+                    <span className={styles.detailValue}>{user?.dni || '-'}</span>
                   </div>
                   <div className={styles.detailItem}>
                     <span className={styles.detailLabel}>Tipo Token</span>

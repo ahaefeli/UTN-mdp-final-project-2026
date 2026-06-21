@@ -48,22 +48,23 @@ export default function Navbar() {
           Mis Datos
         </Link>
 
-        {/* Enlaces exclusivos para COACH / ADMIN */}
-        {(role === 'COACH' || role === 'ADMIN') && (
-          <>
-            <Link 
-              href="/mis-jugadores" 
-              className={`${styles.navLink} ${isActive('/mis-jugadores') ? styles.navLinkActive : ''}`}
-            >
-              Mis Jugadores
-            </Link>
-            <Link 
-              href="/inscripciones" 
-              className={`${styles.navLink} ${isActive('/inscripciones') ? styles.navLinkActive : ''}`}
-            >
-              Inscripciones
-            </Link>
-          </>
+        {/* Enlaces según el rol */}
+        {role === 'COACH' && (
+          <Link 
+            href="/mis-jugadores" 
+            className={`${styles.navLink} ${isActive('/mis-jugadores') ? styles.navLinkActive : ''}`}
+          >
+            Mis Jugadores
+          </Link>
+        )}
+
+        {role === 'ADMIN' && (
+          <Link 
+            href="/usuarios" 
+            className={`${styles.navLink} ${isActive('/usuarios') ? styles.navLinkActive : ''}`}
+          >
+            Usuarios
+          </Link>
         )}
       </div>
 
@@ -76,7 +77,7 @@ export default function Navbar() {
           <span className={styles.profileName}>{user?.name || user?.username}</span>
         </div>
         <button onClick={logout} className={styles.btnLogout}>
-          Cerrar Sesión
+        <i className="bi bi-door-open"></i>
         </button>
       </div>
     </nav>

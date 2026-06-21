@@ -26,6 +26,10 @@ class MatchView(BaseCrudView):
         if cid: qs = qs.filter(models.Q(local_team__club_id=cid) | models.Q(visitor_team__club_id=cid))
         if tid: qs = qs.filter(models.Q(local_team_id=tid) | models.Q(visitor_team_id=tid))
         if s: qs = qs.filter(status=s)
+        
+        if request.GET.get('upcoming') == 'true':
+            from django.utils import timezone
+            qs = qs.filter(match_datetime__gte=timezone.now())
         page = request.GET.get('page')
         if page:
             p = Paginator(qs, 10); p_o = p.get_page(page)

@@ -1,0 +1,6 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo redondeado azul oscuro -->
+  <rect width="256" height="256" rx="64" fill="#002F87"/>
+  <!-- Letra V en naranja -->
+  <path d="M72 64L128 192L184 64" stroke="#F97316" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

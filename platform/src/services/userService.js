@@ -11,7 +11,10 @@ export const userService = {
    */
   async getUsers(params = {}) {
     try {
-      const response = await apiClient.get('internal/usuarios/', { params });
+      const { search, club_id, team_id, page } = params;
+      const response = await apiClient.get('internal/usuarios/', {
+        params: { search, club_id, team_id, page }
+      });
       return response.data;
     } catch (error) {
       console.error('Error al obtener usuarios:', error);

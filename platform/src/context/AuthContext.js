@@ -53,9 +53,15 @@ export function AuthProvider({ children }) {
 
   // REGLA CRÍTICA DE REDIRECCIÓN (RBAC)
   useEffect(() => {
-    if (isInitialized && isAuthenticated && role === 'PLAYER') {
-      if (pathname === '/mis-jugadores' || pathname === '/inscripciones') {
-        router.push('/');
+    if (isInitialized && isAuthenticated) {
+      if (role === 'PLAYER') {
+        if (pathname === '/mis-jugadores' || pathname === '/inscripciones' || pathname === '/usuarios') {
+          router.push('/');
+        }
+      } else if (role === 'ADMIN') {
+        if (pathname === '/mis-jugadores') {
+          router.push('/usuarios');
+        }
       }
     }
   }, [role, pathname, isAuthenticated, isInitialized, router]);

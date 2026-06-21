@@ -104,7 +104,7 @@ export default function MisJugadoresPage() {
                   <td className={styles.td}>
                     {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
                   </td>
-                  <td className={styles.td}>{player.dni || 'No provisto'}</td>
+                  <td className={styles.td}>{player.dni || '-'}</td>
                   <td className={styles.td}>{player.username}</td>
                   <td className={styles.td}>{player.role}</td>
                   <td className={styles.td}>

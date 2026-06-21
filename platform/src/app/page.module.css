@@ -2,9 +2,8 @@
 
 .container {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   background-color: #f8fafc;
-  overflow: hidden;
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   color: #1e293b;
   width: 100%;
@@ -14,7 +13,7 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   width: 260px;
   background-color: #f4f5f7;
   border-right: 1px solid #e2e8f0;
@@ -102,7 +101,7 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 .header {
@@ -223,14 +222,8 @@
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-}
-
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: 2fr 1fr;
-  }
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
 }
 
 .card {
@@ -422,4 +415,10 @@
 .techValue {
   color: #334155;
   font-weight: 800;
+}
+
+.sidebarCards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
