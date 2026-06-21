@@ -1,5 +1,7 @@
 from django.http import JsonResponse
 from django.core.paginator import Paginator
+from django.utils.decorators import method_decorator
+from core.auth import jwt_required
 from .base import BaseCrudView, parse_body
 from core.models import Tournament, TournamentEnrollment, TournamentStage, Team, Match
 
@@ -53,6 +55,7 @@ class TournamentView(BaseCrudView):
         try: self.model.objects.get(id=tid).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
         except Exception: return JsonResponse({'error': 'Cannot delete tournament with associated data'}, status=400)
 
+@method_decorator(jwt_required, name='dispatch')
 class TournamentEnrollmentView(BaseCrudView):
     model = TournamentEnrollment
     def get(self, request, tournament_id=None, team_id=None, *args, **kwargs):

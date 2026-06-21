@@ -1,0 +1,11 @@
+Django==5.2.5
+django-cors-headers==4.7.0
+djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
+psycopg-binary
+psycopg2-binary
+pillow==11.3.0
+bcrypt==5.0.0
+cryptography==46.0.2
+gunicorn==23.0.0
+channels==4.3.1

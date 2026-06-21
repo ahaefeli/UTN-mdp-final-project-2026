@@ -50,7 +50,7 @@ export default function DashboardLayout({ children }) {
     },
     {
       name: "Inscripciones",
-      href: "/dashboard/inscripciones",
+      href: "/inscripciones",
       icon: (
         <svg
           className="w-5 h-5 mr-3 transition-colors"
