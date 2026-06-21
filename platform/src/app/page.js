@@ -96,11 +96,6 @@ export default function RootDashboardPage() {
                 <div className={styles.matchList}>
                   {matches.map((match) => (
                     <div key={match.id} className={styles.matchItem}>
-                      <div className={styles.matchMeta}>
-                        <span>ID: {match.id.substring(0, 8)}...</span>
-                        <span>{match.match_datetime ? new Date(match.match_datetime).toLocaleString() : 'Fecha a confirmar'}</span>
-                      </div>
-                      
                       <div className={styles.matchTeams}>
                         <span className={`${styles.team} ${styles.localTeam}`}>{match.local_team_name}</span>
                         <div className={styles.scoreArea}>

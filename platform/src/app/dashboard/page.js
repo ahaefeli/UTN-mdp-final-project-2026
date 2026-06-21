@@ -148,10 +148,6 @@ export default function DashboardPage() {
                 <div className={styles.matchList}>
                   {matches.map((match) => (
                     <div key={match.id} className={styles.matchItem}>
-                      <div className={styles.matchMeta}>
-                        <span>ID: {match.id.substring(0,8)}</span>
-                        <span>{match.match_datetime ? new Date(match.match_datetime).toLocaleString() : 'Fecha pendiente'}</span>
-                      </div>
                       
                       <div className={styles.matchTeams}>
                         <span className={`${styles.team} ${styles.local}`}>{match.local_team_name}</span>

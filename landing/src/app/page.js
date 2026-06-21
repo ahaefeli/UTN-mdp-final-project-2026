@@ -363,7 +363,7 @@ export default function LandingPage() {
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert(`Visualizando detalles del artículo ID: ${item.id}`);
+                      alert(`Visualizando detalles del artículo`);
                     }}
                     className="text-[10px] font-black text-[#FF8A00] hover:text-orange-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 cursor-pointer"
                   >

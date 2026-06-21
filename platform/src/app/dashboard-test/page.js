@@ -223,11 +223,6 @@ export default function DashboardTestPage() {
                 <div className={styles.matchList}>
                   {matches.map((match) => (
                     <div key={match.id} className={styles.matchCard}>
-                      <div className={styles.matchHeader}>
-                        <span>ID: {match.id.substring(0, 8)}...</span>
-                        <span>{match.match_datetime ? new Date(match.match_datetime).toLocaleString() : 'Fecha no definida'}</span>
-                      </div>
-                      
                       <div className={styles.matchTeams}>
                         <div className={`${styles.teamName} ${styles.localTeam}`}>
                           {match.local_team_name}
