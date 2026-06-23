@@ -53,6 +53,9 @@ class User(AbstractUser):
     deleted_by = models.ForeignKey('User', on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_users')
     deleted_at = models.DateTimeField(null=True, blank=True)
 
+    gender = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Femenino')], null=True, blank=True)
+    is_federated = models.BooleanField(default=False)
+
 class Club(models.Model):
     """ Club de un tenant - Puede haber varios clubes dentro de una liga """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -6,8 +6,17 @@ import styles from './page.module.css';
 import authService from '../services/authService';
 import matchService from '../services/matchService';
 import userService from '../services/userService';
+import apiClient from '../services/apiClient';
 import { ROLE_TRANSLATIONS } from '../utils/roles';
 import { STATUS_TRANSLATIONS } from '../utils/status';
+
+// Componentes del Dashboard de Administración
+import InfoCard from '../components/InfoCard/InfoCard';
+import QuickActions from '../components/QuickActions/QuickActions';
+import PendingAlerts from '../components/PendingAlerts/PendingAlerts';
+
+// Iconos Lucide
+import { Shield, Users, Trophy, CalendarCheck } from 'lucide-react';
 
 export default function RootDashboardPage() {
   const router = useRouter();
@@ -25,6 +34,37 @@ export default function RootDashboardPage() {
   const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
   const [error, setError] = useState('');
 
+  // Estados para el panel de administración
+  const [metrics, setMetrics] = useState(null);
+  const [pendingActions, setPendingActions] = useState([]);
+  const [isLoadingAdmin, setIsLoadingAdmin] = useState(false);
+
+  // Carga de datos para el dashboard de administración
+  const loadAdminDashboard = async () => {
+    setIsLoadingAdmin(true);
+    setError('');
+    try {
+      const response = await apiClient.get('internal/dashboard/admin/');
+      const data = response.data || {};
+      
+      // Actualizar el estado de métricas mapeando la raíz
+      setMetrics({
+        total_clubs: data.total_clubs || 0,
+        federated_players: data.federated_players || { total: 0, masculino: 0, femenino: 0 },
+        active_tournaments: data.active_tournaments || 0,
+        matches_without_referee: data.matches_without_referee || 0
+      });
+
+      // Actualizar las alertas con fallback a array vacío
+      setPendingActions(data.pending_actions || []);
+    } catch (err) {
+      console.error('Error al cargar datos del dashboard de administrador:', err);
+      setError('Error al sincronizar con el backend de administración.');
+    } finally {
+      setIsLoadingAdmin(false);
+    }
+  };
+
   // Validación de la sesión en el cliente
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -33,9 +73,13 @@ export default function RootDashboardPage() {
       const currentUser = authService.getCurrentUser();
       setIsAuthenticated(true);
       setUser(currentUser);
-      loadMatches();
-      if (currentUser && currentUser.id) {
-        loadUserDetails(currentUser.id);
+      if (currentUser && currentUser.role === 'ADMIN') {
+        loadAdminDashboard();
+      } else {
+        loadMatches();
+        if (currentUser && currentUser.id) {
+          loadUserDetails(currentUser.id);
+        }
       }
     }
   }, [router]);
@@ -104,19 +148,65 @@ export default function RootDashboardPage() {
     );
   }
 
+  if (role === 'ADMIN') {
+    return (
+      <div className={`${styles.container} container`}>
+        <div className={styles.scrollContent} style={{ width: '100%' }}>
+          <div className={styles.dashboardLayout} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Header del Admin */}
+              <h2 className={styles.adminTitle}>Panel de Control</h2>
+
+            {isLoadingAdmin ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+                <div className={styles.spinner} />
+              </div>
+            ) : (
+              <>
+                {error && <div className={styles.errorBox}>{error}</div>}
+
+                {/* Grid de 4 InfoCards */}
+                <div className={styles.metricsGrid}>
+                  <InfoCard 
+                    title="Total Clubes" 
+                    value={metrics?.total_clubs ?? 0} 
+                    icon={Shield} 
+                  />
+                  <InfoCard 
+                    title="Jugadores Federados" 
+                    value={metrics?.federated_players?.total ?? 0} 
+                    subValue={metrics?.federated_players ? `Masculino: ${metrics.federated_players.masculino} | Femenino: ${metrics.federated_players.femenino}` : ''} 
+                    icon={Users} 
+                  />
+                  <InfoCard 
+                    title="Torneos en Curso" 
+                    value={metrics?.active_tournaments ?? 0} 
+                    icon={Trophy} 
+                  />
+                  <InfoCard 
+                    title="Partidos sin Árbitro" 
+                    value={metrics?.matches_without_referee ?? 0} 
+                    icon={CalendarCheck} 
+                  />
+                </div>
+
+                {/* Sección Acciones Rápidas */}
+                <QuickActions />
+
+                {/* Sección Alertas Pendientes */}
+                <PendingAlerts alerts={pendingActions} />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       {/* Sección scrolleable de contenidos */}
       <div className={styles.scrollContent} style={{ width: '100%' }}>
         <div className={styles.dashboardLayout}>
-          {/* Banner superior */}
-          <div className={styles.banner}>
-            <h2 className={styles.bannerTitle}>¡Hola, {user?.name || user?.username}!</h2>
-            <p className={styles.bannerText}>
-              ¡Te damos la bienvenida a VoleyHub! Aquí puedes ver el resumen de tu actividad y los próximos partidos.
-            </p>
-          </div>
-
           {/* Grid de 2 Columnas */}
           <div className={styles.grid}>
             {/* Columna Izquierda: Contenido Principal */}

@@ -48,7 +48,7 @@ export default function ContactoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
+    <div className={`${styles.container} container`}>
       
       {/* 1. HEADER PÚBLICO */}
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100 h-20 w-full flex items-center justify-between px-4 md:px-8 lg:px-16 select-none relative">
@@ -57,7 +57,7 @@ export default function ContactoPage() {
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
             <span className="font-black italic text-[#001F54] text-sm md:text-base lg:text-xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer">
-              LIGA NECOCHENSE DE VOLEY
+              VoleyHub
             </span>
           </Link>
         </div>

@@ -422,3 +422,27 @@
   flex-direction: column;
   gap: 16px;
 }
+
+
+.adminTitle {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #002F87;
+  text-transform: uppercase;
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+.adminSubtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+

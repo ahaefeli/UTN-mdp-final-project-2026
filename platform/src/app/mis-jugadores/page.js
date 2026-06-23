@@ -56,7 +56,7 @@ export default function MisJugadoresPage() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} container`}>
       {/* Cabecera del Panel */}
       <header className={styles.header}>
         <h1 className={styles.headerTitle}>

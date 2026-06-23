@@ -46,7 +46,11 @@ class UserView(BaseCrudView):
         if user_id:
             try: return JsonResponse({'data': serialize_user(self.model.objects.get(id=user_id))}, status=200)
             except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
-        qs = self.model.objects.all().order_by('id')
+        qs = self.model.objects.filter(
+            organization=request.user.organization
+        ).exclude(
+            role__in=['ADMIN', 'OWNER']
+        ).order_by('id')
         
         role_filter = request.GET.get('role')
         if role_filter:
