@@ -6,6 +6,7 @@ from django.contrib.auth.models import AbstractUser
 
 class ROLE_CHOICES(models.TextChoices):
     ADMIN = 'ADMIN', 'Admin'
+    CLUB_ADMIN = 'CLUB_ADMIN', 'Club Admin'
     PLAYER = 'PLAYER', 'Player'
     COACH = 'COACH', 'Coach'
     REFEREE = 'REFEREE', 'Referee'
@@ -61,6 +62,7 @@ class Club(models.Model):
     address = models.CharField(max_length=255, null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
+    logo_url = models.URLField(max_length=500, null=True, blank=True)
     
     is_deleted = models.BooleanField(default=False)
     deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_clubs')
@@ -158,3 +160,33 @@ class Match(models.Model):
     is_deleted = models.BooleanField(default=False)
     deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_matches')
     deleted_at = models.DateTimeField(null=True, blank=True)
+
+
+class REQUEST_STATUS_CHOICES(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
+    APPROVED = 'APPROVED', 'Approved'
+    REJECTED = 'REJECTED', 'Rejected'
+
+
+class ClubRegistrationRequest(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    token = models.CharField(max_length=255, unique=True, db_index=True)
+    club_name = models.CharField(max_length=255, null=True, blank=True)
+    club_address = models.CharField(max_length=255, null=True, blank=True)
+    club_phone = models.CharField(max_length=50, null=True, blank=True)
+    club_email = models.EmailField(null=True, blank=True)
+    admin_first_name = models.CharField(max_length=150, null=True, blank=True)
+    admin_last_name = models.CharField(max_length=150, null=True, blank=True)
+    admin_email = models.EmailField(null=True, blank=True)
+    club_logo_url = models.URLField(max_length=500, null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=REQUEST_STATUS_CHOICES.choices,
+        default=REQUEST_STATUS_CHOICES.PENDING,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    def __str__(self):
+        return f"{self.club_name} - {self.status}"

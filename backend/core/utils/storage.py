@@ -2,8 +2,13 @@ import os
 import uuid
 from google.cloud import storage
 
-def upload_to_gcs(file_obj, destination_blob_name):
-    """Sube un archivo a Google Cloud Storage y retorna su URL publica."""
+def upload_to_gcs(file_obj, destination_blob_name, type_data):
+    """
+        Sube un archivo a Google Cloud Storage y retorna su URL publica.
+        file_obj: El archivo a subir
+        destination_blob_name: El nombre del archivo
+        type_data: Tipo de data subida (Ej. medical_certificate, profile_image)
+    """
     bucket_name = os.environ.get("BUCKET_NAME")
     if not bucket_name:
         raise Exception("BUCKET_NAME no esta configurado en las variables de entorno.")
@@ -12,7 +17,7 @@ def upload_to_gcs(file_obj, destination_blob_name):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     
-    unique_name = f"{uuid.uuid4()}_{destination_blob_name}"
+    unique_name = f"{type_data}_{uuid.uuid4()}_{destination_blob_name}"
     blob = bucket.blob(unique_name)
     
     blob.upload_from_file(file_obj, content_type=file_obj.content_type)

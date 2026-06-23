@@ -116,10 +116,10 @@ class UserView(BaseCrudView):
                 
             from core.utils.storage import upload_to_gcs
             if 'medical_certificate' in files:
-                url = upload_to_gcs(files['medical_certificate'], files['medical_certificate'].name)
+                url = upload_to_gcs(files['medical_certificate'], files['medical_certificate'].name, "medical_certificate")
                 u.medical_certificate = url
             if 'coach_certificate' in files:
-                url = upload_to_gcs(files['coach_certificate'], files['coach_certificate'].name)
+                url = upload_to_gcs(files['coach_certificate'], files['coach_certificate'].name, "coach_certificate")
                 u.coach_certificate = url
                 
             u.save(); return JsonResponse({'data': serialize_user(u)}, status=200)

@@ -33,8 +33,13 @@ export default function MisDatosPage() {
     if (!authService.isAuthenticated()) {
       router.push('/login');
     } else {
-      setIsAuthenticated(true);
-      loadUserProfile();
+      const currentUser = authService.getCurrentUser();
+      if (currentUser && currentUser.role === 'ADMIN') {
+        router.push('/');
+      } else {
+        setIsAuthenticated(true);
+        loadUserProfile();
+      }
     }
   }, [router]);
 

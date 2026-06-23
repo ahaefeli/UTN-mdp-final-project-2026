@@ -1,0 +1,361 @@
+/* Estilos modulares para el registro público de clubes */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at 10% 20%, rgba(0, 47, 135, 0.05) 0%, rgba(255, 255, 255, 1) 90%);
+  padding: 2rem 1rem;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  color: #1e293b;
+}
+
+.brandContainer {
+  margin-bottom: 2rem;
+  text-align: center;
+  user-select: none;
+}
+
+.brandText {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #002F87;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  font-style: italic;
+  margin: 0;
+}
+
+.brandTextHighlight {
+  color: #FF8A00;
+}
+
+.card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 600px;
+  padding: 2.5rem;
+  box-sizing: border-box;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cardHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: #002F87;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 1.5rem 0 1rem 0;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fullWidth {
+    grid-column: span 2;
+  }
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.input {
+  height: 44px;
+  padding: 0 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #002F87;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(0, 47, 135, 0.1);
+}
+
+.input:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  width: 100%;
+  margin-top: 1.5rem;
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, #002F87 0%, #1e1b4b 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 47, 135, 0.2);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 47, 135, 0.3);
+  filter: brightness(1.1);
+}
+
+.btnPrimary:disabled {
+  background: #94a3b8;
+  color: #cbd5e1;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Estado de Error / Restrictivo */
+.errorCard {
+  text-align: center;
+  max-width: 500px;
+  padding: 3rem 2rem;
+  animation: shake 0.5s ease-in-out;
+}
+
+.errorIcon {
+  width: 4rem;
+  height: 4rem;
+  color: #ef4444;
+  margin: 0 auto 1.5rem auto;
+  background-color: #fef2f2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #991b1b;
+  margin: 0 0 0.75rem 0;
+}
+
+.errorDesc {
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Estado de Éxito */
+.successCard {
+  text-align: center;
+  max-width: 500px;
+  padding: 3rem 2rem;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.successIcon {
+  width: 4rem;
+  height: 4rem;
+  color: #10b981;
+  margin: 0 auto 1.5rem auto;
+  background-color: #f0fdf4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.successTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #065f46;
+  margin: 0 0 0.75rem 0;
+}
+
+.successDesc {
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Spinner de carga */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid rgba(0, 47, 135, 0.1);
+  border-radius: 50%;
+  border-left-color: #002F87;
+  animation: spin 0.8s linear infinite;
+}
+
+.alertError {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+/* Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.fileInputContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fileInput {
+  border: 1px dashed #cbd5e1;
+  background-color: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fileInput:focus {
+  outline: none;
+  border-color: #002F87;
+  box-shadow: 0 0 0 2px rgba(0, 47, 135, 0.1);
+}
+
+.previewContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+}
+
+.previewImage {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.btnRemoveLogo {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+
+.btnRemoveLogo:hover {
+  background-color: #ef4444;
+  color: white;
+}
+
+.errorAlert {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}

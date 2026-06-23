@@ -41,12 +41,14 @@ export default function Navbar() {
         </Link>
 
         {/* Enlace para todos los roles (PLAYER y COACH) */}
-        <Link 
-          href="/mis-datos" 
-          className={`${styles.navLink} ${isActive('/mis-datos') ? styles.navLinkActive : ''}`}
-        >
-          Mis Datos
-        </Link>
+        {role !== 'ADMIN' && (
+          <Link 
+            href="/mis-datos" 
+            className={`${styles.navLink} ${isActive('/mis-datos') ? styles.navLinkActive : ''}`}
+          >
+            Mis Datos
+          </Link>
+        )}
 
         {/* Enlaces según el rol */}
         {role === 'COACH' && (
@@ -65,6 +67,12 @@ export default function Navbar() {
               className={`${styles.navLink} ${isActive('/usuarios') ? styles.navLinkActive : ''}`}
             >
               Usuarios
+            </Link>
+            <Link 
+              href="/clubes" 
+              className={`${styles.navLink} ${isActive('/clubes') ? styles.navLinkActive : ''}`}
+            >
+              Clubes
             </Link>
             <Link 
               href="/torneos" 
