@@ -16,6 +16,10 @@ class TeamView(BaseCrudView):
         qs = self.model.objects.filter(is_deleted=False).order_by('id')
         cid = request.GET.get('club_id')
         if cid: qs = qs.filter(club_id=cid)
+        cat = request.GET.get('category')
+        if cat: qs = qs.filter(category=cat)
+        br = request.GET.get('branch')
+        if br: qs = qs.filter(branch=br)
         page = request.GET.get('page')
         if page:
             p = Paginator(qs, 10); p_o = p.get_page(page)

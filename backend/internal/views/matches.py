@@ -9,6 +9,9 @@ from core.models import Match
 from core.auth import jwt_required
 
 def serialize_match_detail(m):
+    from core.utils.match_status import evaluate_and_update_match_status
+    evaluate_and_update_match_status(m)
+    m.refresh_from_db()
     d = {'id': m.id, 'tournament_stage_id': m.tournament_stage_id, 'local_team_id': m.local_team_id, 'local_team_name': m.local_team.name, 'visitor_team_id': m.visitor_team_id, 'visitor_team_name': m.visitor_team.name, 'court_id': m.court_id, 'court_name': m.court.name if m.court else None, 'match_datetime': m.match_datetime.isoformat() if m.match_datetime else None, 'referee_id': m.referee_id, 'referee_name': f"{m.referee.first_name} {m.referee.last_name}".strip() if m.referee else None, 'scorer_id': m.scorer_id, 'scorer_name': f"{m.scorer.first_name} {m.scorer.last_name}".strip() if m.scorer else None, 'status': m.status, 'score_summary': m.score_summary, 'sets': [{'set_number': s.set_number, 'local_points': s.local_points, 'visitor_points': s.visitor_points} for s in m.sets.all().order_by('set_number')] if hasattr(m, 'sets') else []}
     return d
 
@@ -38,19 +41,48 @@ class MatchView(BaseCrudView):
 
     def post(self, request, *args, **kwargs):
         data = parse_body(request)
+        if 'referee_id' in data and data['referee_id'] == "":
+            data['referee_id'] = None
+        if 'scorer_id' in data and data['scorer_id'] == "":
+            data['scorer_id'] = None
         if data.get('local_team_id') == data.get('visitor_team_id'): return JsonResponse({'error': 'Same team'}, status=400)
-        try: data['status'] = 'PENDING'; return JsonResponse({'data': serialize_match_detail(self.model.objects.create(**data))}, status=201)
+        try:
+            court_id = data.get('court_id')
+            match_datetime_str = data.get('match_datetime')
+            
+            if court_id and match_datetime_str:
+                from datetime import timedelta
+                from django.utils.dateparse import parse_datetime
+                match_datetime = parse_datetime(match_datetime_str)
+                if match_datetime:
+                    start_window = match_datetime - timedelta(hours=1)
+                    end_window = match_datetime + timedelta(hours=1)
+                    if self.model.objects.filter(court_id=court_id, match_datetime__gt=start_window, match_datetime__lt=end_window).exists():
+                        return JsonResponse({'error': 'La cancha ya tiene un partido asignado con menos de 1 hora de diferencia.'}, status=400)
+            
+            data['status'] = 'PREPARATION'
+            m = self.model.objects.create(**data)
+            m.refresh_from_db()
+            return JsonResponse({'data': serialize_match_detail(m)}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def put(self, request, obj_id=None, *args, **kwargs):
         mid = obj_id or request.GET.get('match_id')
         if not mid: return JsonResponse({'error': 'Missing match_id'}, status=400)
         data = parse_body(request)
+        if 'referee_id' in data and data['referee_id'] == "":
+            data['referee_id'] = None
+        if 'scorer_id' in data and data['scorer_id'] == "":
+            data['scorer_id'] = None
         try:
             o = self.model.objects.get(id=mid)
+            if o.status == 'FINISHED': return JsonResponse({'error': 'No se puede editar un partido finalizado.'}, status=400)
+            if data.get('status') == 'FINISHED' and getattr(request.user, 'role', None) != 'REFEREE': return JsonResponse({'error': 'Solo el árbitro puede finalizar un partido.'}, status=403)
             for k, v in data.items():
                 if hasattr(o, k): setattr(o, k, v)
-            o.save(); return JsonResponse({'data': serialize_match_detail(o)}, status=200)
+            o.save()
+            o.refresh_from_db()
+            return JsonResponse({'data': serialize_match_detail(o)}, status=200)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def delete(self, request, obj_id=None, *args, **kwargs):

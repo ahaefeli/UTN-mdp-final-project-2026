@@ -25,6 +25,7 @@ class BRANCH_CHOICES(models.TextChoices):
 
 class STATUS_CHOICES(models.TextChoices):
     PREPARATION = 'PREPARATION', 'Preparation'
+    CANCELLED = 'CANCELLED', 'Cancelled'
     IN_PROGRESS = 'IN_PROGRESS', 'In Progress'
     FINISHED = 'FINISHED', 'Finished'
 
@@ -149,7 +150,7 @@ class Match(models.Model):
     match_datetime = models.DateTimeField(null=True, blank=True)
     referee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='refereed_matches', limit_choices_to={'role': 'REFEREE'})
     scorer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='scored_matches', limit_choices_to={'role': 'SCORER'})
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PREPARATION')
     score_summary = models.CharField(max_length=100, blank=True, null=True)
     # Guarda en un JSON la data de los Sets del partido
     sets_data = models.JSONField(null=True, blank=True)

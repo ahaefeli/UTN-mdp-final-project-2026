@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
+from django.db import transaction
 from core.auth import jwt_required
 from .base import BaseCrudView, parse_body
 from core.models import Tournament, TournamentEnrollment, TournamentStage, Team, Match
@@ -33,8 +34,20 @@ class TournamentView(BaseCrudView):
 
     def post(self, request, *args, **kwargs):
         data = parse_body(request)
-        if not all(k in data for k in ['name', 'year', 'category', 'branch']): return JsonResponse({'error': 'Missing fields'}, status=400)
-        try: data['status'] = 'PREPARATION'; return JsonResponse({'data': serialize_tournament(self.model.objects.create(**data))}, status=201)
+        if not all(k in data for k in ['name', 'year', 'category', 'branch', 'organization_id']): return JsonResponse({'error': 'Missing fields'}, status=400)
+        
+        organization_id = data.get('organization_id')
+        if Tournament.objects.filter(organization_id=organization_id, status__in=['PREPARATION', 'IN_PROGRESS']).exists():
+            return JsonResponse({'error': 'Ya existe un torneo activo para esta organización. Debes finalizarlo antes de crear uno nuevo.'}, status=400)
+
+        try:
+            with transaction.atomic():
+                stages = data.pop('stages', [])
+                data['status'] = 'PREPARATION'
+                t = self.model.objects.create(**data)
+                for s in stages:
+                    TournamentStage.objects.create(tournament=t, name=s['name'], date=s['date'])
+                return JsonResponse({'data': serialize_tournament(t)}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def put(self, request, obj_id=None, *args, **kwargs):

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import styles from './Dashboard.module.css';
 import authService from '../../services/authService';
 import matchService from '../../services/matchService';
+import { STATUS_TRANSLATIONS } from '../../utils/status';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -161,7 +162,7 @@ export default function DashboardPage() {
                       <div className={styles.matchFooter}>
                         <span>Árbitro: {match.referee_name || 'Sin asignar'}</span>
                         <span className={`${styles.badge} ${match.status === 'FINISHED' ? styles.badgeFinished : styles.badgePending}`}>
-                          {match.status}
+                          {STATUS_TRANSLATIONS[match.status] || match.status}
                         </span>
                       </div>
                     </div>

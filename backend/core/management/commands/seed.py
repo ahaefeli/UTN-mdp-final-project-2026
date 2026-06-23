@@ -6,8 +6,18 @@ class Command(BaseCommand):
     help = 'Seed database with mock data for testing'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write('Seeding database...')
+        self.stdout.write('Clearing database...')
+        Match.objects.all().delete()
+        TournamentStage.objects.all().delete()
+        TournamentEnrollment.objects.all().delete()
+        Team.objects.all().delete()
+        Tournament.objects.all().delete()
+        Court.objects.all().delete()
+        Club.objects.all().delete()
+        User.objects.all().delete()
+        Organization.objects.all().delete()
 
+        self.stdout.write('Seeding database...')
         # Organization
         org, _ = Organization.objects.get_or_create(name='VoleyHub Central')
 
@@ -27,12 +37,12 @@ class Command(BaseCommand):
             coach.set_password('123456')
             coach.save()
 
-        referee, _ = User.objects.get_or_create(username='referee1', defaults={'email': 'referee@voleyhub.com', 'role': 'REFEREE', 'organization': org})
+        referee, _ = User.objects.get_or_create(username='referee1', defaults={'email': 'referee@voleyhub.com', 'first_name': 'Neymar', 'role': 'REFEREE', 'organization': org})
         if not referee.check_password('123456'):
             referee.set_password('123456')
             referee.save()
 
-        scorer, _ = User.objects.get_or_create(username='scorer1', defaults={'email': 'scorer@voleyhub.com', 'role': 'SCORER', 'organization': org})
+        scorer, _ = User.objects.get_or_create(username='scorer1', defaults={'email': 'scorer@voleyhub.com', 'first_name': 'Pizzero', 'role': 'SCORER', 'organization': org})
         if not scorer.check_password('123456'):
             scorer.set_password('123456')
             scorer.save()

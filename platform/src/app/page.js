@@ -7,6 +7,7 @@ import authService from '../services/authService';
 import matchService from '../services/matchService';
 import userService from '../services/userService';
 import { ROLE_TRANSLATIONS } from '../utils/roles';
+import { STATUS_TRANSLATIONS } from '../utils/status';
 
 export default function RootDashboardPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function RootDashboardPage() {
   // Estados reactivos
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const role = user?.role;
   const [userDetails, setUserDetails] = useState(null);
   const [matches, setMatches] = useState([]);
   const [upcomingMatches, setUpcomingMatches] = useState([]);
@@ -44,8 +46,12 @@ export default function RootDashboardPage() {
       const response = await userService.getUserById(userId);
       const details = response.data || null;
       setUserDetails(details);
-      if (details && details.team_id) {
-        loadUpcomingMatches(details.team_id);
+      if (details) {
+        if (details.role === 'ADMIN') {
+          loadUpcomingMatches();
+        } else if (details.team_id) {
+          loadUpcomingMatches(details.team_id);
+        }
       }
     } catch (err) {
       console.error('Error al cargar perfil completo de usuario:', err);
@@ -71,7 +77,11 @@ export default function RootDashboardPage() {
   const loadUpcomingMatches = async (teamId) => {
     setIsLoadingUpcoming(true);
     try {
-      const response = await matchService.getMatches({ upcoming: 'true', team_id: teamId });
+      const params = { upcoming: 'true' };
+      if (teamId) {
+        params.team_id = teamId;
+      }
+      const response = await matchService.getMatches(params);
       setUpcomingMatches(response.data || []);
     } catch (err) {
       console.error('Error al cargar próximas fechas del equipo:', err);
@@ -148,7 +158,7 @@ export default function RootDashboardPage() {
                           <span className={`${styles.statusBadge} ${
                             match.status === 'FINISHED' ? styles.badgeFinished : styles.badgePending
                           }`}>
-                            {match.status}
+                            {STATUS_TRANSLATIONS[match.status] || match.status}
                           </span>
                         </div>
                       </div>
@@ -188,27 +198,29 @@ export default function RootDashboardPage() {
               </section>
 
               {/* Tarjeta Mi Club */}
-              <section className={styles.card}>
-                <div className={styles.sectionHeader}>
-                  <h3 className={styles.sectionTitle}>Mi Club</h3>
-                </div>
-                <div className={styles.techInfoList}>
-                  <div className={styles.techItem}>
-                    <span className={styles.techLabel}>Institución</span>
-                    <span className={styles.techValue} style={{ color: '#002F87', fontWeight: 'bold' }}>
-                      {userDetails?.club_name || 'Club no asignado'}
-                    </span>
+              {role !== 'ADMIN' && (
+                <section className={styles.card}>
+                  <div className={styles.sectionHeader}>
+                    <h3 className={styles.sectionTitle}>Mi Club</h3>
                   </div>
-                  <div className={styles.techItem}>
-                    <span className={styles.techLabel}>Asociado</span>
-                    <span className={styles.techValue}>{userDetails?.name || user?.name || user?.username}</span>
+                  <div className={styles.techInfoList}>
+                    <div className={styles.techItem}>
+                      <span className={styles.techLabel}>Institución</span>
+                      <span className={styles.techValue} style={{ color: '#002F87', fontWeight: 'bold' }}>
+                        {userDetails?.club_name || 'Club no asignado'}
+                      </span>
+                    </div>
+                    <div className={styles.techItem}>
+                      <span className={styles.techLabel}>Asociado</span>
+                      <span className={styles.techValue}>{userDetails?.name || user?.name || user?.username}</span>
+                    </div>
+                    <div className={styles.techItem}>
+                      <span className={styles.techLabel}>Rol</span>
+                      <span className={styles.techValue} style={{ color: '#FF8A00' }}>{ROLE_TRANSLATIONS[userDetails?.role || user?.role] || userDetails?.role || user?.role}</span>
+                    </div>
                   </div>
-                  <div className={styles.techItem}>
-                    <span className={styles.techLabel}>Rol</span>
-                    <span className={styles.techValue} style={{ color: '#FF8A00' }}>{ROLE_TRANSLATIONS[userDetails?.role || user?.role] || userDetails?.role || user?.role}</span>
-                  </div>
-                </div>
-              </section>
+                </section>
+              )}
             </aside>
           </div>
         </div>

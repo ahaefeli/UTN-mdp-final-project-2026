@@ -11,9 +11,9 @@ export const userService = {
    */
   async getUsers(params = {}) {
     try {
-      const { search, club_id, team_id, page } = params;
+      const { search, club_id, team_id, role, page } = params;
       const response = await apiClient.get('internal/usuarios/', {
-        params: { search, club_id, team_id, page }
+        params: { search, club_id, team_id, role, page }
       });
       return response.data;
     } catch (error) {

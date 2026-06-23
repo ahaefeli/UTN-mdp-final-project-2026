@@ -59,12 +59,20 @@ export default function Navbar() {
         )}
 
         {role === 'ADMIN' && (
-          <Link 
-            href="/usuarios" 
-            className={`${styles.navLink} ${isActive('/usuarios') ? styles.navLinkActive : ''}`}
-          >
-            Usuarios
-          </Link>
+          <>
+            <Link 
+              href="/usuarios" 
+              className={`${styles.navLink} ${isActive('/usuarios') ? styles.navLinkActive : ''}`}
+            >
+              Usuarios
+            </Link>
+            <Link 
+              href="/torneos" 
+              className={`${styles.navLink} ${isActive('/torneos') ? styles.navLinkActive : ''}`}
+            >
+              Torneo
+            </Link>
+          </>
         )}
       </div>
 

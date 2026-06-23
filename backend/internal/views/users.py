@@ -47,6 +47,11 @@ class UserView(BaseCrudView):
             try: return JsonResponse({'data': serialize_user(self.model.objects.get(id=user_id))}, status=200)
             except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
         qs = self.model.objects.all().order_by('id')
+        
+        role_filter = request.GET.get('role')
+        if role_filter:
+            qs = qs.filter(role=role_filter)
+            
         if 'jugadores' in request.path:
             qs = qs.filter(role='PLAYER')
         
