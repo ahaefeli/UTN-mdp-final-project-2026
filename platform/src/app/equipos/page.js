@@ -72,7 +72,7 @@ export default function EquiposPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
+    <div className={`${styles.container} container`}>
       
       {/* 1. HEADER PÚBLICO (ENLACE "EQUIPOS" ACTIVO) */}
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100 h-20 w-full flex items-center justify-between px-4 md:px-8 lg:px-16 select-none relative">
@@ -458,7 +458,7 @@ export default function EquiposPage() {
           {/* Footer Bottom copyright */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <span className="text-xs text-blue-200/35 select-none font-semibold">
-              © 2026 LIGA NECOCHENSE DE VOLEY
+              © 2026 VoleyHub
             </span>
           </div>
 

@@ -11,4 +11,5 @@ urlpatterns = [
     path('admin/club-requests/<uuid:pk>/', ClubRequestDetailView.as_view(), name='club_request_detail'),
     path('admin/club-requests/<uuid:pk>/review/', ReviewClubRequestView.as_view(), name='review_club_request'),
     path('public/club-registration/', PublicClubRegistrationView.as_view(), name='public_club_registration'),
+    path('public/', include('public.urls')),
 ]

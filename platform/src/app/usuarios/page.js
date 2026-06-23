@@ -177,7 +177,7 @@ export default function UsuariosPage() {
                       <td className={`${styles.tableBodyCell} ${styles.nameCell}`}>{u.name || '-'}</td>
                       <td className={styles.tableBodyCell}>
                         <span className={`${styles.roleBadge} ${
-                          u.role === 'ADMIN' ? styles.badgeAdmin : u.role === 'COACH' ? styles.badgeCoach : styles.badgePlayer
+                          u.role === 'ADMIN' || u.role === 'CLUB_ADMIN' ? styles.badgeAdmin : u.role === 'COACH' ? styles.badgeCoach : styles.badgePlayer
                         }`}>
                           {ROLE_TRANSLATIONS[u.role] || u.role}
                         </span>

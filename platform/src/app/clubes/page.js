@@ -215,14 +215,13 @@ export default function ClubesAdminPage() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} container`}>
       {/* Cabecera */}
       <header className={styles.header}>
         <div className={styles.titleArea}>
           <h1 className={styles.title}>Gestión de Clubes</h1>
           <p className={styles.subtitle}>Supervise los clubes federados activos y administre las solicitudes de registro.</p>
         </div>
-        {activeTab === 'pendingRequests' && (
           <button 
             onClick={handleGenerateLink} 
             disabled={isGeneratingLink}
@@ -240,7 +239,6 @@ export default function ClubesAdminPage() {
               </>
             )}
           </button>
-        )}
       </header>
 
       {/* Alertas de Mensaje */}

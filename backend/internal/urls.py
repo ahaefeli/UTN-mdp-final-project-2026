@@ -6,8 +6,11 @@ from .views.courts import CourtView
 from .views.teams import TeamView
 from .views.tournaments import TournamentView, TournamentEnrollmentView, TournamentStageView
 from .views.matches import MatchView, MatchRescheduleView, MatchFinishView
+from .views.dashboard import AdminDashboardView
 
 urlpatterns = [
+    # Dashboard Administrador
+    path('dashboard/admin/', AdminDashboardView.as_view(), name='dashboard_admin'),
     # Usuarios
     path('usuarios/', UserView.as_view(), name='usuarios'),
     path('usuarios/<uuid:obj_id>/', UserView.as_view(), name='usuario_detail'),

@@ -103,21 +103,29 @@
   align-items: center;
   border-bottom: 2px solid #f1f5f9;
   padding-bottom: 0.5rem;
+  gap: 10px;
+  opacity: 0.8;
 }
 
 /* Tarjeta de Torneo Activo */
 .activeCard {
   background: #ffffff;
   border: 1px solid rgba(0, 47, 135, 0.1);
-  border-left: 6px solid #002F87;
-  border-radius: 0.5rem 1.25rem 1.25rem 0.5rem;
-  padding: 2rem;
+  border-left: 5px solid #002F8750;
+  padding: 1rem;
   box-shadow: 0 10px 25px -5px rgba(0, 47, 135, 0.05), 0 8px 10px -6px rgba(0, 47, 135, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 2rem;
   transition: all 0.3s ease;
+}
+.activeCardHeader{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .activeCard:hover {
@@ -138,6 +146,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  width: 100%;
 }
 
 .activeCardMeta {
@@ -148,7 +157,7 @@
 }
 
 .activeTitle {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #0f172a;
   margin: 0;
@@ -158,7 +167,7 @@
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #475569;
   font-weight: 500;
 }
@@ -174,7 +183,10 @@
   gap: 0.5rem;
   background-color: #f0f4ff;
   color: #002F87;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem;
+  min-width: 40px;
+  min-height: 40px;
+  aspect-ratio: 1/1;
   border-radius: 0.75rem;
   font-weight: 700;
   font-size: 0.875rem;

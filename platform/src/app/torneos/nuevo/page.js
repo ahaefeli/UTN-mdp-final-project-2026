@@ -178,7 +178,7 @@ export default function TorneosNuevoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className={`${styles.container} container`}>
       <div className="max-w-3xl mx-auto bg-white rounded-3xl border border-slate-200/60 p-8 shadow-sm">
         
         {/* Header */}

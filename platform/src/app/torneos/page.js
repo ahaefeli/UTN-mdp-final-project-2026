@@ -80,7 +80,7 @@ export default function TorneosDashboardPage() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} container`}>
       {/* Header con Control del Botón Nuevo */}
       <header className={styles.header}>
         <div className={styles.titleArea}>
@@ -117,7 +117,7 @@ export default function TorneosDashboardPage() {
                 {activeTournaments.map((tournament) => (
                   <div key={tournament.id} className={styles.activeCard}>
                     <div className={styles.activeCardMain}>
-                      <div className="flex items-center gap-3 flex-wrap">
+                      <div className={styles.activeCardHeader}>
                         <h3 className={styles.activeTitle}>{tournament.name}</h3>
                         <span className={`${styles.badge} ${tournament.status === 'PREPARATION' ? styles.badgePrep : styles.badgeProgress}`}>
                           <span className="w-1.5 h-1.5 rounded-full bg-current" style={{ marginRight: '0.35rem', display: 'inline-block' }}></span>
@@ -144,7 +144,6 @@ export default function TorneosDashboardPage() {
                     <div>
                       <Link href={`/torneos/${tournament.id}`} className={styles.manageLink}>
                         <i className="bi bi-gear-fill"></i>
-                        Gestionar Torneo
                       </Link>
                     </div>
                   </div>

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Voley Hub - Plataforma",
+  title: "VoleyHub - Plataforma",
   description: "Plataforma de gestión de Clubes de Voley",
 };
 
@@ -25,7 +25,7 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col" style={{paddingTop: "8vh"}}>
+      <body className="min-h-full flex flex-col">
         <AuthProvider>
           <Navbar />
           {children}

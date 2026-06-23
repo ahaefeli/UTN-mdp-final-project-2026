@@ -20,9 +20,9 @@ class TournamentView(BaseCrudView):
     def get(self, request, obj_id=None, *args, **kwargs):
         tid = obj_id or request.GET.get('tournament_id')
         if tid:
-            try: return JsonResponse({'data': serialize_tournament(self.model.objects.get(id=tid))}, status=200)
+            try: return JsonResponse({'data': serialize_tournament(self.model.objects.get(id=tid, organization=request.user.organization))}, status=200)
             except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
-        qs = self.model.objects.all().order_by('-year', 'id')
+        qs = self.model.objects.filter(organization=request.user.organization).order_by('-year', 'id')
         y, s = request.GET.get('year'), request.GET.get('status')
         if y: qs = qs.filter(year=y)
         if s: qs = qs.filter(status=s)
@@ -62,7 +62,7 @@ class TournamentView(BaseCrudView):
         if not tid: return JsonResponse({'error': 'Missing tournament_id'}, status=400)
         data = parse_body(request)
         try:
-            o = self.model.objects.get(id=tid)
+            o = self.model.objects.get(id=tid, organization=request.user.organization)
             for k, v in data.items():
                 if hasattr(o, k): setattr(o, k, v)
             o.save(); return JsonResponse({'data': serialize_tournament(o)}, status=200)
@@ -72,7 +72,7 @@ class TournamentView(BaseCrudView):
     def delete(self, request, obj_id=None, *args, **kwargs):
         tid = obj_id or request.GET.get('tournament_id')
         if not tid: return JsonResponse({'error': 'Missing tournament_id'}, status=400)
-        try: self.model.objects.get(id=tid).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
+        try: self.model.objects.get(id=tid, organization=request.user.organization).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
         except Exception: return JsonResponse({'error': 'Cannot delete tournament with associated data'}, status=400)
 
 @method_decorator(jwt_required, name='dispatch')

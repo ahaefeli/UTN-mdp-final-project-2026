@@ -16,6 +16,7 @@
   width: 100%;
   z-index: 1000;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 2px 20px rgba(0, 0, 0, 0.2);
 }
 
 .brand {
@@ -190,9 +191,9 @@
 }
 
 .scrolled {
-  background-color: rgba(255, 255, 255, 0.834);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
   width: 92%;
   max-width: 1200px;
   margin-top: 1rem;
@@ -201,5 +202,3 @@
   height: 60px;
   padding: 0 2.5rem;
 }
-
-
