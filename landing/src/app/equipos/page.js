@@ -41,7 +41,7 @@ const mockClubs = [
 export default function EquiposPage() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [emailInput, setEmailInput] = useState("");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("TODOS");
 
@@ -50,12 +50,7 @@ export default function EquiposPage() {
     window.location.href = "/login";
   };
 
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    if (!emailInput) return;
-    alert(`¡Gracias por suscribirte con: ${emailInput}!`);
-    setEmailInput("");
-  };
+
 
   // Filtrado de Clubes
   const filteredClubs = mockClubs.filter((club) => {
@@ -101,12 +96,7 @@ export default function EquiposPage() {
           >
             Equipos
           </Link>
-          <Link 
-            href="/resultados" 
-            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
-          >
-            Resultados
-          </Link>
+
           <Link 
             href="/reglamento" 
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/reglamento' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
@@ -157,9 +147,7 @@ export default function EquiposPage() {
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
-            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
-              Resultados
-            </Link>
+
             <Link href="/reglamento" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Reglamento
             </Link>
@@ -376,7 +364,7 @@ export default function EquiposPage() {
  
         <div className="max-w-7xl mx-auto w-full flex flex-col gap-12 relative z-10">
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {/* Col 1: Logo & Brief Info */}
             <div className="flex flex-col gap-4 items-start">
               <div className="flex flex-col text-left">
@@ -423,35 +411,7 @@ export default function EquiposPage() {
               </div>
             </div>
 
-            {/* Col 4: NEWSLETTER */}
-            <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-black tracking-widest text-[#FF8A00] uppercase">
-                NEWSLETTER
-              </h4>
-              <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-2">
-                <p className="text-xs text-blue-200/50 font-semibold leading-normal select-none">
-                  Suscribite a nuestro newsletter para recibir las últimas actas y boletines directo en tu mail.
-                </p>
-                <div className="relative flex items-center mt-1">
-                  <input
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="Tu correo electrónico..."
-                    className="w-full pl-4 pr-12 py-3.5 text-xs font-semibold rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF8A00] transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-1.5 bg-[#FF8A00] hover:bg-orange-600 text-blue-950 p-2.5 rounded-lg flex items-center justify-center transition-colors cursor-pointer shadow-sm active:scale-95"
-                    title="Suscribirse"
-                  >
-                    <svg className="w-3.5 h-3.5 text-blue-950" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
-                  </button>
-                </div>
-              </form>
-            </div>
+
 
           </div>
 

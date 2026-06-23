@@ -5,22 +5,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // MOCK DATA (ESTRICTO SEGÚN ESPECIFICACIÓN Y DISEÑO DE IMAGEN)
-const categories = [
-  { 
-    id: 1, 
-    branch: "RAMA MASCULINA", 
-    title: "Competencia Elite", 
-    description: "Desde categorías formativas hasta Primera División. Descubre el poder y la técnica del vóley masculino en la región.",
-    linkText: "EXPLORAR TORNEOS",
-    image: "/images/inicio/festejo_masculino.avif" 
+const associations = [
+  {
+    id: 1,
+    title: "Liga Necochense de Vóley",
+    subtitle: "Competencias oficiales y resultados en vivo",
+    statusTag: "ACTIVA",
+    bgImage: "/images/inicio/festejo_masculino.avif",
+    href: "/torneos",
+    isActive: true
   },
-  { 
-    id: 2, 
-    branch: "RAMA FEMENINA", 
-    title: "Liderazgo & Garra", 
-    description: "Fomentando el desarrollo del vóley femenino en toda la región con torneos de alto nivel y gran competitividad.",
-    linkText: "VER TABLAS",
-    image: "/images/inicio/liderazgo.png" 
+  {
+    id: 2,
+    title: "Asociación Marplatense",
+    subtitle: "Suma tu liga y digitaliza tu gestión",
+    statusTag: "PRÓXIMAMENTE",
+    bgImage: "/images/inicio/liderazgo.png",
+    href: null,
+    isActive: false
   }
 ];
 
@@ -34,7 +36,7 @@ const mockSponsors = [
 
 export default function LandingPage() {
   const pathname = usePathname();
-  const [emailInput, setEmailInput] = useState("");
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigateToLogin = (e) => {
@@ -42,12 +44,7 @@ export default function LandingPage() {
     window.location.href = "/login";
   };
 
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    if (!emailInput) return;
-    alert(`¡Gracias por suscribirte con: ${emailInput}!`);
-    setEmailInput("");
-  };
+
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
@@ -76,12 +73,7 @@ export default function LandingPage() {
           >
             Equipos
           </Link>
-          <Link 
-            href="/resultados" 
-            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
-          >
-            Resultados
-          </Link>
+
           <Link 
             href="/reglamento" 
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/reglamento' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
@@ -132,9 +124,7 @@ export default function LandingPage() {
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
-            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
-              Resultados
-            </Link>
+
             <Link href="/reglamento" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Reglamento
             </Link>
@@ -193,30 +183,30 @@ export default function LandingPage() {
               href="/torneos"
               className="bg-[#F97316] text-[#001F54] font-bold py-3 px-8 rounded-lg hover:bg-orange-600 transition-colors inline-block text-center w-full sm:w-auto"
             >
-              VER COMPETENCIA ACTUAL
+              VER COMPETENCIAS ACTUALES 
             </Link>
           </div>
         </div>
 
       </section>
 
-      {/* 3. NUEVA SECCIÓN: CATEGORÍAS */}
-      <section id="categorias" className="py-20 px-6 lg:px-16 max-w-7xl mx-auto w-full flex flex-col gap-10">
+      {/* 3. NUEVA SECCIÓN: ASOCIACIONES */}
+      <section id="asociaciones" className="py-20 px-6 lg:px-16 max-w-7xl mx-auto w-full flex flex-col gap-10">
         
         {/* Title */}
         <div className="flex flex-col items-start gap-1">
           <div className="w-10 h-1 bg-[#FF8A00] rounded-full mb-1"></div>
           <h2 className="text-[#001F54] font-black tracking-tight text-3xl md:text-4xl uppercase select-none">
-            CATEGORÍAS
+            ASOCIACIONES ADHERIDAS
           </h2>
         </div>
 
-        {/* Grid Categories */}
+        {/* Grid Associations */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-          {categories.map((cat) => (
+          {associations.map((assoc) => (
             <div
-              key={cat.id}
-              style={{ backgroundImage: `url(${cat.image})` }}
+              key={assoc.id}
+              style={{ backgroundImage: `url(${assoc.bgImage})` }}
               className="relative flex flex-col justify-end p-8 rounded-3xl overflow-hidden bg-cover bg-center min-h-[400px] group shadow-sm"
             >
               {/* Dark Overlay Gradient for legibility */}
@@ -225,23 +215,29 @@ export default function LandingPage() {
               {/* Content info */}
               <div className="relative z-10 flex flex-col items-start gap-2.5 select-none">
                 <span className="text-[10px] font-black text-[#FF8A00] tracking-widest uppercase">
-                  {cat.branch}
+                  {assoc.statusTag}
                 </span>
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-white leading-tight">
-                  {cat.title}
+                  {assoc.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-blue-100/70 font-semibold leading-relaxed max-w-md mt-0.5">
-                  {cat.description}
+                  {assoc.subtitle}
                 </p>
-                <Link
-                  href="/torneos"
-                  className="mt-3.5 text-xs font-black text-white group-hover:text-[#FF8A00] transition-colors uppercase tracking-widest flex items-center gap-2 cursor-pointer"
-                >
-                  {cat.linkText}
-                  <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                </Link>
+                {assoc.isActive ? (
+                  <Link
+                    href={assoc.href}
+                    className="mt-3.5 text-xs font-black text-white group-hover:text-[#FF8A00] transition-colors uppercase tracking-widest flex items-center gap-2 cursor-pointer"
+                  >
+                    INGRESAR AL PORTAL
+                    <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  </Link>
+                ) : (
+                  <div className="mt-3.5 text-xs font-black text-white/50 uppercase tracking-widest flex items-center gap-2 cursor-not-allowed">
+                    PRÓXIMAMENTE
+                  </div>
+                )}
               </div>
 
             </div>
@@ -260,7 +256,7 @@ export default function LandingPage() {
               EMPRESAS QUE APOYAN AL VOLEY
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 font-bold">
-              Gracias a su compromiso, impulsamos el deporte en toda la región.
+              Gracias a su compromiso, impulsamos el deporte en todas la regións.
             </p>
           </div>
 
@@ -294,10 +290,10 @@ export default function LandingPage() {
         
         <div className="relative z-10 max-w-4xl mx-auto w-full text-center flex flex-col items-center gap-6">
           <h2 className="text-3xl md:text-4xl font-black tracking-tight leading-tight uppercase">
-            ¿Representas a un club o institución?
+            ¿Representas a una liga o asociación?
           </h2>
           <p className="text-xs sm:text-sm lg:text-base text-blue-200/80 leading-relaxed font-semibold max-w-2xl">
-            Forma parte de la red de clubes de VoleyHub. Accede a torneos oficiales y gestión centralizada para tus deportistas. Inicia el proceso de vinculación oficial.
+            Forma parte de la red de VoleyHub. Accede a torneos oficiales y gestión centralizada para tus deportistas. Inicia el proceso de vinculación oficial.
           </p>
           <a
             href="#"
@@ -321,7 +317,7 @@ export default function LandingPage() {
  
         <div className="max-w-7xl mx-auto w-full flex flex-col gap-12 relative z-10">
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {/* Col 1: Logo & Brief Info */}
             <div className="flex flex-col gap-4 items-start">
               <div className="flex flex-col text-left">
@@ -368,35 +364,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Col 4: NEWSLETTER */}
-            <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-black tracking-widest text-[#FF8A00] uppercase">
-                NEWSLETTER
-              </h4>
-              <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-2">
-                <p className="text-xs text-blue-200/50 font-semibold leading-normal select-none">
-                  Mantenete al día. Recibí comunicados oficiales, fixtures y noticias destacadas en tu bandeja de entrada.
-                </p>
-                <div className="relative flex items-center mt-1">
-                  <input
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="Tu correo electrónico..."
-                    className="w-full pl-4 pr-12 py-3.5 text-xs font-semibold rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF8A00] transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-1.5 bg-[#FF8A00] hover:bg-orange-600 text-blue-950 p-2.5 rounded-lg flex items-center justify-center transition-colors cursor-pointer shadow-sm active:scale-95"
-                    title="Suscribirse"
-                  >
-                    <svg className="w-3.5 h-3.5 text-blue-950" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
-                  </button>
-                </div>
-              </form>
-            </div>
+
 
           </div>
 

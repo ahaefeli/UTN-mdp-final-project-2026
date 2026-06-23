@@ -1,76 +1,80 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// MOCK DATA (CATEGORÍA DE TARJETA 1 CAMBIADA A FEMENINO)
-const mockTournaments = [
-  {
-    id: 1,
-    badgeText: "EN VIVO",
-    badgeType: "live", // bg-orange-500 text-white
-    category: "PRIMERA DIVISIÓN FEMENINO", // Cambiado a FEMENINO según especificación
-    title: "Torneo Apertura 2026",
-    dateInfo: "Marzo - Julio 2025", // Nota: el diseño dice 2025, mantener textual
-    locationInfo: "Múltiples Sedes",
-    buttonText: "Ver Fixture Completo",
-    image: "/images/inicio/torneo-apertura.jpg",
-    href: "/resultados"
-  },
-  {
-    id: 2,
-    badgeText: "PRÓXIMAMENTE",
-    badgeType: "upcoming", // bg-white text-slate-700
-    category: "SUB-18 FEMENINO",
-    title: "Torneo Clausura 2026",
-    dateInfo: "Inicia: 15 de Agosto",
-    locationInfo: "Inscripciones Abiertas",
-    buttonText: "Información e Inscripción",
-    image: "/images/inicio/torneo_clausura.jpg",
-    href: "/contacto"
-  },
-  {
-    id: 3,
-    badgeText: "EN DISPUTA",
-    badgeType: "ongoing", // bg-[#001F54] text-white
-    category: "SUB-16 MIXTO",
-    title: "Liga Promocional Formativa",
-    dateInfo: "Abril - Noviembre 2026",
-    locationInfo: "Fase Regular: Fecha 8",
-    buttonText: "Ver Posiciones",
-    image: "/images/inicio/fecha-formativa.jpg",
-    href: "/resultados"
-  }
-];
+
 
 export default function TorneosPage() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [emailInput, setEmailInput] = useState("");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("TODOS");
+
+  const [tournaments, setTournaments] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTenant, setActiveTenant] = useState("TODAS");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch simultáneo de torneos y organizaciones
+        const [resTournaments, resOrgs] = await Promise.all([
+          fetch('http://127.0.0.1:8000/public/torneos/'),
+          fetch('http://127.0.0.1:8000/public/organizaciones/')
+        ]);
+        
+        if (!resTournaments.ok || !resOrgs.ok) throw new Error("Error en peticiones HTTP");
+        
+        const dataTournaments = await resTournaments.json();
+        const dataOrgs = await resOrgs.json();
+        
+        setOrganizations(dataOrgs.data || []);
+        
+        // Mapeo adaptativo de los torneos
+        const mappedData = (dataTournaments.data || []).map(t => ({
+          ...t,
+          title: t.name,
+          badgeText: t.status === "IN_PROGRESS" ? "EN DISPUTA" : t.status === "PREPARATION" ? "PRÓXIMAMENTE" : "FINALIZADO",
+          badgeType: t.status === "IN_PROGRESS" ? "ongoing" : t.status === "PREPARATION" ? "upcoming" : "default",
+          dateInfo: t.start_date ? `Inicio: ${t.start_date}` : "A definir",
+          locationInfo: t.organization_name || "Sede a confirmar",
+          buttonText: "VER DETALLES",
+          image: "/images/inicio/torneo-apertura.jpg", // Default genérico
+          href: `/torneos/${t.id}`
+        }));
+        
+        setTournaments(mappedData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const navigateToLogin = (e) => {
     e.preventDefault();
     window.location.href = "/login";
   };
 
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    if (!emailInput) return;
-    alert(`¡Gracias por suscribirte con: ${emailInput}!`);
-    setEmailInput("");
-  };
+
 
   // Filtrado de Torneos
-  const filteredTournaments = mockTournaments.filter((t) => {
-    const matchesSearch =
-      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.category.toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (activeCategory === "TODOS") return matchesSearch;
-    return matchesSearch && t.category.toUpperCase().includes(activeCategory.toUpperCase());
+  const filteredTournaments = tournaments.filter((t) => {
+    const searchLower = searchQuery.toLowerCase();
+    const matchSearch = t.title.toLowerCase().includes(searchLower) || t.category.toLowerCase().includes(searchLower);
+    // Mapear CATEGORY_CHOICES del backend (ej: SUB_18) con el filtro del front
+    const matchCategory = activeCategory === "TODOS" || t.category.replace('_', '-').includes(activeCategory);
+    const matchTenant = activeTenant === "TODAS" || t.organization_id === activeTenant;
+    
+    return matchSearch && matchCategory && matchTenant;
   });
 
   return (
@@ -100,12 +104,7 @@ export default function TorneosPage() {
           >
             Equipos
           </Link>
-          <Link 
-            href="/resultados" 
-            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
-          >
-            Resultados
-          </Link>
+
           <Link 
             href="/reglamento" 
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/reglamento' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
@@ -156,9 +155,7 @@ export default function TorneosPage() {
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
-            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
-              Resultados
-            </Link>
+
             <Link href="/reglamento" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Reglamento
             </Link>
@@ -209,17 +206,35 @@ export default function TorneosPage() {
         <div className="bg-white rounded-3xl border border-slate-150 shadow-md p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
           
           {/* Input de Búsqueda */}
-          <div className="flex items-center gap-3 flex-1 border-b md:border-b-0 md:border-r border-slate-100 pb-3 md:pb-0 md:pr-4">
-            <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por equipo o nombre del torneo..."
-              className="w-full text-sm font-semibold text-slate-700 placeholder-slate-400 outline-none bg-transparent"
-            />
+          <div className="flex flex-col md:flex-row items-center gap-4 flex-1 border-b md:border-b-0 md:border-r border-slate-100 pb-3 md:pb-0 md:pr-4 w-full">
+            <div className="flex items-center gap-3 w-full md:w-auto flex-grow">
+              <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar torneo..."
+                className="w-full text-sm font-semibold text-slate-700 placeholder-slate-400 outline-none bg-transparent"
+              />
+            </div>
+            
+            {/* NUEVO FILTRO TENANT DINÁMICO */}
+            <div className="w-full md:w-64 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
+              <select
+                value={activeTenant}
+                onChange={(e) => setActiveTenant(e.target.value)}
+                className="w-full text-sm font-bold text-slate-600 bg-transparent outline-none cursor-pointer"
+              >
+                <option value="TODAS">Todas las Ligas</option>
+                {organizations.map(org => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Filtros (Pills) */}
@@ -262,7 +277,12 @@ export default function TorneosPage() {
       {/* 4. GRILLA DE TORNEOS (TARJETAS) */}
       <main className="py-20 px-6 lg:px-16 max-w-7xl mx-auto w-full flex-grow flex flex-col gap-10">
         
-        {filteredTournaments.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-16 flex flex-col items-center justify-center gap-4 w-full">
+            <span className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></span>
+            <p className="text-slate-500 font-bold text-sm">Cargando torneos y ligas oficiales...</p>
+          </div>
+        ) : filteredTournaments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredTournaments.map((tournament) => (
               <div
@@ -370,7 +390,7 @@ export default function TorneosPage() {
  
         <div className="max-w-7xl mx-auto w-full flex flex-col gap-12 relative z-10">
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {/* Col 1: Logo & Brief Info */}
             <div className="flex flex-col gap-4 items-start">
               <div className="flex flex-col text-left">
@@ -417,35 +437,7 @@ export default function TorneosPage() {
               </div>
             </div>
 
-            {/* Col 4: NEWSLETTER */}
-            <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-black tracking-widest text-[#FF8A00] uppercase">
-                NEWSLETTER
-              </h4>
-              <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-2">
-                <p className="text-xs text-blue-200/50 font-semibold leading-normal select-none">
-                  Suscribite a nuestro newsletter para recibir las últimas actas y boletines directo en tu mail.
-                </p>
-                <div className="relative flex items-center mt-1">
-                  <input
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="Tu correo electrónico..."
-                    className="w-full pl-4 pr-12 py-3.5 text-xs font-semibold rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF8A00] transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-1.5 bg-[#FF8A00] hover:bg-orange-600 text-blue-950 p-2.5 rounded-lg flex items-center justify-center transition-colors cursor-pointer shadow-sm active:scale-95"
-                    title="Suscribirse"
-                  >
-                    <svg className="w-3.5 h-3.5 text-blue-950" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
-                  </button>
-                </div>
-              </form>
-            </div>
+
 
           </div>
 

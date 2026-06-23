@@ -71,8 +71,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'voley_lnv_db',
-        'USER': 'postgres',
-        'PASSWORD': '0102',
+        'USER': 'octavio',
+        'PASSWORD': '1234',
         'HOST': 'localhost',
         'PORT': '5432',
     }
