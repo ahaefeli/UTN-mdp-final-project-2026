@@ -72,21 +72,20 @@ export default function LoginPage() {
           </svg>
         </div>
 
-        {/* Branding Logo: "LIGA NECOCHENSE DE VOLEY" */}
+        {/* Branding Logo: "VOLEYHUB" */}
         <div className="relative z-10">
-          <div className="text-white italic font-black tracking-wider text-xl md:text-3xl uppercase relative inline-block select-none leading-none">
+          <div className="italic font-black tracking-wider text-3xl md:text-5xl uppercase relative inline-block select-none leading-none">
             <span className="relative inline-block pb-1.5">
-              LIGA
+              <span className="text-white">VOLEY</span><span className="text-[#F97316]">HUB</span>
               <span className="absolute left-0 bottom-0 w-full h-[4px] bg-orange-500 rounded" />
             </span>
-            {" "}NECOCHENSE DE VOLEY
           </div>
         </div>
 
         {/* Center Title and Subtitle */}
         <div className="relative z-10 max-w-md my-auto space-y-4">
           <h1 className="text-4xl lg:text-5xl font-light text-white tracking-tight leading-tight">
-            Comunidad LNV
+            Comunidad VOLEYHUB
           </h1>
           <p className="text-sm font-semibold text-slate-200/80 leading-relaxed max-w-sm">
             Accedé al corazón del voley regional. Gestioná tus estadísticas, torneos y vinculación oficial.
@@ -123,12 +122,11 @@ export default function LoginPage() {
         
         {/* Mobile Header Logo (Visible only on tiny screens) */}
         <div className="md:hidden mb-8 self-center">
-          <div className="text-[#002F87] italic font-black tracking-wider text-xl sm:text-2xl uppercase relative leading-none">
+          <div className="italic font-black tracking-wider text-2xl sm:text-3xl uppercase relative leading-none">
             <span className="relative inline-block pb-1">
-              LIGA
+              <span className="text-[#001F54]">VOLEY</span><span className="text-[#F97316]">HUB</span>
               <span className="absolute left-0 bottom-0 w-full h-[3.5px] bg-orange-500 rounded" />
             </span>
-            {" "}NECOCHENSE DE VOLEY
           </div>
         </div>
 

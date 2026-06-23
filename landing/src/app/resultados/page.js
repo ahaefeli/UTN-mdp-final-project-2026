@@ -87,9 +87,7 @@ export default function ResultadosPage() {
         {/* Left: Logo LNV */}
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
-            <span className="font-black italic text-[#001F54] text-sm md:text-base lg:text-xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer">
-              LIGA NECOCHENSE DE VOLEY
-            </span>
+            <span className="font-black italic text-2xl md:text-3xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer"><span className="text-[#001F54]">VOLEY</span><span className="text-[#F97316]">HUB</span></span>
           </Link>
         </div>
 
@@ -564,15 +562,12 @@ export default function ResultadosPage() {
             {/* Col 1: Logo & Brief Info */}
             <div className="flex flex-col gap-4 items-start">
               <div className="flex flex-col text-left">
-                <span className="font-black tracking-tight text-white text-base leading-none select-none">
-                  LIGA NECOCHENSE
-                </span>
-                <span className="text-[10px] font-black text-[#FF8A00] tracking-widest uppercase mt-1 leading-none select-none">
-                  DE VOLEY
+                <span className="font-black text-2xl tracking-tight leading-none select-none">
+                  <span className="text-white">VOLEY</span><span className="text-[#F97316]">HUB</span>
                 </span>
               </div>
               <p className="text-xs text-blue-200/50 leading-relaxed font-semibold max-w-xs">
-                Organización oficial de vóley federado en la ciudad de Necochea. Impulsando competencias y afiliaciones.
+                El software de gestión deportiva que conecta a ligas, clubes y jugadores de vóley en un solo lugar. Simplificá la administración y viví el torneo punto a punto.
               </p>
             </div>
 
@@ -582,10 +577,10 @@ export default function ResultadosPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
-                <li><Link href="/sitemap" className="hover:text-white transition-colors duration-200">SITEMAP</Link></li>
-                <li><Link href="/privacidad" className="hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
-                <li><Link href="/contacto" className="hover:text-white transition-colors duration-200">CONTACTO</Link></li>
-                <li><a href="https://feva.org.ar/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-200">FEVA</a></li>
+                <li><Link href="/sitemap" className="text-xs hover:text-white transition-colors duration-200">SITEMAP</Link></li>
+                <li><Link href="/privacidad" className="text-xs hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
+                <li><Link href="/contacto" className="text-xs hover:text-white transition-colors duration-200">CONTACTO</Link></li>
+                <li><a href="https://feva.org.ar/" target="_blank" rel="noopener noreferrer" className="text-xs hover:text-white transition-colors duration-200">FEVA</a></li>
               </ul>
             </div>
 
@@ -616,7 +611,7 @@ export default function ResultadosPage() {
                 NEWSLETTER
               </h4>
               <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-2">
-                <p className="text-[10px] text-blue-200/50 font-semibold leading-normal select-none">
+                <p className="text-xs text-blue-200/50 font-semibold leading-normal select-none">
                   Suscribite a nuestro newsletter para recibir las últimas actas y boletines directo en tu mail.
                 </p>
                 <div className="relative flex items-center mt-1">
@@ -647,7 +642,7 @@ export default function ResultadosPage() {
           {/* Footer Bottom copyright */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <span className="text-xs text-blue-200/35 select-none font-semibold">
-              © 2026 LIGA NECOCHENSE DE VOLEY
+              © 2026 VOLEYHUB
             </span>
           </div>
 

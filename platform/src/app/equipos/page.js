@@ -12,6 +12,7 @@ const mockClubs = [
     location: "Necochea, BA",
     founded: "FUND. 1919",
     logo: "/images/logos/clubhuracan.jpg",
+    descripcion: "Institución histórica de la ciudad con un fuerte enfoque en el desarrollo de categorías formativas y gran presencia en la Primera División.",
     femaleCategories: ["PRIMERA", "SUB-18", "SUB-16"],
     maleCategories: ["PRIMERA", "SUB-18"]
   },
@@ -21,6 +22,7 @@ const mockClubs = [
     location: "Necochea, BA",
     founded: "FUND. 1945",
     logo: "/images/logos/basko.jpg",
+    descripcion: "Club caracterizado por su garra y liderazgo competitivo, brindando un espacio de excelencia deportiva para jóvenes talentos de la región.",
     femaleCategories: ["PRIMERA", "SUB-18", "SUB-14"],
     maleCategories: [] // Renderizar "Sin participación actual"
   },
@@ -30,6 +32,7 @@ const mockClubs = [
     location: "Necochea, BA",
     founded: "FUND. 1913",
     logo: "/images/logos/rivadavia.png",
+    descripcion: "Decano del vóley local. Destacado por su ambiente familiar, su histórico estadio y su compromiso constante con el deporte federado.",
     femaleCategories: ["SUB-16", "SUB-14"],
     maleCategories: ["PRIMERA", "SUB-18", "SUB-16"]
   }
@@ -286,8 +289,12 @@ export default function EquiposPage() {
                   </div>
                 </div>
 
+                <p className="text-sm text-slate-600 mt-4 mb-2 leading-relaxed line-clamp-3">
+                  {club.descripcion}
+                </p>
+
                 {/* Cuerpo de Tarjeta: Categorías */}
-                <div className="bg-slate-50 border border-slate-100/50 rounded-2xl p-4 mt-6 flex-grow flex flex-col gap-4">
+                <div className="bg-slate-50 border border-slate-100/50 rounded-2xl p-4 mt-4 flex-grow flex flex-col gap-4">
                   
                   <span className="text-[10px] font-black tracking-widest text-[#001F54]/75 select-none uppercase">
                     CATEGORÍAS COMPETITIVAS

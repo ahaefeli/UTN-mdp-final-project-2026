@@ -10,7 +10,7 @@ const categories = [
     id: 1, 
     branch: "RAMA MASCULINA", 
     title: "Competencia Elite", 
-    description: "Desde categorías formativas hasta Primera División. Descubre el poder y la técnica del vóley masculino necochense.",
+    description: "Desde categorías formativas hasta Primera División. Descubre el poder y la técnica del vóley masculino en la región.",
     linkText: "EXPLORAR TORNEOS",
     image: "/images/inicio/festejo_masculino.avif" 
   },
@@ -24,32 +24,6 @@ const categories = [
   }
 ];
 
-const news = [
-  { 
-    id: 1, 
-    tag: "INSTITUCIONAL", 
-    date: "27 OCT, 2025", 
-    title: "Gran convocatoria para el taller de arbitraje regional", 
-    description: "Más de 50 participantes se reunieron en la sede de la Liga para capacitarse en las nuevas regulaciones oficiales.",
-    image: "/images/inicio/convocatoria.png" 
-  },
-  { 
-    id: 2, 
-    tag: "NOTICIAS", 
-    date: "24 OCT, 2025", 
-    title: "Definidas las sedes para el Final Four Sub-18", 
-    description: "Los mejores cuatro equipos del semestre se enfrentarán en el Microestadio Municipal este fin de semana en busca de la copa.",
-    image: "/images/inicio/sedes.png" 
-  },
-  { 
-    id: 3, 
-    tag: "RESULTADOS", 
-    date: "20 OCT, 2025", 
-    title: "Rivadavia se corona campeón de la Copa Apertura", 
-    description: "En una final electrizante que llegó al tie-break, el equipo de la calle 59 se quedó con el primer título de la temporada.",
-    image: "/images/inicio/campeon.webp" 
-  }
-];
 
 // Sponsors Logos Mock Array
 const mockSponsors = [
@@ -81,12 +55,10 @@ export default function LandingPage() {
       {/* 1. HEADER PÚBLICO */}
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100 h-20 w-full flex items-center justify-between px-4 md:px-8 lg:px-16 select-none relative">
         
-        {/* Left: Logo LNV - "LIGA NECOCHENSE DE VOLEY" */}
+        {/* Left: Logo LNV - "VOLEYHUB" */}
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
-            <span className="font-black italic text-[#001F54] text-sm md:text-base lg:text-xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer">
-              LIGA NECOCHENSE DE VOLEY
-            </span>
+            <span className="font-black italic text-2xl md:text-3xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer"><span className="text-[#001F54]">VOLEY</span><span className="text-[#F97316]">HUB</span></span>
           </Link>
         </div>
 
@@ -212,36 +184,17 @@ export default function LandingPage() {
 
           {/* Paragraph */}
           <p className="text-sm sm:text-base lg:text-lg text-blue-200/80 leading-relaxed font-semibold max-w-xl">
-            El epicentro del vóley regional. Formación, competencia y excelencia deportiva en cada saque. Unite a la institución que impulsa el talento de Necochea.
+            Todo el voley en un solo lugar. Formación, competencia y oportunidades para impulsar el talento y llevar la pasión por este deporte al siguiente nivel.
           </p>
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 mt-2 w-full sm:w-auto">
-            <a
-              href="#torneos"
-              className="bg-[#FF8A00] hover:bg-orange-600 text-blue-950 font-black text-xs uppercase tracking-wider py-4 px-8 rounded-xl transition-all duration-200 cursor-pointer shadow-md shadow-orange-500/10 active:scale-[0.99] text-center w-full sm:w-auto"
+            <Link
+              href="/torneos"
+              className="bg-[#F97316] text-[#001F54] font-bold py-3 px-8 rounded-lg hover:bg-orange-600 transition-colors inline-block text-center w-full sm:w-auto"
             >
-              Ver Calendario
-            </a>
-            <a
-              href="#categorias"
-              className="bg-white/10 hover:bg-white/15 border-2 border-white/20 text-white font-extrabold text-xs uppercase tracking-wider py-4 px-8 rounded-xl transition-all duration-200 cursor-pointer text-center w-full sm:w-auto"
-            >
-              Clubes Afiliados
-            </a>
-          </div>
-        </div>
-
-        {/* Floating next match pill on bottom right */}
-        <div className="absolute bottom-6 right-6 lg:right-16 z-10 bg-slate-950/70 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-xl max-w-xs hidden md:flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-[#FF8A00]/20 text-[#FF8A00] flex-shrink-0">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[9px] font-black text-[#FF8A00] uppercase tracking-widest leading-none">PRÓXIMO PARTIDO</p>
-            <p className="text-xs font-black text-white mt-1 leading-tight">Huracán vs Luz y Fuerza</p>
+              VER COMPETENCIA ACTUAL
+            </Link>
           </div>
         </div>
 
@@ -297,89 +250,6 @@ export default function LandingPage() {
 
       </section>
 
-      {/* 4. SECCIÓN ACTUALIDAD */}
-      <section id="actualidad" className="py-20 px-6 lg:px-16 bg-white w-full">
-        <div className="max-w-7xl mx-auto w-full flex flex-col gap-10">
-          
-          {/* Title row */}
-          <div className="flex items-end justify-between border-b border-slate-100 pb-5">
-            <div className="flex flex-col items-start gap-1">
-              <div className="w-10 h-1 bg-[#FF8A00] rounded-full mb-1"></div>
-              <h2 className="text-[#001F54] font-black tracking-tight text-3xl md:text-4xl uppercase select-none">
-                ACTUALIDAD
-              </h2>
-              <p className="text-xs text-slate-400 font-semibold mt-0.5 select-none">
-                Las últimas novedades de la Liga y nuestros clubes afiliados.
-              </p>
-            </div>
-            
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                alert("Redirigiendo a todas las novedades");
-              }}
-              className="px-5 py-2.5 bg-white hover:bg-slate-50 text-[#001F54] font-black text-xs uppercase tracking-wider rounded-xl border border-slate-200 transition-colors shadow-sm select-none cursor-pointer"
-            >
-              VER TODAS
-            </a>
-          </div>
-
-          {/* Grid News Cards (3 Columns) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {news.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col h-full group"
-              >
-                {/* News Image */}
-                <div className="relative w-full h-56 overflow-hidden bg-slate-900">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
-                  />
-                  {/* Category Tag Badge */}
-                  <span className="absolute top-4 right-4 px-2.5 py-1 text-[9px] font-black tracking-wider text-white bg-[#001F54] rounded-[4px] uppercase select-none leading-none shadow-sm shadow-blue-900/10">
-                    {item.tag}
-                  </span>
-                </div>
-
-                {/* News Content */}
-                <div className="p-6 flex flex-col justify-between flex-1 gap-5">
-                  <div className="space-y-2 select-none">
-                    <span className="text-[10px] font-black text-[#FF8A00] tracking-widest uppercase">
-                      {item.date}
-                    </span>
-                    <h3 className="font-black text-[#001F54] group-hover:text-blue-950 text-base leading-snug transition-colors line-clamp-2">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-slate-600 font-semibold leading-relaxed line-clamp-3">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert(`Visualizando detalles del artículo ID: ${item.id}`);
-                    }}
-                    className="text-[10px] font-black text-[#FF8A00] hover:text-orange-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 cursor-pointer"
-                  >
-                    Leer más
-                    <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
-                  </a>
-                </div>
-
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
 
       {/* 5. SECCIÓN SPONSORS */}
       <section id="sponsors" className="py-16 bg-slate-50 border-y border-slate-100/50 w-full">
@@ -427,7 +297,7 @@ export default function LandingPage() {
             ¿Representas a un club o institución?
           </h2>
           <p className="text-xs sm:text-sm lg:text-base text-blue-200/80 leading-relaxed font-semibold max-w-2xl">
-            Forma parte de la red de clubes de la Liga Necochense de Voley. Accede a capacitaciones, torneos oficiales y gestión centralizada para tus deportistas. Inicia el proceso de vinculación oficial.
+            Forma parte de la red de clubes de VoleyHub. Accede a torneos oficiales y gestión centralizada para tus deportistas. Inicia el proceso de vinculación oficial.
           </p>
           <a
             href="#"
@@ -455,15 +325,12 @@ export default function LandingPage() {
             {/* Col 1: Logo & Brief Info */}
             <div className="flex flex-col gap-4 items-start">
               <div className="flex flex-col text-left">
-                <span className="font-black tracking-tight text-white text-base leading-none select-none">
-                  LIGA NECOCHENSE
-                </span>
-                <span className="text-[10px] font-black text-[#FF8A00] tracking-widest uppercase mt-1 leading-none select-none">
-                  DE VOLEY
+                <span className="font-black text-2xl tracking-tight leading-none select-none">
+                  <span className="text-white">VOLEY</span><span className="text-[#F97316]">HUB</span>
                 </span>
               </div>
               <p className="text-xs text-blue-200/50 leading-relaxed font-semibold max-w-xs">
-                Organización oficial de vóley federado en la ciudad de Necochea. Impulsando competencias y afiliaciones.
+                El software de gestión deportiva que conecta a ligas, clubes y jugadores de vóley en un solo lugar. Simplificá la administración y viví el torneo punto a punto.
               </p>
             </div>
 
@@ -473,10 +340,10 @@ export default function LandingPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
-                <li><Link href="/sitemap" className="hover:text-white transition-colors duration-200">SITEMAP</Link></li>
-                <li><Link href="/privacidad" className="hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
-                <li><Link href="/contacto" className="hover:text-white transition-colors duration-200">CONTACTO</Link></li>
-                <li><a href="https://feva.org.ar/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-200">FEVA</a></li>
+                <li><Link href="/sitemap" className="text-xs hover:text-white transition-colors duration-200">SITEMAP</Link></li>
+                <li><Link href="/privacidad" className="text-xs hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
+                <li><Link href="/contacto" className="text-xs hover:text-white transition-colors duration-200">CONTACTO</Link></li>
+                <li><a href="https://feva.org.ar/" target="_blank" rel="noopener noreferrer" className="text-xs hover:text-white transition-colors duration-200">FEVA</a></li>
               </ul>
             </div>
 
@@ -507,8 +374,8 @@ export default function LandingPage() {
                 NEWSLETTER
               </h4>
               <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-2">
-                <p className="text-[10px] text-blue-200/50 font-semibold leading-normal select-none">
-                  Suscribite a nuestro newsletter para recibir las últimas actas y boletines directo en tu mail.
+                <p className="text-xs text-blue-200/50 font-semibold leading-normal select-none">
+                  Mantenete al día. Recibí comunicados oficiales, fixtures y noticias destacadas en tu bandeja de entrada.
                 </p>
                 <div className="relative flex items-center mt-1">
                   <input
@@ -538,7 +405,7 @@ export default function LandingPage() {
           {/* Footer Bottom copyright */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <span className="text-xs text-blue-200/35 select-none font-semibold">
-              © 2026 LIGA NECOCHENSE DE VOLEY
+              © 2026 VOLEYHUB
             </span>
           </div>
 
