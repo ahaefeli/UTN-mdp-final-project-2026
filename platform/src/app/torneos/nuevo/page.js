@@ -7,6 +7,7 @@ import teamService from '../../../services/teamService';
 import tournamentService from '../../../services/tournamentService';
 import enrollmentService from '../../../services/enrollmentService';
 import userService from '../../../services/userService';
+import styles from './page.module.css';
 
 export default function TorneosNuevoPage() {
   const router = useRouter();
@@ -57,6 +58,7 @@ export default function TorneosNuevoPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleAddStage = () => {
     const nextNum = stages.length + 1;
@@ -116,6 +118,7 @@ export default function TorneosNuevoPage() {
   const handleCreateTournament = async () => {
     setIsSubmitting(true);
     setError('');
+    setErrorMessage(null);
     try {
       const year = new Date().getFullYear();
       const payload = {
@@ -143,7 +146,11 @@ export default function TorneosNuevoPage() {
       setStep(3); // Success Screen
     } catch (err) {
       console.error('Error al crear el torneo:', err);
-      setError(err?.response?.data?.error || 'Error al procesar la creación del torneo.');
+      if (err?.response?.status === 400) {
+        setErrorMessage(err.response.data?.error || 'Error al procesar la creación del torneo.');
+      } else {
+        setError(err?.response?.data?.error || 'Error al procesar la creación del torneo.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -159,6 +166,7 @@ export default function TorneosNuevoPage() {
     setStep(1);
     setSuccess(false);
     setError('');
+    setErrorMessage(null);
   };
 
   if (!isInitialized || !isAuthenticated || role !== 'ADMIN') {
@@ -209,7 +217,7 @@ export default function TorneosNuevoPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Apertura Oficial 2026"
+                  placeholder="Ej: Apertura Sub-18 Femenino 2026"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#002F87] transition-all"
@@ -221,7 +229,10 @@ export default function TorneosNuevoPage() {
                   <label className="text-[10px] font-black text-slate-500 tracking-wider mb-2 block uppercase">Categoría</label>
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) => {
+                      setCategory(e.target.value);
+                      setErrorMessage(null);
+                    }}
                     className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#002F87] transition-all"
                   >
                     <option value="SUB_14">Sub 14</option>
@@ -237,7 +248,10 @@ export default function TorneosNuevoPage() {
                   <label className="text-[10px] font-black text-slate-500 tracking-wider mb-2 block uppercase">Rama</label>
                   <select
                     value={branch}
-                    onChange={(e) => setBranch(e.target.value)}
+                    onChange={(e) => {
+                      setBranch(e.target.value);
+                      setErrorMessage(null);
+                    }}
                     className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#002F87] transition-all"
                   >
                     <option value="FEMALE">Femenino</option>
@@ -346,6 +360,12 @@ export default function TorneosNuevoPage() {
                 </div>
               )}
             </div>
+
+            {errorMessage && (
+              <div className={styles.errorAlert}>
+                {errorMessage}
+              </div>
+            )}
 
             <div className="flex gap-4 pt-4 border-t border-slate-100">
               <button

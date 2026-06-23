@@ -26,7 +26,7 @@ export default function TorneosDashboardPage() {
   const router = useRouter();
   const { role, isAuthenticated, isInitialized } = useAuth();
 
-  const [activeTournament, setActiveTournament] = useState(null);
+  const [activeTournaments, setActiveTournaments] = useState([]);
   const [finishedTournaments, setFinishedTournaments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -52,9 +52,9 @@ export default function TorneosDashboardPage() {
           const res = await tournamentService.getTournaments();
           const list = res.data || [];
 
-          // Torneo Activo: status PREPARATION o IN_PROGRESS
-          const active = list.find(t => t.status === 'PREPARATION' || t.status === 'IN_PROGRESS');
-          setActiveTournament(active || null);
+          // Torneos Activos: status PREPARATION o IN_PROGRESS
+          const activeList = list.filter(t => t.status === 'PREPARATION' || t.status === 'IN_PROGRESS');
+          setActiveTournaments(activeList);
 
           // Historial de Torneos: status FINISHED
           const finished = list.filter(t => t.status === 'FINISHED');
@@ -79,8 +79,6 @@ export default function TorneosDashboardPage() {
     );
   }
 
-  const isNewButtonDisabled = !!activeTournament;
-
   return (
     <div className={styles.container}>
       {/* Header con Control del Botón Nuevo */}
@@ -90,21 +88,10 @@ export default function TorneosDashboardPage() {
           <p className={styles.subtitle}>Gestione los torneos de la organización y configure las jornadas correspondientes.</p>
         </div>
         <div>
-          {isNewButtonDisabled ? (
-            <button 
-              className={`${styles.btnNew} ${styles.btnNewDisabled}`} 
-              disabled 
-              title="Ya existe un torneo activo para la organización. Debe finalizarlo antes de crear uno nuevo."
-            >
-              <i className="bi bi-lock-fill" style={{ marginRight: '0.25rem' }}></i>
-              + Nuevo Torneo
-            </button>
-          ) : (
-            <Link href="/torneos/nuevo" className={`${styles.btnNew} ${styles.btnNewActive}`}>
-              <i className="bi bi-plus-circle-fill" style={{ marginRight: '0.25rem' }}></i>
-              + Nuevo Torneo
-            </Link>
-          )}
+          <Link href="/torneos/nuevo" className={`${styles.btnNew} ${styles.btnNewActive}`}>
+            <i className="bi bi-plus-circle-fill" style={{ marginRight: '0.25rem' }}></i>
+            Nuevo Torneo
+          </Link>
         </div>
       </header>
 
@@ -125,44 +112,48 @@ export default function TorneosDashboardPage() {
               Torneo Activo
             </h2>
 
-            {activeTournament ? (
-              <div className={styles.activeCard}>
-                <div className={styles.activeCardMain}>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h3 className={styles.activeTitle}>{activeTournament.name}</h3>
-                    <span className={`${styles.badge} ${activeTournament.status === 'PREPARATION' ? styles.badgePrep : styles.badgeProgress}`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-current" style={{ marginRight: '0.35rem', display: 'inline-block' }}></span>
-                      {STATUS_TRANSLATIONS[activeTournament.status]}
-                    </span>
-                  </div>
+            {activeTournaments.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                {activeTournaments.map((tournament) => (
+                  <div key={tournament.id} className={styles.activeCard}>
+                    <div className={styles.activeCardMain}>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className={styles.activeTitle}>{tournament.name}</h3>
+                        <span className={`${styles.badge} ${tournament.status === 'PREPARATION' ? styles.badgePrep : styles.badgeProgress}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-current" style={{ marginRight: '0.35rem', display: 'inline-block' }}></span>
+                          {STATUS_TRANSLATIONS[tournament.status]}
+                        </span>
+                      </div>
 
-                  <div className={styles.activeCardMeta}>
-                    <div className={styles.metaItem}>
-                      <i className="bi bi-calendar3"></i>
-                      <span>Año: {activeTournament.year}</span>
+                      <div className={styles.activeCardMeta}>
+                        <div className={styles.metaItem}>
+                          <i className="bi bi-calendar3"></i>
+                          <span>Año: {tournament.year}</span>
+                        </div>
+                        <div className={styles.metaItem}>
+                          <i className="bi bi-tag-fill"></i>
+                          <span>Categoría: {CATEGORY_TRANSLATIONS[tournament.category] || tournament.category}</span>
+                        </div>
+                        <div className={styles.metaItem}>
+                          <i className="bi bi-gender-ambiguous"></i>
+                          <span>Rama: {BRANCH_TRANSLATIONS[tournament.branch] || tournament.branch}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className={styles.metaItem}>
-                      <i className="bi bi-tag-fill"></i>
-                      <span>Categoría: {CATEGORY_TRANSLATIONS[activeTournament.category] || activeTournament.category}</span>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <i className="bi bi-gender-ambiguous"></i>
-                      <span>Rama: {BRANCH_TRANSLATIONS[activeTournament.branch] || activeTournament.branch}</span>
+
+                    <div>
+                      <Link href={`/torneos/${tournament.id}`} className={styles.manageLink}>
+                        <i className="bi bi-gear-fill"></i>
+                        Gestionar Torneo
+                      </Link>
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <Link href={`/torneos/${activeTournament.id}`} className={styles.manageLink}>
-                    <i className="bi bi-gear-fill"></i>
-                    Gestionar Torneo
-                  </Link>
-                </div>
+                ))}
               </div>
             ) : (
               <div className={styles.emptyState}>
                 <i className={`bi bi-trophy ${styles.emptyStateIcon}`}></i>
-                <p className={styles.emptyStateText}>No hay ningún torneo activo actualmente</p>
+                <p className={styles.emptyStateText}>No hay torneos activos actualmente</p>
                 <p className={styles.emptyStateSubtext}>Para iniciar una nueva temporada, haga clic en el botón "+ Nuevo Torneo" en la parte superior.</p>
               </div>
             )}

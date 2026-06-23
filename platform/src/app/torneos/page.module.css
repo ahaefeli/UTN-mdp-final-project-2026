@@ -1,7 +1,8 @@
 /* CSS Modular para el listado y control de torneos */
 
 .container {
-  max-width: 1200px;
+  min-width: 80vw;
+  max-width: 90vw;
   margin: 0 auto;
   padding: 2.5rem 1.5rem;
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
@@ -90,6 +91,7 @@
 
 .section {
   margin-bottom: 3.5rem;
+  width: 100%;
 }
 
 .sectionTitle {
@@ -99,7 +101,6 @@
   margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
   border-bottom: 2px solid #f1f5f9;
   padding-bottom: 0.5rem;
 }
@@ -109,7 +110,7 @@
   background: #ffffff;
   border: 1px solid rgba(0, 47, 135, 0.1);
   border-left: 6px solid #002F87;
-  border-radius: 1.25rem;
+  border-radius: 0.5rem 1.25rem 1.25rem 0.5rem;
   padding: 2rem;
   box-shadow: 0 10px 25px -5px rgba(0, 47, 135, 0.05), 0 8px 10px -6px rgba(0, 47, 135, 0.05);
   display: flex;

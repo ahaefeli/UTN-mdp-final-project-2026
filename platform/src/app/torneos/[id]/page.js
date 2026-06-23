@@ -517,25 +517,66 @@ export default function TorneoDetailPage() {
 
                 {editingMatchId && (
                   <div className={styles.formGroup}>
-                    {/* Renderizado condicional: Solo si el partido está en preparación o pendiente */}
-                    {(editingMatch?.status === 'PREPARATION' || editingMatch?.status === 'PENDING') && (
-                      <div className={styles.btnGroup}>
-                        {/* <button 
-                          type="button"
-                          className={`${styles.btnStateAction} ${styles.btnStateInProgress}`}
-                          onClick={() => handleUpdateMatchStatus(editingMatchId, 'IN_PROGRESS')}
-                        >
-                          Iniciar Partido
-                        </button> */}
+                    {/* Renderizado condicional de botones según el estado actual */}
+                    <div className={styles.btnGroup}>
+                      {(editingMatch?.status === 'PREPARATION' || editingMatch?.status === 'PENDING') && (
+                        <>
+                          <button 
+                            type="button"
+                            className={`${styles.btnSubmit}`}
+                            style={{ backgroundColor: '#0ea5e9' }}
+                            onClick={() => handleUpdateMatchStatus(editingMatchId, 'IN_PROGRESS')}
+                          >
+                            <i className="bi bi-play-circle-fill" style={{ marginRight: '0.25rem' }}></i>
+                            Iniciar Partido
+                          </button>
+                          <button 
+                            type="button"
+                            className={`${styles.btnSubmit}`}
+                            style={{ backgroundColor: '#64748b' }}
+                            onClick={() => handleUpdateMatchStatus(editingMatchId, 'CANCELLED')}
+                          >
+                            <i className="bi bi-x-circle-fill" style={{ marginRight: '0.25rem' }}></i>
+                            Cancelar Partido
+                          </button>
+                        </>
+                      )}
+                      
+                      {editingMatch?.status === 'IN_PROGRESS' && (
+                        <>
+                          <button 
+                            type="button"
+                            className={`${styles.btnSubmit}`}
+                            style={{ backgroundColor: '#10b981' }}
+                            onClick={() => handleUpdateMatchStatus(editingMatchId, 'FINISHED')}
+                          >
+                            <i className="bi bi-check-circle-fill" style={{ marginRight: '0.25rem' }}></i>
+                            Finalizar Partido
+                          </button>
+                          <button 
+                            type="button"
+                            className={`${styles.btnSubmit}`}
+                            style={{ backgroundColor: '#f59e0b' }}
+                            onClick={() => handleUpdateMatchStatus(editingMatchId, 'PREPARATION')}
+                          >
+                            <i className="bi bi-pause-circle-fill" style={{ marginRight: '0.25rem' }}></i>
+                            Suspender (Volver a Prep.)
+                          </button>
+                        </>
+                      )}
+
+                      {editingMatch?.status === 'CANCELLED' && (
                         <button 
                           type="button"
-                          className={`${styles.btnStateAction} ${styles.btnStateCancelled}`}
-                          onClick={() => handleUpdateMatchStatus(editingMatchId, 'CANCELLED')}
+                          className={`${styles.btnSubmit}`}
+                          style={{ backgroundColor: '#0ea5e9' }}
+                          onClick={() => handleUpdateMatchStatus(editingMatchId, 'PREPARATION')}
                         >
-                          Cancelar Partido
+                          <i className="bi bi-arrow-counterclockwise" style={{ marginRight: '0.25rem' }}></i>
+                          Retomar (Volver a Prep.)
                         </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
                 {editingMatchId && (

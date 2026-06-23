@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // La URL base del API se obtiene de variables de entorno o usa la URL por defecto para desarrollo local.
 // El backend expone rutas en '/api/internal/' y la autenticación en '/api/auth/'.
-const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/';
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/';
 
 const apiClient = axios.create({
   baseURL,

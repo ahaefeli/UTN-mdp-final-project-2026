@@ -37,8 +37,15 @@ class TournamentView(BaseCrudView):
         if not all(k in data for k in ['name', 'year', 'category', 'branch', 'organization_id']): return JsonResponse({'error': 'Missing fields'}, status=400)
         
         organization_id = data.get('organization_id')
-        if Tournament.objects.filter(organization_id=organization_id, status__in=['PREPARATION', 'IN_PROGRESS']).exists():
-            return JsonResponse({'error': 'Ya existe un torneo activo para esta organización. Debes finalizarlo antes de crear uno nuevo.'}, status=400)
+        category = data.get('category')
+        branch = data.get('branch')
+        if Tournament.objects.filter(
+            organization_id=organization_id,
+            category=category,
+            branch=branch,
+            status__in=['PREPARATION', 'IN_PROGRESS']
+        ).exists():
+            return JsonResponse({'error': 'Ya existe un torneo activo (en preparación o en progreso) para esta categoría y rama. Debes finalizarlo antes de crear uno nuevo.'}, status=400)
 
         try:
             with transaction.atomic():
