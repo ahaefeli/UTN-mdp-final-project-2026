@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ClipboardList, Landmark, Download, ExternalLink } from "lucide-react";
+import { BookOpen, ClipboardList, Download, ExternalLink } from "lucide-react";
 
 // MOCK DATA (DOCUMENTOS Y REGLAMENTOS)
 const mockDocuments = {
@@ -13,12 +13,14 @@ const mockDocuments = {
       title: "Reglamento Oficial de Juego 2026",
       description: "Normativa vigente para todas las categorías competitivas.",
       updatedDate: "ACTUALIZADO: 1 DE ENERO DE 2025",
+      href: "/docs/reglamento_juego_2026.pdf",
     },
     {
       id: 2,
       title: "Código de Penas y Disciplina",
       description: "Sanciones, procedimientos disciplinarios y tribunal de disciplina.",
       updatedDate: "ACTUALIZADO: 1 DE JUNIO DE 2023",
+      href: "/docs/codigo_penas_2023.pdf",
     },
   ],
   formularios: [
@@ -26,28 +28,19 @@ const mockDocuments = {
       id: 1,
       title: "Lista de Buena Fe",
       description: "Formato oficial para inscripción de jugadores por categoría.",
+      href: "/docs/lista_buena_fe.pdf",
     },
     {
       id: 2,
       title: "Pase de Jugador",
       description: "Solicitud de transferencia entre clubes afiliados.",
+      href: "/docs/pase_jugador.pdf",
     },
     {
       id: 3,
       title: "Planilla de Partido",
       description: "Modelo oficial para uso en mesa de control.",
-    },
-  ],
-  institucional: [
-    {
-      id: 1,
-      title: "Estatuto LNV",
-      description: "Documento fundacional y marco legal de la liga.",
-    },
-    {
-      id: 2,
-      title: "Manual de Marca",
-      description: "Guía de uso de logotipos y elementos visuales.",
+      href: "/docs/planilla_partido.pdf",
     },
   ],
 };
@@ -63,10 +56,6 @@ export default function ReglamentoPage() {
   };
 
 
-
-  const handleDownload = (title) => {
-    alert(`Iniciando la descarga de: ${title}`);
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
@@ -213,13 +202,15 @@ export default function ReglamentoPage() {
                   </div>
 
                   {/* Botón Descargar */}
-                  <button
-                    onClick={() => handleDownload(doc.title)}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all duration-200 cursor-pointer shadow-sm active:scale-[0.99]"
+                  <a
+                    href={doc.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all duration-200 cursor-pointer shadow-sm active:scale-[0.99] text-center"
                   >
                     <Download className="w-4 h-4 text-[#F97316] flex-shrink-0" />
                     Descargar PDF
-                  </button>
+                  </a>
                 </div>
               ))}
             </div>
@@ -251,10 +242,12 @@ export default function ReglamentoPage() {
               {/* Lista de Formularios */}
               <div className="flex flex-col gap-4">
                 {mockDocuments.formularios.map((form) => (
-                  <div
+                  <a
                     key={form.id}
-                    onClick={() => handleDownload(form.title)}
-                    className="bg-white rounded-2xl border border-slate-100/80 shadow-sm p-5 flex items-start justify-between gap-4 cursor-pointer hover:border-slate-200 transition-all duration-200 group"
+                    href={form.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white rounded-2xl border border-slate-100/80 shadow-sm p-5 flex items-start justify-between gap-4 cursor-pointer hover:border-slate-200 transition-all duration-200 group block"
                   >
                     <div className="flex flex-col gap-1 select-none">
                       <h4 className="font-bold text-[#001F54] group-hover:text-blue-950 text-sm md:text-base leading-snug">
@@ -266,7 +259,7 @@ export default function ReglamentoPage() {
                     </div>
 
                     <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-[#F97316] transition-colors mt-0.5 flex-shrink-0" />
-                  </div>
+                  </a>
                 ))}
               </div>
 
@@ -276,50 +269,7 @@ export default function ReglamentoPage() {
 
         </div>
 
-        {/* 4. DOCUMENTACIÓN INSTITUCIONAL (INFERIOR - COL-SPAN-FULL) */}
-        <section className="mt-12 flex flex-col gap-6">
-          
-          {/* Título Sección */}
-          <div className="flex items-center gap-2.5 text-[#001F54] select-none">
-            <Landmark className="w-6 h-6 text-[#F97316]" />
-            <h2 className="text-2xl font-black tracking-tight">
-              Documentación Institucional
-            </h2>
-          </div>
 
-          {/* Grilla 2 Columnas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {mockDocuments.institucional.map((inst) => (
-              <div
-                key={inst.id}
-                onClick={() => handleDownload(inst.title)}
-                className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex items-center justify-between gap-6 cursor-pointer hover:shadow-md hover:border-slate-200/60 transition-all duration-300 group"
-              >
-                <div className="flex items-center gap-4">
-                  {/* Icono de Archivo Institucional */}
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50/50 flex items-center justify-center flex-shrink-0 select-none">
-                    <BookOpen className="w-6 h-6 text-[#001F54]" />
-                  </div>
-                  
-                  <div className="flex flex-col gap-1 select-none">
-                    <h3 className="font-bold text-[#001F54] text-base md:text-lg">
-                      {inst.title}
-                    </h3>
-                    <p className="text-slate-600 text-xs sm:text-sm font-semibold leading-relaxed">
-                      {inst.description}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Icono Descarga */}
-                <div className="w-10 h-10 rounded-full border border-slate-100 flex items-center justify-center flex-shrink-0 text-slate-400 group-hover:text-[#F97316] group-hover:border-slate-200 transition-all duration-200 shadow-sm">
-                  <Download className="w-4 h-4" />
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </section>
 
       </main>
 

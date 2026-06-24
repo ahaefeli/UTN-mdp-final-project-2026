@@ -6,9 +6,6 @@ import { usePathname } from "next/navigation";
 
 
 
-// MOCK DATA (VACÍO SEGÚN ESPECIFICACIÓN)
-const mockTournaments = [];
-
 export default function TorneosPage() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -17,6 +14,11 @@ export default function TorneosPage() {
   const [selectedRama, setSelectedRama] = useState("Todas");
   const [selectedCategoria, setSelectedCategoria] = useState("Todas");
   const [selectedLiga, setSelectedLiga] = useState("Todas");
+
+  // Estados para la API
+  const [tournaments, setTournaments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navigateToLogin = (e) => {
     e.preventDefault();
@@ -30,15 +32,108 @@ export default function TorneosPage() {
     setEmailInput("");
   };
 
-  // Filtrado de Torneos
-  const filteredTournaments = mockTournaments.filter((t) => {
-    const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRama = selectedRama === "Todas" || t.rama === selectedRama;
-    const matchesCategoria = selectedCategoria === "Todas" || t.categoria === selectedCategoria;
-    const matchesLiga = selectedLiga === "Todas" || t.liga === selectedLiga;
-    
-    return matchesSearch && matchesRama && matchesCategoria && matchesLiga;
-  });
+  // Conexión con el Backend (useEffect)
+  useEffect(() => {
+    let active = true;
+
+    const fetchTournaments = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/internal';
+        const params = new URLSearchParams();
+
+        if (searchTerm) {
+          params.append("search", searchTerm);
+        }
+        if (selectedLiga !== "Todas") {
+          params.append("liga", selectedLiga);
+        }
+        if (selectedRama !== "Todas") {
+          params.append("rama", selectedRama);
+        }
+        if (selectedCategoria !== "Todas") {
+          params.append("categoria", selectedCategoria);
+        }
+
+        const queryString = params.toString();
+        const url = `${baseUrl}/torneos/${queryString ? `?${queryString}` : ""}`;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`Error de servidor (${res.status})`);
+        }
+
+        const json = await res.json();
+
+        if (active) {
+          const mapped = (json.data || []).map((t) => {
+            let badgeText = "Próximamente";
+            let badgeType = "upcoming";
+
+            if (t.status === "IN_PROGRESS") {
+              badgeText = "EN DISPUTA";
+              badgeType = "live";
+            } else if (t.status === "FINISHED") {
+              badgeText = "FINALIZADO";
+              badgeType = "default";
+            } else if (t.status === "CANCELLED") {
+              badgeText = "CANCELADO";
+              badgeType = "default";
+            }
+
+            const ramaFormatted = t.branch === "MALE" ? "Masculino" : t.branch === "FEMALE" ? "Femenino" : t.branch;
+            const catFormatted = t.category ? t.category.replace("_", " ") : "";
+            const categoryText = `${catFormatted.charAt(0).toUpperCase() + catFormatted.slice(1).toLowerCase()} - ${ramaFormatted}`;
+
+            let dateInfo = "A definir";
+            if (t.start_date) {
+              try {
+                const d = new Date(t.start_date + "T00:00:00");
+                dateInfo = d.toLocaleDateString("es-ES", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                });
+              } catch (e) {
+                dateInfo = `Inicio: ${t.start_date}`;
+              }
+            }
+
+            return {
+              id: t.id,
+              title: t.name || "Sin título",
+              category: categoryText,
+              badgeText,
+              badgeType,
+              dateInfo,
+              locationInfo: t.organization_name || "Sede a confirmar",
+              buttonText: "VER DETALLES",
+              image: "/images/inicio/torneo-apertura.jpg",
+              href: `/torneos/${t.id}`,
+            };
+          });
+
+          setTournaments(mapped);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.message || "Error al conectar con la API.");
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchTournaments();
+
+    return () => {
+      active = false;
+    };
+  }, [searchTerm, selectedLiga, selectedRama, selectedCategoria]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
@@ -229,9 +324,24 @@ export default function TorneosPage() {
       {/* 4. GRILLA DE TORNEOS (TARJETAS) */}
       <main className="py-20 px-6 lg:px-16 max-w-7xl mx-auto w-full flex-grow flex flex-col gap-10">
         
-        {filteredTournaments.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-16 flex flex-col items-center justify-center gap-4 w-full">
+            <span className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></span>
+            <p className="text-slate-500 font-bold text-sm">Cargando torneos...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-3xl p-6 text-center select-none shadow-sm flex flex-col items-center justify-center gap-3">
+            <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="text-red-700 font-bold text-sm">
+              Hubo un error al cargar los torneos.
+            </p>
+            <p className="text-red-500 text-xs">{error}</p>
+          </div>
+        ) : tournaments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredTournaments.map((tournament) => (
+            {tournaments.map((tournament) => (
               <div
                 key={tournament.id}
                 className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group"
@@ -242,9 +352,7 @@ export default function TorneosPage() {
                   <img
                     src={tournament.image}
                     alt={tournament.title}
-                    className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-102 ${
-                      tournament.id === 1 ? "object-[center_15%]" : "object-center" // object-[center_15%] en tarjeta 1 para evitar recorte de cabeza
-                    }`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102 object-center"
                   />
                   
                   {/* Badge Absoluto */}

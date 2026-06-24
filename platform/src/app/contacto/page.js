@@ -56,8 +56,8 @@ export default function ContactoPage() {
         {/* Left: Logo LNV */}
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
-            <span className="font-black italic text-[#001F54] text-sm md:text-base lg:text-xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer">
-              LIGA NECOCHENSE DE VOLEY
+            <span className="font-black italic text-2xl md:text-3xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer">
+              <span className="text-[#001F54]">VOLEY</span><span className="text-[#F97316]">HUB</span>
             </span>
           </Link>
         </div>

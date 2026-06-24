@@ -7,7 +7,17 @@ from .base import BaseCrudView, parse_body
 from core.models import Tournament, TournamentEnrollment, TournamentStage, Team, Match
 
 def serialize_tournament(t):
-    return {'id': t.id, 'name': t.name, 'year': t.year, 'start_date': t.start_date.isoformat() if t.start_date else None, 'end_date': t.end_date.isoformat() if t.end_date else None, 'category': t.category, 'branch': t.branch, 'status': t.status}
+    return {
+        'id': t.id,
+        'name': t.name,
+        'year': t.year,
+        'start_date': t.start_date.isoformat() if t.start_date else None,
+        'end_date': t.end_date.isoformat() if t.end_date else None,
+        'category': t.category,
+        'branch': t.branch,
+        'status': t.status,
+        'organization_name': t.organization.name if t.organization else None
+    }
 
 def serialize_enrollment(e):
     return {'id': e.id, 'tournament_id': e.tournament_id, 'tournament_name': e.tournament.name, 'team_id': e.team_id, 'team_name': e.team.name, 'category': e.team.category, 'branch': e.team.branch}
@@ -17,6 +27,13 @@ def serialize_stage(s):
 
 class TournamentView(BaseCrudView):
     model = Tournament
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == 'GET':
+            from django.views import View
+            return View.dispatch(self, request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
     def get(self, request, obj_id=None, *args, **kwargs):
         tid = obj_id or request.GET.get('tournament_id')
         if tid:
@@ -26,6 +43,34 @@ class TournamentView(BaseCrudView):
         y, s = request.GET.get('year'), request.GET.get('status')
         if y: qs = qs.filter(year=y)
         if s: qs = qs.filter(status=s)
+
+        search = request.GET.get('search')
+        if search:
+            qs = qs.filter(name__icontains=search)
+
+        liga = request.GET.get('liga')
+        if liga:
+            qs = qs.filter(organization__name__icontains=liga)
+
+        rama = request.GET.get('rama')
+        if rama:
+            rama_map = {"Femenino": "FEMALE", "Masculino": "MALE", "FEMALE": "FEMALE", "MALE": "MALE"}
+            branch_val = rama_map.get(rama, rama)
+            qs = qs.filter(branch=branch_val)
+
+        categoria = request.GET.get('categoria')
+        if categoria:
+            cat_map = {
+                "Sub-14": "SUB_14",
+                "Sub-16": "SUB_16",
+                "Sub-18": "SUB_18",
+                "Sub-21": "SUB_21",
+                "Primera": "PRIMERA",
+                "Maxi": "MAXI"
+            }
+            cat_val = cat_map.get(categoria, categoria.upper().replace("-", "_"))
+            qs = qs.filter(category=cat_val)
+
         page = request.GET.get('page')
         if page:
             p = Paginator(qs, 10); p_o = p.get_page(page)

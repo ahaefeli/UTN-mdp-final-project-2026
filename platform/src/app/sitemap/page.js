@@ -181,12 +181,6 @@ export default function SitemapPage() {
                 </Link>
               </li>
               <li>
-                <Link href="/resultados" className="group flex items-center gap-1.5 text-slate-600 hover:text-[#001F54] hover:translate-x-1 transition-all text-sm font-bold">
-                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500" />
-                  <span>Resultados y Posiciones</span>
-                </Link>
-              </li>
-              <li>
                 <Link href="/reglamento" className="group flex items-center gap-1.5 text-slate-600 hover:text-[#001F54] hover:translate-x-1 transition-all text-sm font-bold">
                   <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500" />
                   <span>Reglamento y Documentación</span>

@@ -51,8 +51,8 @@ export default function ContactoPage() {
         {/* Left: Logo LNV */}
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
-            <span className="font-black italic text-[#001F54] text-sm md:text-base lg:text-xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer">
-              LIGA NECOCHENSE DE VOLEY
+            <span className="font-black italic text-2xl md:text-3xl leading-tight tracking-tight select-none max-w-[200px] sm:max-w-none cursor-pointer">
+              <span className="text-[#001F54]">VOLEY</span><span className="text-[#F97316]">HUB</span>
             </span>
           </Link>
         </div>
@@ -71,7 +71,6 @@ export default function ContactoPage() {
           >
             Equipos
           </Link>
-
           <Link 
             href="/reglamento" 
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/reglamento' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
@@ -122,7 +121,6 @@ export default function ContactoPage() {
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
-
             <Link href="/reglamento" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Reglamento
             </Link>
@@ -397,11 +395,8 @@ export default function ContactoPage() {
             {/* Col 1: Logo & Brief Info */}
             <div className="flex flex-col gap-4 items-start">
               <div className="flex flex-col text-left">
-                <span className="font-black tracking-tight text-white text-base leading-none select-none">
-                  LIGA NECOCHENSE
-                </span>
-                <span className="text-[10px] font-black text-[#FF8A00] tracking-widest uppercase mt-1 leading-none select-none">
-                  DE VOLEY
+                <span className="font-black text-2xl tracking-tight leading-none select-none">
+                  <span className="text-white">VOLEY</span><span className="text-[#F97316]">HUB</span>
                 </span>
               </div>
               <p className="text-xs text-blue-200/50 leading-relaxed font-semibold max-w-xs">
@@ -452,7 +447,7 @@ export default function ContactoPage() {
           {/* Footer Bottom copyright */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <span className="text-xs text-blue-200/35 select-none font-semibold">
-              © 2026 LIGA NECOCHENSE DE VOLEY
+              © 2026 VOLEYHUB
             </span>
           </div>
 
