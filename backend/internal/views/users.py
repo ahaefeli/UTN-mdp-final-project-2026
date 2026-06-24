@@ -9,20 +9,21 @@ def serialize_user(user):
     data = model_to_dict(user)
     if 'password' in data: del data['password']
     
-    club_id, club_name = None, None
+    club_id = str(user.club.id) if user.club else None
+    club_name = user.club.name if user.club else None
     team_id = None
     if user.role == 'COACH':
         team = user.coached_teams.first()
         if team:
             team_id = str(team.id)
-            if team.club:
+            if not club_id and team.club:
                 club_id = str(team.club.id)
                 club_name = team.club.name
     elif user.role == 'PLAYER':
         team = user.teams_playing.first()
         if team:
             team_id = str(team.id)
-            if team.club:
+            if not club_id and team.club:
                 club_id = str(team.club.id)
                 club_name = team.club.name
             

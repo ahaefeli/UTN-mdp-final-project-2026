@@ -71,6 +71,15 @@ export default function Navbar() {
           </Link>
         )}
 
+        {role === 'CLUB_ADMIN' && (
+          <Link 
+            href="/mis-equipos" 
+            className={`${styles.navLink} ${isActive('/mis-equipos') ? styles.navLinkActive : ''}`}
+          >
+            Mis Equipos
+          </Link>
+        )}
+
         {role === 'ADMIN' && (
           <>
             <Link 

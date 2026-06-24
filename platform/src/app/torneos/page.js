@@ -12,7 +12,6 @@ import styles from './page.module.css';
 const BRANCH_TRANSLATIONS = {
   MALE: 'Masculino',
   FEMALE: 'Femenino',
-  MIXED: 'Mixto'
 };
 
 const CATEGORY_TRANSLATIONS = {
@@ -80,7 +79,7 @@ export default function TorneosDashboardPage() {
   }
 
   return (
-    <div className={`${styles.container} container`}>
+    <div className={`${styles.container} custom_container`}>
       {/* Header con Control del Botón Nuevo */}
       <header className={styles.header}>
         <div className={styles.titleArea}>

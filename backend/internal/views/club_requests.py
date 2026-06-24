@@ -173,7 +173,6 @@ class ReviewClubRequestView(View):
             elif action == 'APPROVE':
                 if not req_obj.admin_email or not req_obj.club_name:
                     return JsonResponse({'error': 'La solicitud no ha sido completada por el club invitado.'}, status=400)
-                temp_password = BaseUserManager().make_random_password(length=12)
                 with transaction.atomic():
                     if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=req_obj.admin_email).exists():
                         return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' already exists."}, status=400)
@@ -193,9 +192,10 @@ class ReviewClubRequestView(View):
                         first_name=req_obj.admin_first_name,
                         last_name=req_obj.admin_last_name,
                         role='CLUB_ADMIN',
-                        organization=request.user.organization
+                        organization=request.user.organization,
+                        club=club
                     )
-                    user.set_password(temp_password)
+                    user.password = req_obj.password
                     user.save()
 
                     req_obj.status = 'APPROVED'
@@ -206,10 +206,8 @@ class ReviewClubRequestView(View):
                     body = (
                         f"Hola {req_obj.admin_first_name} {req_obj.admin_last_name},\n\n"
                         "¡Nos complace informarte que tu Club ha sido aprobado en VoleyHub!\n\n"
-                        "A partir de este momento, puedes iniciar sesión utilizando las siguientes credenciales temporales:\n"
-                        f"- Email: {req_obj.admin_email}\n"
-                        f"- Contraseña temporal: {temp_password}\n\n"
-                        "IMPORTANTE: Por motivos de seguridad, es obligatorio cambiar esta contraseña temporal inmediatamente después de tu primer inicio de sesión.\n\n"
+                        "A partir de este momento, puedes iniciar sesión utilizando las credenciales que ingresaste en el formulario de registro:\n"
+                        f"- Email: {req_obj.admin_email}\n\n"
                         "Atentamente,\n"
                         "El equipo de VoleyHub"
                     )

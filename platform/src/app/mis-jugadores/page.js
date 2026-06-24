@@ -56,17 +56,10 @@ export default function MisJugadoresPage() {
   }
 
   return (
-    <div className={`${styles.container} container`}>
+    <div className={`${styles.container} custom_container`}>
       {/* Cabecera del Panel */}
       <header className={styles.header}>
-        <h1 className={styles.headerTitle}>
-          <span className={styles.headerTitleHighlight}>Mis</span> Jugadores
-        </h1>
-        
         <div className={styles.actions}>
-          <button onClick={loadPlayers} className={styles.btnRefresh} disabled={isLoading}>
-            {isLoading ? 'Cargando...' : 'Sincronizar'}
-          </button>
           <Link href="/" className={styles.btnBack}>
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />

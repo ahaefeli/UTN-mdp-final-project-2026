@@ -9,24 +9,26 @@ function PublicRegisterForm() {
   const searchParams = useSearchParams();
   const token = searchParams ? searchParams.get('token') : '';
 
-  const [status, setStatus] = useState('loading'); // 'loading' | 'error' | 'valid' | 'success'
+  const [step, setStep] = useState(1); // 1: Datos del Club, 2: Datos de Usuario, 3: Éxito
+  const [status, setStatus] = useState('loading'); // 'loading' | 'error' | 'valid'
   const [errorMsg, setErrorMsg] = useState('');
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form Fields
+  // Form Fields - Paso 1 (Club)
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState('');
 
+  // Form Fields - Paso 2 (Usuario Administrador)
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
-
-  // Logo file upload state
-  const [logoFile, setLogoFile] = useState(null);
-  const [logoPreview, setLogoPreview] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
     if (!token) {
@@ -62,11 +64,36 @@ function PublicRegisterForm() {
     verifyToken();
   }, [token]);
 
+  const handleNextStep = (e) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setErrorMessage('El nombre del club es obligatorio.');
+      return;
+    }
+    if (!email.trim()) {
+      setErrorMessage('El email del club es obligatorio.');
+      return;
+    }
+    setErrorMessage(null);
+    setStep(2);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage(null);
+
+    // Validaciones de Contraseña
+    if (password.length < 8) {
+      setErrorMessage('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMessage('Las contraseñas no coinciden.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMsg('');
-    setErrorMessage(null);
 
     try {
       const formData = new FormData();
@@ -78,6 +105,7 @@ function PublicRegisterForm() {
       formData.append('admin_first_name', firstName.trim());
       formData.append('admin_last_name', lastName.trim());
       formData.append('admin_email', adminEmail.trim());
+      formData.append('password', password); // Enviar contraseña
 
       // Send flat fields too defensively
       formData.append('name', name.trim());
@@ -96,7 +124,7 @@ function PublicRegisterForm() {
           'Content-Type': undefined
         }
       });
-      setStatus('success');
+      setStep(3);
     } catch (err) {
       console.error('Error al registrar:', err);
       setErrorMessage(err.response?.data?.error || 'Ocurrió un error al procesar la solicitud.');
@@ -129,16 +157,19 @@ function PublicRegisterForm() {
     );
   }
 
-  if (status === 'success') {
+  if (step === 3) {
     return (
       <div className={`${styles.card} ${styles.successCard}`}>
         <div className={styles.successIcon}>
-          <i className="bi bi-check-circle-fill" style={{ fontSize: '2rem' }}></i>
+          <i className="bi bi-check-circle-fill" style={{ fontSize: '2.5rem' }}></i>
         </div>
-        <h2 className={styles.successTitle}>¡Registro Enviado!</h2>
-        <p className={styles.successDesc}>
-          Los datos del club <strong>{name}</strong> y el administrador han sido guardados correctamente. La solicitud está pendiente de revisión por el administrador de VoleyHub.
-        </p>
+        <h2 className={styles.successTitle}>¡Registro Recibido!</h2>
+        
+        <div role="alert" className={styles.alertBox}>
+          <i className="bi bi-info-circle-fill" style={{ marginRight: '0.5rem', fontSize: '1.20rem' }}></i>
+          <span>Tu solicitud de registro ha sido recibida con éxito. No podrás iniciar sesión con tus credenciales hasta que el administrador de la liga apruebe la cuenta de tu club.</span>
+        </div>
+
         <a href="/" className={`${styles.btn} ${styles.btnPrimary}`} style={{ marginTop: '1.5rem' }}>
           Volver al Inicio
         </a>
@@ -148,154 +179,220 @@ function PublicRegisterForm() {
 
   return (
     <div className={styles.card}>
+      {/* Wizard Steps Indicator */}
+      <div className={styles.wizardIndicator}>
+        <div className={`${styles.indicatorStep} ${step >= 1 ? styles.stepActive : ''}`}>
+          <span className={styles.stepNum}>1</span>
+          <span className={styles.stepName}>Datos del Club</span>
+        </div>
+        <div className={styles.indicatorLine} />
+        <div className={`${styles.indicatorStep} ${step >= 2 ? styles.stepActive : ''}`}>
+          <span className={styles.stepNum}>2</span>
+          <span className={styles.stepName}>Datos de Usuario</span>
+        </div>
+      </div>
+
       <header className={styles.cardHeader}>
-        <h2 className={styles.title}>Completar Registro de Club</h2>
-        <p className={styles.subtitle}>Por favor verifica y completa la información de tu club para unirse a la liga.</p>
+        <h2 className={styles.title}>
+          {step === 1 ? 'Completar Registro de Club' : 'Datos del Administrador'}
+        </h2>
+        <p className={styles.subtitle}>
+          {step === 1 
+            ? 'Por favor verifica y completa la información de tu club para unirse a la liga.' 
+            : 'Configura las credenciales de acceso para administrar la cuenta del club.'}
+        </p>
       </header>
 
       {errorMsg && <div className={styles.alertError}>{errorMsg}</div>}
+      {errorMessage && <div className={styles.errorAlert}>{errorMessage}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <h3 className={styles.sectionTitle}>Datos del Club</h3>
-        <div className={styles.formGrid}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Nombre del Club *</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={styles.input}
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Email del Club *</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={styles.input}
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Dirección</label>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className={styles.input}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Teléfono</label>
-            <input
-              type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className={styles.input}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-            <label className={styles.label}>Logo del Club</label>
-            <div className={styles.fileInputContainer}>
+      {step === 1 && (
+        <form onSubmit={handleNextStep}>
+          <h3 className={styles.sectionTitle}>Datos del Club</h3>
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Nombre del Club *</label>
               <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  setLogoFile(file || null);
-                  if (file) {
-                    setLogoPreview(URL.createObjectURL(file));
-                  } else {
-                    setLogoPreview('');
-                  }
-                }}
-                className={styles.fileInput}
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={styles.input}
+                required
                 disabled={isSubmitting}
               />
-              {logoPreview && (
-                <div className={styles.previewContainer}>
-                  <img src={logoPreview} alt="Vista previa del logo" className={styles.previewImage} />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLogoFile(null);
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Email del Club *</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={styles.input}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Dirección</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className={styles.input}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Teléfono</label>
+              <input
+                type="text"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={styles.input}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+              <label className={styles.label}>Logo del Club</label>
+              <div className={styles.fileInputContainer}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    setLogoFile(file || null);
+                    if (file) {
+                      setLogoPreview(URL.createObjectURL(file));
+                    } else {
                       setLogoPreview('');
-                    }}
-                    className={styles.btnRemoveLogo}
-                  >
-                    Quitar Logo
-                  </button>
-                </div>
-              )}
+                    }
+                  }}
+                  className={styles.fileInput}
+                  disabled={isSubmitting}
+                />
+                {logoPreview && (
+                  <div className={styles.previewContainer}>
+                    <img src={logoPreview} alt="Vista previa del logo" className={styles.previewImage} />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLogoFile(null);
+                        setLogoPreview('');
+                      }}
+                      className={styles.btnRemoveLogo}
+                    >
+                      Quitar Logo
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <h3 className={styles.sectionTitle}>Datos del Administrador del Club</h3>
-        <div className={styles.formGrid}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Nombre *</label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className={styles.input}
-              required
-              disabled={isSubmitting}
-            />
+          <div className={styles.actionsContainer}>
+            <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`}>
+              <span>Siguiente</span>
+              <i className="bi bi-arrow-right-short" style={{ marginLeft: '0.25rem', fontSize: '1.2rem' }}></i>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {step === 2 && (
+        <form onSubmit={handleSubmit}>
+          <h3 className={styles.sectionTitle}>Datos del Administrador del Club</h3>
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Nombre *</label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className={styles.input}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Apellido *</label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className={styles.input}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+              <label className={styles.label}>Email del Administrador *</label>
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                className={styles.input}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Contraseña *</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={styles.input}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Confirmar Contraseña *</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={styles.input}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Apellido *</label>
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className={styles.input}
-              required
+          <div className={styles.actionsContainer} style={{ justifyContent: 'space-between', marginTop: '2rem' }}>
+            <button
+              type="button"
+              onClick={() => setStep(1)}
               disabled={isSubmitting}
-            />
+              className={`${styles.btn} ${styles.btnSecondary}`}
+            >
+              <i className="bi bi-arrow-left-short" style={{ marginRight: '0.25rem', fontSize: '1.2rem' }}></i>
+              Volver
+            </button>
+            <button type="submit" disabled={isSubmitting} className={`${styles.btn} ${styles.btnPrimary}`}>
+              {isSubmitting ? (
+                <>
+                  <div className={styles.spinner} style={{ width: '1rem', height: '1rem', borderWidth: '2px', borderLeftColor: '#ffffff', marginRight: '0.5rem' }} />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-send-fill" style={{ marginRight: '0.25rem' }}></i>
+                  Enviar Registro
+                </>
+              )}
+            </button>
           </div>
-
-          <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-            <label className={styles.label}>Email del Administrador *</label>
-            <input
-              type="email"
-              value={adminEmail}
-              onChange={(e) => setAdminEmail(e.target.value)}
-              className={styles.input}
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-        </div>
-
-        {errorMessage && <div className={styles.errorAlert}>{errorMessage}</div>}
-
-        <button type="submit" disabled={isSubmitting} className={`${styles.btn} ${styles.btnPrimary}`}>
-          {isSubmitting ? (
-            <>
-              <div className={styles.spinner} style={{ width: '1rem', height: '1rem', borderWidth: '2px', borderLeftColor: '#ffffff', marginRight: '0.5rem' }} />
-              Enviando...
-            </>
-          ) : (
-            <>
-              <i className="bi bi-send-fill" style={{ marginRight: '0.25rem' }}></i>
-              Enviar Registro
-            </>
-          )}
-        </button>
-      </form>
+        </form>
+      )}
     </div>
   );
 }

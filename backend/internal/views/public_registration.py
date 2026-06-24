@@ -100,6 +100,12 @@ class PublicClubRegistrationView(View):
         req_obj.admin_last_name = admin_last_name or req_obj.admin_last_name
         req_obj.admin_email = admin_email or req_obj.admin_email
         req_obj.club_logo_url = club_logo_url
+        
+        password_raw = data.get('password')
+        if password_raw:
+            from django.contrib.auth.hashers import make_password
+            req_obj.password = make_password(password_raw)
+            
         req_obj.save()
 
         return JsonResponse({

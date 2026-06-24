@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mail, Phone, MapPin, Send, CheckCircle2 } from "lucide-react";
+import styles from "./page.module.css";
 
 export default function ContactoPage() {
   const pathname = usePathname();
@@ -48,7 +49,7 @@ export default function ContactoPage() {
   };
 
   return (
-    <div className={`${styles.container} container`}>
+    <div className={`${styles.container} custom_container`}>
       
       {/* 1. HEADER PÚBLICO */}
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100 h-20 w-full flex items-center justify-between px-4 md:px-8 lg:px-16 select-none relative">

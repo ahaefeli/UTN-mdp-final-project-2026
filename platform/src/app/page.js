@@ -150,7 +150,7 @@ export default function RootDashboardPage() {
 
   if (role === 'ADMIN') {
     return (
-      <div className={`${styles.container} container`}>
+      <div className={`${styles.container} custom_container`}>
         <div className={styles.scrollContent} style={{ width: '100%' }}>
           <div className={styles.dashboardLayout} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Header del Admin */}

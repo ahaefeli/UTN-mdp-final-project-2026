@@ -215,7 +215,7 @@ export default function ClubesAdminPage() {
   }
 
   return (
-    <div className={`${styles.container} container`}>
+    <div className={`${styles.container} custom_container`}>
       {/* Cabecera */}
       <header className={styles.header}>
         <div className={styles.titleArea}>

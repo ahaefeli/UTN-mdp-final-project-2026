@@ -130,7 +130,7 @@ export default function MisDatosPage() {
   }
 
   return (
-    <div className={`${styles.container} container`}>
+    <div className={`${styles.container} custom_container`}>
       {/* Cabecera */}
       <header className={styles.header}>
         <h1 className={styles.headerTitle}>

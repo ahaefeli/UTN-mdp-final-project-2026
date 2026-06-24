@@ -91,7 +91,7 @@ export default function UsuariosPage() {
   }
 
   return (
-    <div className={styles.container}>
+      <div className={`${styles.container} custom_container`}>
       <div className={styles.wrapper}>
         {/* Cabecera */}
         <header className={styles.header}>

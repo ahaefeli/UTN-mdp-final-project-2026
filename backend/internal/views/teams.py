@@ -11,11 +11,20 @@ class TeamView(BaseCrudView):
     def get(self, request, obj_id=None, *args, **kwargs):
         tid = obj_id or request.GET.get('team_id')
         if tid:
-            try: return JsonResponse({'data': serialize_team(self.model.objects.get(id=tid, is_deleted=False))}, status=200)
+            try:
+                t = self.model.objects.get(id=tid, is_deleted=False)
+                if request.user.role == 'CLUB_ADMIN' and t.club != request.user.club:
+                    return JsonResponse({'error': 'Forbidden'}, status=403)
+                return JsonResponse({'data': serialize_team(t)}, status=200)
             except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        
         qs = self.model.objects.filter(is_deleted=False).order_by('id')
-        cid = request.GET.get('club_id')
-        if cid: qs = qs.filter(club_id=cid)
+        if request.user.role == 'CLUB_ADMIN':
+            qs = qs.filter(club=request.user.club)
+        else:
+            cid = request.GET.get('club_id')
+            if cid: qs = qs.filter(club_id=cid)
+            
         cat = request.GET.get('category')
         if cat: qs = qs.filter(category=cat)
         br = request.GET.get('branch')
@@ -29,6 +38,13 @@ class TeamView(BaseCrudView):
     def post(self, request, *args, **kwargs):
         data = parse_body(request)
         if not all(k in data for k in ['club_id', 'organization_id', 'name', 'category', 'branch']): return JsonResponse({'error': 'Missing fields'}, status=400)
+        
+        if request.user.role == 'CLUB_ADMIN':
+            data['club_id'] = str(request.user.club.id) if request.user.club else None
+            if request.user.club:
+                data['club'] = request.user.club
+                
+        data.pop('organization_id', None)
         try: return JsonResponse({'data': serialize_team(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
@@ -36,8 +52,16 @@ class TeamView(BaseCrudView):
         tid = obj_id or request.GET.get('team_id')
         if not tid: return JsonResponse({'error': 'Missing team_id'}, status=400)
         data = parse_body(request)
+        
+        if request.user.role == 'CLUB_ADMIN':
+            data.pop('club_id', None)
+            data.pop('club', None)
+            
+        data.pop('organization_id', None)
         try:
             t = self.model.objects.get(id=tid, is_deleted=False)
+            if request.user.role == 'CLUB_ADMIN' and t.club != request.user.club:
+                return JsonResponse({'error': 'Forbidden'}, status=403)
             for k, v in data.items():
                 if hasattr(t, k): setattr(t, k, v)
             t.save(); return JsonResponse({'data': serialize_team(t)}, status=200)
@@ -48,6 +72,9 @@ class TeamView(BaseCrudView):
         tid = obj_id or request.GET.get('team_id')
         if not tid: return JsonResponse({'error': 'Missing team_id'}, status=400)
         try:
-            t = self.model.objects.get(id=tid); t.is_deleted = True; t.save()
+            t = self.model.objects.get(id=tid)
+            if request.user.role == 'CLUB_ADMIN' and t.club != request.user.club:
+                return JsonResponse({'error': 'Forbidden'}, status=403)
+            t.is_deleted = True; t.save()
             return JsonResponse({'message': 'Deleted (soft)'}, status=200)
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)

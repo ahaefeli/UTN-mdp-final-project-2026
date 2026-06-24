@@ -55,6 +55,7 @@ class User(AbstractUser):
 
     gender = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Femenino')], null=True, blank=True)
     is_federated = models.BooleanField(default=False)
+    club = models.ForeignKey('Club', on_delete=models.SET_NULL, null=True, blank=True)
 
 class Club(models.Model):
     """ Club de un tenant - Puede haber varios clubes dentro de una liga """
@@ -190,6 +191,7 @@ class ClubRegistrationRequest(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
+    password = models.CharField(max_length=128, null=True, blank=True)
 
     def __str__(self):
         return f"{self.club_name} - {self.status}"
