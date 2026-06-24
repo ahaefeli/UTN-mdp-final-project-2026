@@ -6,75 +6,36 @@ import { usePathname } from "next/navigation";
 
 
 
+// MOCK DATA (VACÍO SEGÚN ESPECIFICACIÓN)
+const mockTournaments = [];
+
 export default function TorneosPage() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("TODOS");
-
-  const [tournaments, setTournaments] = useState([]);
-  const [organizations, setOrganizations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTenant, setActiveTenant] = useState("TODAS");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Fetch simultáneo de torneos y organizaciones
-        const [resTournaments, resOrgs] = await Promise.all([
-          fetch('http://127.0.0.1:8000/public/torneos/'),
-          fetch('http://127.0.0.1:8000/public/organizaciones/')
-        ]);
-        
-        if (!resTournaments.ok || !resOrgs.ok) throw new Error("Error en peticiones HTTP");
-        
-        const dataTournaments = await resTournaments.json();
-        const dataOrgs = await resOrgs.json();
-        
-        setOrganizations(dataOrgs.data || []);
-        
-        // Mapeo adaptativo de los torneos
-        const mappedData = (dataTournaments.data || []).map(t => ({
-          ...t,
-          title: t.name,
-          badgeText: t.status === "IN_PROGRESS" ? "EN DISPUTA" : t.status === "PREPARATION" ? "PRÓXIMAMENTE" : "FINALIZADO",
-          badgeType: t.status === "IN_PROGRESS" ? "ongoing" : t.status === "PREPARATION" ? "upcoming" : "default",
-          dateInfo: t.start_date ? `Inicio: ${t.start_date}` : "A definir",
-          locationInfo: t.organization_name || "Sede a confirmar",
-          buttonText: "VER DETALLES",
-          image: "/images/inicio/torneo-apertura.jpg", // Default genérico
-          href: `/torneos/${t.id}`
-        }));
-        
-        setTournaments(mappedData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const [emailInput, setEmailInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRama, setSelectedRama] = useState("Todas");
+  const [selectedCategoria, setSelectedCategoria] = useState("Todas");
 
   const navigateToLogin = (e) => {
     e.preventDefault();
     window.location.href = "/login";
   };
 
-
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault();
+    if (!emailInput) return;
+    alert(`¡Gracias por suscribirte con: ${emailInput}!`);
+    setEmailInput("");
+  };
 
   // Filtrado de Torneos
-  const filteredTournaments = tournaments.filter((t) => {
-    const searchLower = searchQuery.toLowerCase();
-    const matchSearch = t.title.toLowerCase().includes(searchLower) || t.category.toLowerCase().includes(searchLower);
-    // Mapear CATEGORY_CHOICES del backend (ej: SUB_18) con el filtro del front
-    const matchCategory = activeCategory === "TODOS" || t.category.replace('_', '-').includes(activeCategory);
-    const matchTenant = activeTenant === "TODAS" || t.organization_id === activeTenant;
+  const filteredTournaments = mockTournaments.filter((t) => {
+    const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRama = selectedRama === "Todas" || t.rama === selectedRama;
+    const matchesCategoria = selectedCategoria === "Todas" || t.categoria === selectedCategoria;
     
-    return matchSearch && matchCategory && matchTenant;
+    return matchesSearch && matchesRama && matchesCategoria;
   });
 
   return (
@@ -206,69 +167,47 @@ export default function TorneosPage() {
         <div className="bg-white rounded-3xl border border-slate-150 shadow-md p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
           
           {/* Input de Búsqueda */}
-          <div className="flex flex-col md:flex-row items-center gap-4 flex-1 border-b md:border-b-0 md:border-r border-slate-100 pb-3 md:pb-0 md:pr-4 w-full">
-            <div className="flex items-center gap-3 w-full md:w-auto flex-grow">
-              <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar torneo..."
-                className="w-full text-sm font-semibold text-slate-700 placeholder-slate-400 outline-none bg-transparent"
-              />
-            </div>
-            
-            {/* NUEVO FILTRO TENANT DINÁMICO */}
-            <div className="w-full md:w-64 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
-              <select
-                value={activeTenant}
-                onChange={(e) => setActiveTenant(e.target.value)}
-                className="w-full text-sm font-bold text-slate-600 bg-transparent outline-none cursor-pointer"
-              >
-                <option value="TODAS">Todas las Ligas</option>
-                {organizations.map(org => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="flex items-center gap-3 flex-1 bg-slate-50 px-4 py-3 rounded-2xl border border-slate-100">
+            <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar torneo..."
+              className="w-full text-sm font-semibold text-slate-700 placeholder-slate-400 outline-none bg-transparent"
+            />
           </div>
 
-          {/* Filtros (Pills) */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setActiveCategory("TODOS")}
-              className={`px-6 py-2.5 rounded-full text-xs font-black tracking-wider transition-all duration-200 cursor-pointer ${
-                activeCategory === "TODOS"
-                  ? "bg-[#001F54] text-white shadow-sm shadow-[#001F54]/20"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold"
-              }`}
+          {/* Filtros (Rama y Categoría) */}
+          <div className="flex gap-4 items-center flex-wrap">
+            {/* Select de Rama */}
+            <select
+              value={selectedRama}
+              onChange={(e) => setSelectedRama(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2.5 outline-none font-semibold cursor-pointer"
             >
-              TODOS
-            </button>
-            <button
-              onClick={() => setActiveCategory("PRIMERA")}
-              className={`px-6 py-2.5 rounded-full text-xs font-black tracking-wider transition-all duration-200 cursor-pointer ${
-                activeCategory === "PRIMERA"
-                  ? "bg-[#001F54] text-white shadow-sm shadow-[#001F54]/20"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold"
-              }`}
+              <option value="Todas">Todas las Ramas</option>
+              <option value="Femenino">Femenino</option>
+              <option value="Masculino">Masculino</option>
+            </select>
+
+            {/* Select de Categoría */}
+            <select
+              value={selectedCategoria}
+              onChange={(e) => setSelectedCategoria(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2.5 outline-none font-semibold cursor-pointer"
             >
-              PRIMERA
-            </button>
-            <button
-              onClick={() => setActiveCategory("SUB-18")}
-              className={`px-6 py-2.5 rounded-full text-xs font-black tracking-wider transition-all duration-200 cursor-pointer ${
-                activeCategory === "SUB-18"
-                  ? "bg-[#001F54] text-white shadow-sm shadow-[#001F54]/20"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold"
-              }`}
-            >
-              SUB-18
-            </button>
+              <option value="Todas">Todas las Categorías</option>
+              <option value="Minis">Minis</option>
+              <option value="Sub-14">Sub-14</option>
+              <option value="Sub-16">Sub-16</option>
+              <option value="Sub-18">Sub-18</option>
+              <option value="Sub-21">Sub-21</option>
+              <option value="Primera">Primera</option>
+              <option value="Maxi">Maxi</option>
+            </select>
           </div>
 
         </div>
@@ -277,12 +216,7 @@ export default function TorneosPage() {
       {/* 4. GRILLA DE TORNEOS (TARJETAS) */}
       <main className="py-20 px-6 lg:px-16 max-w-7xl mx-auto w-full flex-grow flex flex-col gap-10">
         
-        {isLoading ? (
-          <div className="text-center py-16 flex flex-col items-center justify-center gap-4 w-full">
-            <span className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></span>
-            <p className="text-slate-500 font-bold text-sm">Cargando torneos y ligas oficiales...</p>
-          </div>
-        ) : filteredTournaments.length > 0 ? (
+        {filteredTournaments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredTournaments.map((tournament) => (
               <div
@@ -370,13 +304,9 @@ export default function TorneosPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 bg-white border border-slate-100 rounded-3xl select-none shadow-sm flex flex-col items-center justify-center gap-4">
-            <svg className="w-12 h-12 text-slate-350" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <p className="text-slate-500 font-bold text-xs">
-              No se encontraron torneos que coincidan con la búsqueda.
-            </p>
+          <div className="col-span-full w-full py-20 flex flex-col items-center justify-center text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-700">No se encontraron torneos</h3>
+            <p className="text-slate-500 mt-2">No hay competencias disponibles para los filtros seleccionados en este momento.</p>
           </div>
         )}
 
