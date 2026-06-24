@@ -16,6 +16,7 @@ export default function TorneosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRama, setSelectedRama] = useState("Todas");
   const [selectedCategoria, setSelectedCategoria] = useState("Todas");
+  const [selectedLiga, setSelectedLiga] = useState("Todas");
 
   const navigateToLogin = (e) => {
     e.preventDefault();
@@ -34,8 +35,9 @@ export default function TorneosPage() {
     const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRama = selectedRama === "Todas" || t.rama === selectedRama;
     const matchesCategoria = selectedCategoria === "Todas" || t.categoria === selectedCategoria;
+    const matchesLiga = selectedLiga === "Todas" || t.liga === selectedLiga;
     
-    return matchesSearch && matchesRama && matchesCategoria;
+    return matchesSearch && matchesRama && matchesCategoria && matchesLiga;
   });
 
   return (
@@ -180,8 +182,19 @@ export default function TorneosPage() {
             />
           </div>
 
-          {/* Filtros (Rama y Categoría) */}
+          {/* Filtros (Ligas, Rama y Categoría) */}
           <div className="flex gap-4 items-center flex-wrap">
+            {/* Select de Ligas */}
+            <select
+              value={selectedLiga}
+              onChange={(e) => setSelectedLiga(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2.5 outline-none font-semibold cursor-pointer"
+            >
+              <option value="Todas">Todas las Ligas</option>
+              <option value="Liga Necochense">Liga Necochense</option>
+              <option value="Liga Marplatense">Liga Marplatense</option>
+            </select>
+
             {/* Select de Rama */}
             <select
               value={selectedRama}
