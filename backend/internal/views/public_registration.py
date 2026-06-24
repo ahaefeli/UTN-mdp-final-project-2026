@@ -73,6 +73,8 @@ class PublicClubRegistrationView(View):
         admin_first_name = data.get('admin_first_name') or data.get('first_name') or data.get('admin', {}).get('first_name')
         admin_last_name = data.get('admin_last_name') or data.get('last_name') or data.get('admin', {}).get('last_name')
         admin_email = data.get('admin_email') or data.get('admin', {}).get('email')
+        admin_username = data.get('admin_username') or data.get('username') or data.get('admin', {}).get('username')
+        admin_dni = data.get('admin_dni') or data.get('dni') or data.get('admin', {}).get('dni')
 
         # Validate that the admin email is provided
         if not admin_email:
@@ -81,6 +83,8 @@ class PublicClubRegistrationView(View):
         # 4. Verify admin email/username doesn't exist previously in User table
         if User.objects.filter(email=admin_email).exists() or User.objects.filter(username=admin_email).exists():
             return JsonResponse({'error': f"A user with email '{admin_email}' already exists in the system"}, status=400)
+        if admin_username and (User.objects.filter(username=admin_username).exists() or User.objects.filter(email=admin_username).exists()):
+            return JsonResponse({'error': f"A user with username '{admin_username}' already exists in the system"}, status=400)
 
         # Upload logo to GCS if provided
         club_logo_url = req_obj.club_logo_url
@@ -99,6 +103,8 @@ class PublicClubRegistrationView(View):
         req_obj.admin_first_name = admin_first_name or req_obj.admin_first_name
         req_obj.admin_last_name = admin_last_name or req_obj.admin_last_name
         req_obj.admin_email = admin_email or req_obj.admin_email
+        req_obj.admin_username = admin_username or req_obj.admin_username
+        req_obj.admin_dni = admin_dni or req_obj.admin_dni
         req_obj.club_logo_url = club_logo_url
         
         password_raw = data.get('password')

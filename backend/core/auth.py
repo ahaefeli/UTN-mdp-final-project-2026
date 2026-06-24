@@ -83,6 +83,7 @@ class LoginView(View):
             'user_id': str(user.id),
             'email': user.email,
             'role': user.role,
+            'club_id': str(user.club_id) if user.club_id else None,
             'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1),
             'iat': datetime.datetime.utcnow()
         }
@@ -98,6 +99,7 @@ class LoginView(View):
                 'username': user.username,
                 'email': user.email,
                 'role': user.role,
+                'club_id': str(user.club_id) if user.club_id else None,
                 'name': f"{user.first_name} {user.last_name}".strip()
             }
         }, status=200)

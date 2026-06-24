@@ -72,12 +72,20 @@ export default function Navbar() {
         )}
 
         {role === 'CLUB_ADMIN' && (
-          <Link 
-            href="/mis-equipos" 
-            className={`${styles.navLink} ${isActive('/mis-equipos') ? styles.navLinkActive : ''}`}
-          >
-            Mis Equipos
-          </Link>
+          <>
+            <Link 
+              href="/mis-equipos" 
+              className={`${styles.navLink} ${isActive('/mis-equipos') ? styles.navLinkActive : ''}`}
+            >
+              Mis Equipos
+            </Link>
+            <Link 
+              href="/gestion-club" 
+              className={`${styles.navLink} ${isActive('/gestion-club') ? styles.navLinkActive : ''}`}
+            >
+              Gestión del Club
+            </Link>
+          </>
         )}
 
         {role === 'ADMIN' && (

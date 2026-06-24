@@ -27,6 +27,8 @@ function PublicRegisterForm() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminDni, setAdminDni] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -49,6 +51,8 @@ function PublicRegisterForm() {
           setFirstName(data.admin_first_name || '');
           setLastName(data.admin_last_name || '');
           setAdminEmail(data.admin_email || '');
+          setAdminUsername(data.admin_username || '');
+          setAdminDni(data.admin_dni || '');
           setStatus('valid');
         } else {
           setStatus('error');
@@ -82,7 +86,20 @@ function PublicRegisterForm() {
     e.preventDefault();
     setErrorMessage(null);
 
-    // Validaciones de Contraseña
+    // Validaciones de DNI, Usuario y Contraseña
+    if (!adminDni.trim()) {
+      setErrorMessage('El DNI es obligatorio.');
+      return;
+    }
+    if (!adminUsername.trim()) {
+      setErrorMessage('El nombre de usuario es obligatorio.');
+      return;
+    }
+    const usernameRegex = /^[a-zA-Z0-9._-]+$/;
+    if (!usernameRegex.test(adminUsername)) {
+      setErrorMessage('El nombre de usuario solo puede contener letras, números, puntos, guiones y guiones bajos (sin espacios).');
+      return;
+    }
     if (password.length < 8) {
       setErrorMessage('La contraseña debe tener al menos 8 caracteres.');
       return;
@@ -105,6 +122,8 @@ function PublicRegisterForm() {
       formData.append('admin_first_name', firstName.trim());
       formData.append('admin_last_name', lastName.trim());
       formData.append('admin_email', adminEmail.trim());
+      formData.append('admin_username', adminUsername.trim());
+      formData.append('admin_dni', adminDni.trim());
       formData.append('password', password); // Enviar contraseña
 
       // Send flat fields too defensively
@@ -339,6 +358,32 @@ function PublicRegisterForm() {
                 className={styles.input}
                 required
                 disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Nombre de Usuario *</label>
+              <input
+                type="text"
+                value={adminUsername}
+                onChange={(e) => setAdminUsername(e.target.value)}
+                className={styles.input}
+                required
+                disabled={isSubmitting}
+                placeholder="Ej: admin_club"
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>DNI *</label>
+              <input
+                type="text"
+                value={adminDni}
+                onChange={(e) => setAdminDni(e.target.value)}
+                className={styles.input}
+                required
+                disabled={isSubmitting}
+                placeholder="Ej: 12345678"
               />
             </div>
 

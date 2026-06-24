@@ -2,8 +2,10 @@ import axios from 'axios';
 
 class ApiService {
     constructor() {
+        const base = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/';
+        const cleanBase = base.endsWith('/') ? base : `${base}/`;
         this.client = axios.create({
-            baseURL: 'http://127.0.0.1:8000/internal/'
+            baseURL: `${cleanBase}internal/`
         });
     }
 

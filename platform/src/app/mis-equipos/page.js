@@ -6,6 +6,12 @@ import Link from 'next/link';
 import styles from './page.module.css';
 import { useAuth } from '../../context/AuthContext';
 
+const getApiUrl = (path) => {
+  const base = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/';
+  const cleanBase = base.endsWith('/') ? base : `${base}/`;
+  return `${cleanBase}${path}`;
+};
+
 const BRANCH_LABELS = {
   MALE: 'Masculino',
   FEMALE: 'Femenino'
@@ -66,7 +72,7 @@ export default function MisEquiposPage() {
         throw new Error('No se encontró el identificador del usuario.');
       }
       
-      const profileRes = await fetch(`http://127.0.0.1:8000/internal/usuarios/${sessionUser.id}/`, {
+      const profileRes = await fetch(getApiUrl(`internal/usuarios/${sessionUser.id}/`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -107,7 +113,7 @@ export default function MisEquiposPage() {
       const currentToken = token || localStorage.getItem('lnv_token');
       const currentClubId = targetClubId || clubId;
       
-      const res = await fetch(`http://127.0.0.1:8000/internal/equipos/?club_id=${currentClubId}`, {
+      const res = await fetch(getApiUrl(`internal/equipos/?club_id=${currentClubId}`), {
         headers: {
           'Authorization': `Bearer ${currentToken}`,
           'Content-Type': 'application/json'
@@ -145,7 +151,7 @@ export default function MisEquiposPage() {
         organization_id: organizationId
       };
       
-      const res = await fetch('http://127.0.0.1:8000/internal/equipos/', {
+      const res = await fetch(getApiUrl('internal/equipos/'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -185,7 +191,7 @@ export default function MisEquiposPage() {
         branch: formData.branch
       };
       
-      const res = await fetch(`http://127.0.0.1:8000/internal/equipos/${selectedTeam.id}/`, {
+      const res = await fetch(getApiUrl(`internal/equipos/${selectedTeam.id}/`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -219,7 +225,7 @@ export default function MisEquiposPage() {
     setErrorMsg('');
     try {
       const token = localStorage.getItem('lnv_token');
-      const res = await fetch(`http://127.0.0.1:8000/internal/equipos/${selectedTeam.id}/`, {
+      const res = await fetch(getApiUrl(`internal/equipos/${selectedTeam.id}/`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

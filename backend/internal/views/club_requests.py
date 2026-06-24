@@ -36,6 +36,8 @@ def serialize_club_request(req):
         "admin_first_name": req.admin_first_name,
         "admin_last_name": req.admin_last_name,
         "admin_email": req.admin_email,
+        "admin_username": req.admin_username,
+        "admin_dni": req.admin_dni,
         "club_logo_url": req.club_logo_url,
         "status": req.status,
         "created_at": req.created_at.isoformat() if req.created_at else None,
@@ -174,8 +176,9 @@ class ReviewClubRequestView(View):
                 if not req_obj.admin_email or not req_obj.club_name:
                     return JsonResponse({'error': 'La solicitud no ha sido completada por el club invitado.'}, status=400)
                 with transaction.atomic():
-                    if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=req_obj.admin_email).exists():
-                        return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' already exists."}, status=400)
+                    username_to_check = req_obj.admin_username or req_obj.admin_email
+                    if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=username_to_check).exists():
+                        return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' or '{username_to_check}' already exists."}, status=400)
 
                     club = Club.objects.create(
                         organization=request.user.organization,
@@ -187,13 +190,14 @@ class ReviewClubRequestView(View):
                     )
 
                     user = User(
-                        username=req_obj.admin_email,
+                        username=username_to_check,
                         email=req_obj.admin_email,
                         first_name=req_obj.admin_first_name,
                         last_name=req_obj.admin_last_name,
                         role='CLUB_ADMIN',
                         organization=request.user.organization,
-                        club=club
+                        club=club,
+                        dni=req_obj.admin_dni
                     )
                     user.password = req_obj.password
                     user.save()
@@ -207,6 +211,7 @@ class ReviewClubRequestView(View):
                         f"Hola {req_obj.admin_first_name} {req_obj.admin_last_name},\n\n"
                         "¡Nos complace informarte que tu Club ha sido aprobado en VoleyHub!\n\n"
                         "A partir de este momento, puedes iniciar sesión utilizando las credenciales que ingresaste en el formulario de registro:\n"
+                        f"- Usuario: {req_obj.admin_username or req_obj.admin_email}\n"
                         f"- Email: {req_obj.admin_email}\n\n"
                         "Atentamente,\n"
                         "El equipo de VoleyHub"

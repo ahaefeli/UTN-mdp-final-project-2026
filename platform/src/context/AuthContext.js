@@ -26,6 +26,7 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [clubId, setClubId] = useState(null);
   
   const pathname = usePathname();
   const router = useRouter();
@@ -37,9 +38,11 @@ export function AuthProvider({ children }) {
       const session = localStorage.getItem('lnv_session');
       if (token) {
         try {
+          // Prefer stored session; otherwise decode JWT to obtain full user data including club_id
           const parsedUser = session ? JSON.parse(session) : parseJwt(token);
           if (parsedUser) {
             setUser(parsedUser);
+            setClubId(parsedUser.club_id || null);
             setRole(parsedUser.role || 'PLAYER');
             setIsAuthenticated(true);
           }
@@ -65,12 +68,25 @@ export function AuthProvider({ children }) {
       }
     }
   }, [role, pathname, isAuthenticated, isInitialized, router]);
-
   const login = (token, user) => {
+    // Persist token and user (including club_id) in localStorage
     localStorage.setItem('lnv_token', token);
-    localStorage.setItem('lnv_session', JSON.stringify(user));
-    setUser(user);
-    setRole(user.role || 'PLAYER');
+    // Ensure club_id is present; if missing, decode from JWT
+    const enrichedUser = { ...user };
+    if (!enrichedUser.club_id) {
+      try {
+        const decoded = parseJwt(token);
+        if (decoded && decoded.club_id) {
+          enrichedUser.club_id = decoded.club_id;
+        }
+      } catch (e) {
+        console.error('Error extracting club_id from token:', e);
+      }
+    }
+    localStorage.setItem('lnv_session', JSON.stringify(enrichedUser));
+    setUser(enrichedUser);
+    setClubId(enrichedUser.club_id || null);
+    setRole(enrichedUser.role || 'PLAYER');
     setIsAuthenticated(true);
   };
 
@@ -78,13 +94,17 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('lnv_token');
     localStorage.removeItem('lnv_session');
     setUser(null);
+    setClubId(null);
     setRole('');
     setIsAuthenticated(false);
     router.push('/login');
   };
 
+
+
+
   return (
-    <AuthContext.Provider value={{ user, role, isAuthenticated, isInitialized, login, logout }}>
+    <AuthContext.Provider value={{ user, clubId, role, isAuthenticated, isInitialized, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -45,13 +45,23 @@ class UserView(BaseCrudView):
     def get(self, request, obj_id=None, *args, **kwargs):
         user_id = obj_id or request.GET.get('user_id')
         if user_id:
-            try: return JsonResponse({'data': serialize_user(self.model.objects.get(id=user_id))}, status=200)
+            try:
+                u = self.model.objects.get(id=user_id)
+                if request.user.role == 'CLUB_ADMIN':
+                    if u.club != request.user.club or u.role not in ['CLUB_ADMIN']:
+                        return JsonResponse({'error': 'Forbidden'}, status=403)
+                return JsonResponse({'data': serialize_user(u)}, status=200)
             except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        
         qs = self.model.objects.filter(
             organization=request.user.organization
-        ).exclude(
-            role__in=['ADMIN', 'OWNER']
-        ).order_by('id')
+        )
+        if request.user.role == 'CLUB_ADMIN':
+            qs = qs.filter(club=request.user.club, role__in=['COACH', 'PLAYER'])
+        else:
+            qs = qs.exclude(role__in=['ADMIN', 'OWNER'])
+            
+        qs = qs.order_by('id')
         
         role_filter = request.GET.get('role')
         if role_filter:
@@ -71,7 +81,7 @@ class UserView(BaseCrudView):
             
         club_id = request.GET.get('club_id')
         if club_id:
-            qs = qs.filter(Q(teams_playing__club_id=club_id) | Q(coached_teams__club_id=club_id)).distinct()
+            qs = qs.filter(Q(club_id=club_id) | Q(teams_playing__club_id=club_id) | Q(coached_teams__club_id=club_id)).distinct()
 
         page = request.GET.get('page')
         if page:
@@ -81,6 +91,12 @@ class UserView(BaseCrudView):
 
     def post(self, request, *args, **kwargs):
         data = parse_body(request)
+        if request.user.role == 'CLUB_ADMIN':
+            data['club_id'] = str(request.user.club_id) if request.user.club_id else None
+            data['organization_id'] = str(request.user.organization_id)
+            if data.get('role') != 'COACH':
+                return JsonResponse({'error': 'No tienes permisos para crear este tipo de usuario'}, status=403)
+                
         for f in ['role', 'user', 'password', 'organization_id', 'dni']:
             if f not in data: return JsonResponse({'error': f'Missing: {f}'}, status=400)
         try:
@@ -107,6 +123,16 @@ class UserView(BaseCrudView):
             
         try:
             u = User.objects.get(id=user_id)
+            if request.user.role == 'CLUB_ADMIN':
+                if u.club_id != request.user.club_id:
+                    return JsonResponse({'error': 'Forbidden'}, status=403)
+                if u.role == 'PLAYER':
+                    return JsonResponse({'error': 'Los clubes no pueden editar ni eliminar jugadores directamente'}, status=403)
+                if 'role' in data and data['role'] in ['ADMIN', 'CLUB_ADMIN']:
+                    return JsonResponse({'error': 'Forbidden: Privilege elevation blocked'}, status=403)
+                data.pop('club_id', None)
+                data.pop('club', None)
+                
             if 'enable' in data:
                 if (data.get('requester_role') or getattr(request.user, 'role', None)) != 'ADMIN':
                     return JsonResponse({'error': 'Admin only'}, status=403)
@@ -134,5 +160,13 @@ class UserView(BaseCrudView):
     def delete(self, request, obj_id=None, *args, **kwargs):
         uid = obj_id or request.GET.get('user_id')
         if not uid: return JsonResponse({'error': 'Missing user_id'}, status=400)
-        try: self.model.objects.get(id=uid).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
+        try:
+            u = self.model.objects.get(id=uid)
+            if request.user.role == 'CLUB_ADMIN':
+                if u.club_id != request.user.club_id:
+                    return JsonResponse({'error': 'Forbidden'}, status=403)
+                if u.role == 'PLAYER':
+                    return JsonResponse({'error': 'Los clubes no pueden editar ni eliminar jugadores directamente'}, status=403)
+            u.delete()
+            return JsonResponse({'message': 'Deleted'}, status=200)
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
