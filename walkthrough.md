@@ -1,6 +1,6 @@
-# Walkthrough: Conexión API en Explorar Torneos, Sincronización de Contacto y Enlaces de Reglamento
+# Walkthrough: Conexión API, Sincronización de Contacto, Enlaces de Reglamento y Enlaces de Instagram
 
-Hemos refactorizado con éxito el componente de **Explorar Torneos** (`landing/src/app/torneos/page.js`) y el backend de Django (`backend/internal/views/tournaments.py`) para consumir datos reales de la base de datos aplicando los filtros correspondientes desde el servidor. Asimismo, sincronizamos el Navbar y el Footer de la página de **Contacto** (`landing/src/app/contacto/page.js`), configuramos los enlaces reales de descarga en la página de **Reglamento** (`landing/src/app/reglamento/page.js`), y eliminamos la sección redundante de **Documentación Institucional**.
+Hemos refactorizado con éxito el componente de **Explorar Torneos** (`landing/src/app/torneos/page.js`) y el backend de Django (`backend/internal/views/tournaments.py`) para consumir datos reales de la base de datos aplicando los filtros correspondientes desde el servidor. Asimismo, sincronizamos el Navbar y el Footer de la página de **Contacto** (`landing/src/app/contacto/page.js`), configuramos los enlaces reales de descarga en la página de **Reglamento** (`landing/src/app/reglamento/page.js`), eliminamos la sección de **Documentación Institucional**, y actualizamos todos los enlaces de **Instagram** en toda la plataforma.
 
 ---
 
@@ -25,7 +25,7 @@ Hemos refactorizado con éxito el componente de **Explorar Torneos** (`landing/s
 * **Nuevos Estados**: Se incorporaron los estados `tournaments` (`[]`), `isLoading` (`true`) y `error` (`null`).
 * **Eliminación de Mock Data**: Se eliminó el array vacío local `mockTournaments` y toda la lógica local de filtrado (`filteredTournaments` y su `.filter()`), delegando esta tarea por completo al backend.
 * **Llamada Dinámica a la API (useEffect)**:
-  * Se implementé un hook `useEffect` dependiente de `[searchTerm, selectedLiga, selectedRama, selectedCategoria]`.
+  * Se implementó un hook `useEffect` dependiente de `[searchTerm, selectedLiga, selectedRama, selectedCategoria]`.
   * Se limpia cada filtro cuyo valor sea el por defecto (`"Todas"`), evitando enviarlo como parámetro.
   * La URL se construye dinámicamente apuntando a `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/internal'}/torneos/`.
 * **Mapeo de Datos**:
@@ -74,7 +74,33 @@ Hemos refactorizado con éxito el componente de **Explorar Torneos** (`landing/s
 
 ---
 
+### 5. Frontend: Actualización de todos los enlaces de Instagram
+
+#### [MODIFY] Varios Archivos
+Se localizaron y actualizaron todos los botones y enlaces del ícono de Instagram en los proyectos `landing` y `platform` para apuntar al perfil oficial de la nueva marca:
+* **Nueva URL**: `https://www.instagram.com/voley_hub/`
+* **Apertura Segura**: Se añadieron los atributos `target="_blank"` y `rel="noopener noreferrer"` a cada elemento `<a>`.
+* **Integridad de Estilos**: Se conservaron intactas todas las clases de Tailwind CSS (incluyendo el botón con degradado de color y sombras en la sección de contacto).
+* **Archivos modificados**:
+  * `landing/src/app/contacto/page.js`
+  * `landing/src/app/equipos/page.js`
+  * `landing/src/app/page.js`
+  * `landing/src/app/privacidad/page.js`
+  * `landing/src/app/reglamento/page.js`
+  * `landing/src/app/sitemap/page.js`
+  * `landing/src/app/torneos/[id]/page.js`
+  * `landing/src/app/torneos/page.js`
+  * `platform/src/app/contacto/page.js`
+  * `platform/src/app/equipos/page.js`
+  * `platform/src/app/privacidad/page.js`
+  * `platform/src/app/reglamento/page.js`
+  * `platform/src/app/resultados/page.js`
+  * `platform/src/app/sitemap/page.js`
+
+---
+
 ## 🧪 Verificación Realizada
 
 ### 1. Compilación Exitosa
 * Ejecutamos `npm run build` en el subdirectorio `landing` y el proyecto Next.js compiló perfectamente todas sus páginas públicas y administrativas sin warnings ni errores.
+* Ejecutamos `npm run build` en el subdirectorio `platform` y el proyecto Next.js compiló perfectamente todas sus páginas del portal administrativo sin warnings ni errores.

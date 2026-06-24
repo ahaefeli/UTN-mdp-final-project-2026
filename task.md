@@ -1,4 +1,4 @@
-# Checklist de Tareas: Conexión API en Explorar Torneos, Contacto y Reglamentos
+# Checklist de Tareas: Conexión API en Explorar Torneos, Contacto, Reglamentos e Instagram
 
 - `[x]` Crear nuevos estados para la API (`tournaments`, `isLoading`, `error`) en `landing/src/app/torneos/page.js`
 - `[x]` Implementar `useEffect` con dependencias `[searchTerm, selectedLiga, selectedRama, selectedCategoria]` en `landing/src/app/torneos/page.js`
@@ -13,4 +13,6 @@
 - `[x]` Configurar `target="_blank"` y `rel="noopener noreferrer"` en todos los enlaces de descarga para abrirlos en una pestaña nueva
 - `[x]` Eliminar la sección "Documentación Institucional" (y sus datos "Estatuto LNV" y "Manual de Marca") de `landing/src/app/reglamento/page.js`
 - `[x]` Limpiar imports de íconos en `landing/src/app/reglamento/page.js` (remover `Landmark` de `lucide-react`)
-- `[x]` Verificar compilación del frontend `landing` con `npm run build`
+- `[x]` Actualizar todos los enlaces y botones de Instagram en `landing` y `platform` para apuntar a `https://www.instagram.com/voley_hub/`
+- `[x]` Configurar la apertura segura con `target="_blank"` y `rel="noopener noreferrer"` en todos los enlaces de Instagram
+- `[x]` Verificar compilación de `landing` y `platform` con `npm run build`
