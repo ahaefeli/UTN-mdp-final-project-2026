@@ -15,13 +15,20 @@ def serialize_enrollment(e):
 def serialize_stage(s):
     return {'id': s.id, 'tournament_id': s.tournament_id, 'tournament_name': s.tournament.name, 'date': s.date.isoformat(), 'name': s.name}
 
+def serialize_match_detail(m):
+    return {'id': m.id, 'local_team': m.local_team.name, 'visitor_team': m.visitor_team.name, 'score_local': m.score_local, 'score_visitor': m.score_visitor, 'match_datetime': m.match_datetime.isoformat() if m.match_datetime else None, 'status': m.status, 'tournament_stage_id': m.tournament_stage_id}
+
+@method_decorator(jwt_required, name='dispatch')
 class TournamentView(BaseCrudView):
     model = Tournament
     def get(self, request, obj_id=None, *args, **kwargs):
         tid = obj_id or request.GET.get('tournament_id')
         if tid:
-            try: return JsonResponse({'data': serialize_tournament(self.model.objects.get(id=tid, organization=request.user.organization))}, status=200)
-            except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+            try:
+                tournament = self.model.objects.get(id=tid, organization=request.user.organization)
+                return JsonResponse({'data': serialize_tournament(tournament)}, status=200)
+            except self.model.DoesNotExist:
+                return JsonResponse({'error': 'Torneo no encontrado'}, status=404)
         qs = self.model.objects.filter(organization=request.user.organization).order_by('-year', 'id')
         y, s = request.GET.get('year'), request.GET.get('status')
         if y: qs = qs.filter(year=y)

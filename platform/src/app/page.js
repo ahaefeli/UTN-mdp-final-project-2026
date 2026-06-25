@@ -20,7 +20,7 @@ import { Shield, Users, Trophy, CalendarCheck } from 'lucide-react';
 
 export default function RootDashboardPage() {
   const router = useRouter();
-  
+
   // Estados reactivos
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -28,7 +28,7 @@ export default function RootDashboardPage() {
   const [userDetails, setUserDetails] = useState(null);
   const [matches, setMatches] = useState([]);
   const [upcomingMatches, setUpcomingMatches] = useState([]);
-  
+
   // Estados de carga y error
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
@@ -46,7 +46,7 @@ export default function RootDashboardPage() {
     try {
       const response = await apiClient.get('internal/dashboard/admin/');
       const data = response.data || {};
-      
+
       // Actualizar el estado de métricas mapeando la raíz
       setMetrics({
         total_clubs: data.total_clubs || 0,
@@ -154,7 +154,7 @@ export default function RootDashboardPage() {
         <div className={styles.scrollContent} style={{ width: '100%' }}>
           <div className={styles.dashboardLayout} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Header del Admin */}
-              <h2 className={styles.adminTitle}>Panel de Control</h2>
+            <h2 className={styles.adminTitle}>Panel de Control</h2>
 
             {isLoadingAdmin ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
@@ -166,26 +166,26 @@ export default function RootDashboardPage() {
 
                 {/* Grid de 4 InfoCards */}
                 <div className={styles.metricsGrid}>
-                  <InfoCard 
-                    title="Total Clubes" 
-                    value={metrics?.total_clubs ?? 0} 
-                    icon={Shield} 
+                  <InfoCard
+                    title="Total Clubes"
+                    value={metrics?.total_clubs ?? 0}
+                    icon={Shield}
                   />
-                  <InfoCard 
-                    title="Jugadores Federados" 
-                    value={metrics?.federated_players?.total ?? 0} 
-                    subValue={metrics?.federated_players ? `Masculino: ${metrics.federated_players.masculino} | Femenino: ${metrics.federated_players.femenino}` : ''} 
-                    icon={Users} 
+                  <InfoCard
+                    title="Jugadores Federados"
+                    value={metrics?.federated_players?.total ?? 0}
+                    subValue={metrics?.federated_players ? `Masculino: ${metrics.federated_players.masculino} | Femenino: ${metrics.federated_players.femenino}` : ''}
+                    icon={Users}
                   />
-                  <InfoCard 
-                    title="Torneos en Curso" 
-                    value={metrics?.active_tournaments ?? 0} 
-                    icon={Trophy} 
+                  <InfoCard
+                    title="Torneos en Curso"
+                    value={metrics?.active_tournaments ?? 0}
+                    icon={Trophy}
                   />
-                  <InfoCard 
-                    title="Partidos sin Árbitro" 
-                    value={metrics?.matches_without_referee ?? 0} 
-                    icon={CalendarCheck} 
+                  <InfoCard
+                    title="Partidos sin Árbitro"
+                    value={metrics?.matches_without_referee ?? 0}
+                    icon={CalendarCheck}
                   />
                 </div>
 
@@ -203,7 +203,7 @@ export default function RootDashboardPage() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} custom_container`}>
       {/* Sección scrolleable de contenidos */}
       <div className={styles.scrollContent} style={{ width: '100%' }}>
         <div className={styles.dashboardLayout}>
@@ -232,7 +232,7 @@ export default function RootDashboardPage() {
 
                 {!isLoading && !error && matches.length > 0 && (
                   <div className={styles.matchList}>
-                    {matches.map((match) => (
+                    {matches && matches.length > 0 && matches.map((match) => (
                       <div key={match.id} className={styles.matchItem}>
                         <div className={styles.matchTeams}>
                           <span className={`${styles.team} ${styles.localTeam}`}>{match.local_team_name}</span>
@@ -245,9 +245,8 @@ export default function RootDashboardPage() {
 
                         <div className={styles.matchFooter}>
                           <span>Árbitro: {match.referee_name || 'Sin asignar'}</span>
-                          <span className={`${styles.statusBadge} ${
-                            match.status === 'FINISHED' ? styles.badgeFinished : styles.badgePending
-                          }`}>
+                          <span className={`${styles.statusBadge} ${match.status === 'FINISHED' ? styles.badgeFinished : styles.badgePending
+                            }`}>
                             {STATUS_TRANSLATIONS[match.status] || match.status}
                           </span>
                         </div>

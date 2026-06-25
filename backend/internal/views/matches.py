@@ -15,20 +15,37 @@ def serialize_match_detail(m):
     d = {'id': m.id, 'tournament_stage_id': m.tournament_stage_id, 'local_team_id': m.local_team_id, 'local_team_name': m.local_team.name, 'visitor_team_id': m.visitor_team_id, 'visitor_team_name': m.visitor_team.name, 'court_id': m.court_id, 'court_name': m.court.name if m.court else None, 'match_datetime': m.match_datetime.isoformat() if m.match_datetime else None, 'referee_id': m.referee_id, 'referee_name': f"{m.referee.first_name} {m.referee.last_name}".strip() if m.referee else None, 'scorer_id': m.scorer_id, 'scorer_name': f"{m.scorer.first_name} {m.scorer.last_name}".strip() if m.scorer else None, 'status': m.status, 'score_summary': m.score_summary, 'sets': [{'set_number': s.set_number, 'local_points': s.local_points, 'visitor_points': s.visitor_points} for s in m.sets.all().order_by('set_number')] if hasattr(m, 'sets') else []}
     return d
 
+@method_decorator(jwt_required, name='dispatch')
 class MatchView(BaseCrudView):
     model = Match
     def get(self, request, obj_id=None, *args, **kwargs):
         mid = obj_id or request.GET.get('match_id')
         did = request.GET.get('date_id')
         if mid:
-            try: return JsonResponse({'data': serialize_match_detail(self.model.objects.get(id=mid))}, status=200)
-            except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
-        if did: return JsonResponse({'data': [serialize_match_detail(m) for m in self.model.objects.filter(tournament_stage_id=did).order_by('match_datetime')]}, status=200)
+            try:
+                match = self.model.objects.get(id=mid, tournament_stage__tournament__organization=request.user.organization)
+                return JsonResponse({'data': serialize_match_detail(match)}, status=200)
+            except self.model.DoesNotExist:
+                return JsonResponse({'error': 'Partido no encontrado'}, status=404)
+        if did:
+            matches = self.model.objects.filter(tournament_stage_id=did, tournament_stage__tournament__organization=request.user.organization).order_by('match_datetime')
+            return JsonResponse({'data': [serialize_match_detail(m) for m in matches]}, status=200)
         qs = self.model.objects.all().order_by('-match_datetime', 'id')
+        # Enforce organization isolation
+        qs = qs.filter(tournament_stage__tournament__organization=request.user.organization)
         cid, tid, s = request.GET.get('club_id'), request.GET.get('team_id'), request.GET.get('status')
-        if cid: qs = qs.filter(models.Q(local_team__club_id=cid) | models.Q(visitor_team__club_id=cid))
-        if tid: qs = qs.filter(models.Q(local_team_id=tid) | models.Q(visitor_team_id=tid))
-        if s: qs = qs.filter(status=s)
+        tour_id = request.GET.get('tournament_id')
+        if tour_id:
+            from core.models import Tournament
+            if not Tournament.objects.filter(id=tour_id, organization=request.user.organization).exists():
+                return JsonResponse({'error': 'No autorizado'}, status=403)
+            qs = qs.filter(tournament_stage__tournament_id=tour_id)
+        if cid:
+            qs = qs.filter(models.Q(local_team__club_id=cid) | models.Q(visitor_team__club_id=cid))
+        if tid:
+            qs = qs.filter(models.Q(local_team_id=tid) | models.Q(visitor_team_id=tid))
+        if s:
+            qs = qs.filter(status=s)
         
         if request.GET.get('upcoming') == 'true':
             from django.utils import timezone

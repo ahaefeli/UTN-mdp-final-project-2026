@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import tournamentService from '../../services/tournamentService';
 import { STATUS_TRANSLATIONS } from '../../utils/status';
 import styles from './page.module.css';
 
@@ -30,25 +29,33 @@ export default function TorneosDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Redirección de seguridad RBAC si no es ADMIN
+  // Redirección de seguridad si no está autenticado
   useEffect(() => {
     if (isInitialized) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (role !== 'ADMIN') {
-        router.push('/');
       }
     }
-  }, [isInitialized, isAuthenticated, role, router]);
+  }, [isInitialized, isAuthenticated, router]);
 
-  // Carga de torneos al montarse la vista
+  // Carga de torneos al montarse la vista consumiendo el endpoint real con Authorization
   useEffect(() => {
-    if (isAuthenticated && role === 'ADMIN') {
+    if (isAuthenticated) {
       const loadTournaments = async () => {
         try {
           setIsLoading(true);
           setError('');
-          const res = await tournamentService.getTournaments();
+          const token = typeof window !== 'undefined' ? localStorage.getItem('lnv_token') : '';
+          const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          };
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+          const response = await fetch(`${baseUrl}/internal/torneos/`, { headers });
+          if (!response.ok) {
+            throw new Error('Failed to fetch tournaments');
+          }
+          const res = await response.json();
           const list = res.data || [];
 
           // Torneos Activos: status PREPARATION o IN_PROGRESS
@@ -69,8 +76,8 @@ export default function TorneosDashboardPage() {
     }
   }, [isAuthenticated, role]);
 
-  // Si no está inicializado o no tiene permisos, mostrar loader inicial
-  if (!isInitialized || !isAuthenticated || role !== 'ADMIN') {
+  // Si no está inicializado o no está logueado, mostrar loader inicial
+  if (!isInitialized || !isAuthenticated) {
     return (
       <div className={styles.loadingSpinner} style={{ minHeight: '100vh' }}>
         <div className={styles.spinner} />
@@ -84,14 +91,16 @@ export default function TorneosDashboardPage() {
       <header className={styles.header}>
         <div className={styles.titleArea}>
           <h1 className={styles.title}>Panel de Torneos</h1>
-          <p className={styles.subtitle}>Gestione los torneos de la organización y configure las jornadas correspondientes.</p>
+          <p className={styles.subtitle}>Consulte y gestione los torneos de la organización.</p>
         </div>
-        <div>
-          <Link href="/torneos/nuevo" className={`${styles.btnNew} ${styles.btnNewActive}`}>
-            <i className="bi bi-plus-circle-fill" style={{ marginRight: '0.25rem' }}></i>
-            Nuevo Torneo
-          </Link>
-        </div>
+        {role === 'ADMIN' && (
+          <div>
+            <Link href="/torneos/nuevo" className={`${styles.btnNew} ${styles.btnNewActive}`}>
+              <i className="bi bi-plus-circle-fill" style={{ marginRight: '0.25rem' }}></i>
+              Nuevo Torneo
+            </Link>
+          </div>
+        )}
       </header>
 
       {/* Alerta de Error */}
@@ -142,7 +151,7 @@ export default function TorneosDashboardPage() {
 
                     <div>
                       <Link href={`/torneos/${tournament.id}`} className={styles.manageLink}>
-                        <i className="bi bi-gear-fill"></i>
+                        <i className={role === 'ADMIN' ? "bi bi-gear-fill" : "bi bi-eye-fill"}></i>
                       </Link>
                     </div>
                   </div>
