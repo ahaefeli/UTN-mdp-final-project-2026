@@ -4,7 +4,7 @@ from .views.players import PlayerView
 from .views.clubs import ClubView
 from .views.courts import CourtView
 from .views.teams import TeamView
-from .views.tournaments import TournamentView, TournamentEnrollmentView, TournamentStageView
+from .views.tournaments import TournamentView, TournamentEnrollmentView, TournamentStageView, InternalStandingsView
 from .views.matches import MatchView, MatchRescheduleView, MatchFinishView
 from .views.dashboard import AdminDashboardView
 
@@ -47,5 +47,6 @@ urlpatterns = [
 
     # Torneos (Dynamic relative to torneos)
     path('torneos/', TournamentView.as_view(), name='torneos'),
+    path('torneos/<uuid:tournament_id>/posiciones/', InternalStandingsView.as_view(), name='torneo_posiciones'),
     path('torneos/<uuid:obj_id>/', TournamentView.as_view(), name='torneo_detail'),
 ]

@@ -27,15 +27,16 @@ class AdminDashboardView(View):
             femenino=Count('id', filter=Q(gender='F'))
         )
         
-        # Torneos en Curso: Conteo de Tournament con status='IN_PROGRESS' y organization=org.
+        # Torneos en Curso: Conteo de Tournament con status__in=['PREPARATION', 'IN_PROGRESS'] y organization=org.
         active_tournaments = Tournament.objects.filter(
-            status='IN_PROGRESS',
+            status__in=['PREPARATION', 'IN_PROGRESS'],
             organization=org
         ).count()
         
         # Partidos sin Árbitro: Conteo de Match con referee__isnull=True que pertenezcan a torneos de la organización.
         matches_without_referee = Match.objects.filter(
             referee__isnull=True,
+            status__in=['PREPARATION', 'IN_PROGRESS'],
             tournament_stage__tournament__organization=org
         ).count()
         

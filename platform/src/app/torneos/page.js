@@ -142,7 +142,7 @@ export default function TorneosDashboardPage() {
 
                     <div>
                       <Link href={`/torneos/${tournament.id}`} className={styles.manageLink}>
-                        <i className="bi bi-gear-fill"></i>
+                        <i className={role === 'ADMIN' ? "bi bi-gear-fill" : "bi bi-eye-fill"}></i>
                       </Link>
                     </div>
                   </div>

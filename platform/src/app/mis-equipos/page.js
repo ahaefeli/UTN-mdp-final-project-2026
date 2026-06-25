@@ -45,7 +45,8 @@ export default function MisEquiposPage() {
   
   // Estado de Formularios e Item Seleccionado
   const [selectedTeam, setSelectedTeam] = useState(null);
-  const [formData, setFormData] = useState({ name: '', category: 'PRIMERA', branch: 'FEMALE' });
+  const [coaches, setCoaches] = useState([]);
+  const [formData, setFormData] = useState({ name: '', category: 'PRIMERA', branch: 'FEMALE', coach_id: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Validación de Rol CLUB_ADMIN y redirección
@@ -97,11 +98,30 @@ export default function MisEquiposPage() {
       setClubId(userClubId);
       setOrganizationId(userOrgId);
       
+      await fetchCoaches(token);
       await fetchTeams(userClubId, token);
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message || 'Error de comunicación con el servidor.');
       setIsLoading(false);
+    }
+  };
+
+  // Cargar entrenadores
+  const fetchCoaches = async (token) => {
+    try {
+      const res = await fetch(getApiUrl('internal/usuarios/?role=COACH'), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCoaches(data.data || []);
+      }
+    } catch (err) {
+      console.error('Error al cargar entrenadores:', err);
     }
   };
 
@@ -148,7 +168,8 @@ export default function MisEquiposPage() {
         category: formData.category,
         branch: formData.branch,
         club_id: clubId,
-        organization_id: organizationId
+        organization_id: organizationId,
+        coach_id: formData.coach_id || null
       };
       
       const res = await fetch(getApiUrl('internal/equipos/'), {
@@ -166,7 +187,7 @@ export default function MisEquiposPage() {
       }
       
       setShowCreateModal(false);
-      setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE' });
+      setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE', coach_id: '' });
       await fetchTeams(clubId, token);
     } catch (err) {
       console.error(err);
@@ -188,7 +209,8 @@ export default function MisEquiposPage() {
       const payload = {
         name: formData.name.trim(),
         category: formData.category,
-        branch: formData.branch
+        branch: formData.branch,
+        coach_id: formData.coach_id || null
       };
       
       const res = await fetch(getApiUrl(`internal/equipos/${selectedTeam.id}/`), {
@@ -207,7 +229,7 @@ export default function MisEquiposPage() {
       
       setShowEditModal(false);
       setSelectedTeam(null);
-      setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE' });
+      setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE', coach_id: '' });
       await fetchTeams(clubId, token);
     } catch (err) {
       console.error(err);
@@ -255,7 +277,8 @@ export default function MisEquiposPage() {
     setFormData({
       name: team.name || '',
       category: team.category || 'PRIMERA',
-      branch: team.branch || 'FEMALE'
+      branch: team.branch || 'FEMALE',
+      coach_id: team.coach_id || ''
     });
     setShowEditModal(true);
   };
@@ -281,7 +304,7 @@ export default function MisEquiposPage() {
       <header className={styles.header}>
         <div className={styles.actions}>
           <button onClick={() => {
-            setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE' });
+            setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE', coach_id: '' });
             setShowCreateModal(true);
           }} className={styles.btnCreate}>
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
@@ -323,7 +346,19 @@ export default function MisEquiposPage() {
             <tbody>
               {teams.map((team) => (
                 <tr key={team.id} className={styles.tr}>
-                  <td className={styles.td}>{team.name}</td>
+                  <td className={styles.td}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{team.name}</span>
+                      {team.coach_name && (
+                        <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Entrenador: {team.coach_name}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className={styles.td}>
                     {CATEGORY_LABELS[team.category] || team.category}
                   </td>
@@ -402,6 +437,23 @@ export default function MisEquiposPage() {
                 </select>
               </div>
 
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Entrenador (Opcional)</label>
+                <select
+                  value={formData.coach_id || ''}
+                  onChange={(e) => setFormData({ ...formData, coach_id: e.target.value })}
+                  className={styles.select}
+                  disabled={isSubmitting}
+                >
+                  <option value="">Sin entrenador asignado</option>
+                  {coaches.map((coach) => (
+                    <option key={coach.id} value={coach.id}>
+                      {coach.name || coach.username || coach.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className={styles.modalActions}>
                 <button
                   type="button"
@@ -470,6 +522,23 @@ export default function MisEquiposPage() {
                 >
                   {Object.entries(BRANCH_LABELS).map(([key, value]) => (
                     <option key={key} value={key}>{value}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Entrenador (Opcional)</label>
+                <select
+                  value={formData.coach_id || ''}
+                  onChange={(e) => setFormData({ ...formData, coach_id: e.target.value })}
+                  className={styles.select}
+                  disabled={isSubmitting}
+                >
+                  <option value="">Sin entrenador asignado</option>
+                  {coaches.map((coach) => (
+                    <option key={coach.id} value={coach.id}>
+                      {coach.name || coach.username || coach.email}
+                    </option>
                   ))}
                 </select>
               </div>

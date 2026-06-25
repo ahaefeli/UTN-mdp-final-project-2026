@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import styles from './page.module.css';
 import authService from '../services/authService';
 import matchService from '../services/matchService';
@@ -20,6 +20,7 @@ import { Shield, Users, Trophy, CalendarCheck } from 'lucide-react';
 
 export default function RootDashboardPage() {
   const router = useRouter();
+  const pathname = usePathname();
 
   // Estados reactivos
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -82,7 +83,7 @@ export default function RootDashboardPage() {
         }
       }
     }
-  }, [router]);
+  }, [router, pathname]);
 
   // Carga de perfil completo de usuario para obtener team_id y club_name
   const loadUserDetails = async (userId) => {
@@ -92,6 +93,10 @@ export default function RootDashboardPage() {
       setUserDetails(details);
       if (details) {
         if (details.role === 'ADMIN') {
+          loadUpcomingMatches();
+        } else if (details.role === 'CLUB_ADMIN') {
+          loadUpcomingMatches();
+        } else if (details.role === 'COACH') {
           loadUpcomingMatches();
         } else if (details.team_id) {
           loadUpcomingMatches(details.team_id);
@@ -117,18 +122,21 @@ export default function RootDashboardPage() {
     }
   };
 
-  // Carga de partidos futuros filtrados por team_id
-  const loadUpcomingMatches = async (teamId) => {
+  // Carga de partidos futuros filtrados por team_id o club_id
+  const loadUpcomingMatches = async (teamId, clubId) => {
     setIsLoadingUpcoming(true);
     try {
       const params = { upcoming: 'true' };
       if (teamId) {
         params.team_id = teamId;
       }
+      if (clubId) {
+        params.club_id = clubId;
+      }
       const response = await matchService.getMatches(params);
       setUpcomingMatches(response.data || []);
     } catch (err) {
-      console.error('Error al cargar próximas fechas del equipo:', err);
+      console.error('Error al cargar próximas fechas:', err);
     } finally {
       setIsLoadingUpcoming(false);
     }
@@ -196,6 +204,302 @@ export default function RootDashboardPage() {
                 <PendingAlerts alerts={pendingActions} />
               </>
             )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (role === 'CLUB_ADMIN') {
+    const clubActions = [
+      {
+        label: 'Mis Datos',
+        path: '/mis-datos',
+        description: 'Actualiza tus datos personales.',
+        iconClass: 'bi-person',
+        bg: '#eff6ff',
+        color: '#1d4ed8'
+      },
+      {
+        label: 'Mi Club',
+        path: '/gestion-club',
+        description: 'Gestiona los entrenadores y jugadores del club',
+        iconClass: 'bi-building',
+        bg: '#fff7ed',
+        color: '#ea580c'
+      },
+      {
+        label: 'Mis Equipos',
+        path: '/mis-equipos',
+        description: 'Gestiona categorías, ramas y asigna entrenadores.',
+        iconClass: 'bi-shield-fill',
+        bg: '#f0fdf4',
+        color: '#16a34a'
+      },
+    ];
+
+    return (
+      <div className={`${styles.container} custom_container`}>
+        <div className={styles.scrollContent} style={{ width: '100%', padding: '1.5rem 0' }}>
+          <div className={styles.dashboardLayout} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            {/* Header del Club Admin */}
+            <div>
+              <h2 className={styles.adminTitle} style={{ marginBottom: '0.25rem' }}>Panel del Club</h2>
+              <p style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                Gestión institucional de {userDetails?.club_name || 'tu club asignado'}
+              </p>
+            </div>
+
+            {/* Grid de Acciones Rápidas */}
+            <div>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '2px solid #f1f5f9', paddingBottom: '0.5rem' }}>
+                Acciones Rápidas
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                {clubActions.map((action, idx) => (
+                  <a
+                    key={idx}
+                    href={action.path}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '1rem',
+                      padding: '1.5rem',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.03)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1.25rem',
+                      textDecoration: 'none',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-3px)';
+                      e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.05)';
+                      e.currentTarget.style.borderColor = '#cbd5e1';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.03)';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '3rem',
+                      height: '3rem',
+                      borderRadius: '0.75rem',
+                      backgroundColor: action.bg,
+                      color: action.color,
+                      fontSize: '1.5rem',
+                      flexShrink: 0
+                    }}>
+                      <i className={`bi ${action.iconClass}`}></i>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <span style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#1e293b' }}>{action.label}</span>
+                      <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500, lineHeight: 1.3 }}>{action.description}</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Próximas Fechas */}
+            <section className={styles.card} style={{ maxWidth: '800px' }}>
+              <div className={styles.sectionHeader}>
+                <h3 className={styles.sectionTitle}>Próximas Fechas</h3>
+              </div>
+              {isLoadingUpcoming ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                  <div className={styles.spinner} />
+                </div>
+              ) : upcomingMatches.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2.5rem 2rem', color: '#64748b', fontSize: '0.875rem' }}>
+                  No tienes próximos partidos programados.
+                </div>
+              ) : (
+                <div className={styles.matchList} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {upcomingMatches.map((match) => (
+                    <div key={match.id} className={styles.matchItem} style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid #e2e8f0', borderRadius: '0.75rem' }}>
+                      
+                      {/* Meta Información Detallada */}
+                      <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                        <span style={{ color: '#002F87' }}>{match.tournament_name || 'Torneo'}</span>
+                        <span style={{ color: '#cbd5e1' }}>•</span>
+                        <span>{match.category ? `Categoría: ${match.category}` : 'Categoría a confirmar'}</span>
+                        <span style={{ color: '#cbd5e1' }}>•</span>
+                        <span>{match.branch === 'MALE' ? 'Masculino' : match.branch === 'FEMALE' ? 'Femenino' : 'Rama a confirmar'}</span>
+                      </div>
+
+                      {/* Enfrentamiento */}
+                      <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.25rem 0' }}>
+                        <span>{match.local_team_name}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'normal' }}>vs</span>
+                        <span>{match.visitor_team_name}</span>
+                      </div>
+
+                      {/* Fecha y Hora */}
+                      <div style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <i className="bi bi-calendar-event"></i>
+                        <span>{match.match_datetime ? new Date(match.match_datetime).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Fecha y hora a confirmar'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (role === 'COACH') {
+    const coachActions = [
+      {
+        label: 'Resultados y posiciones',
+        path: '/resultados',
+        description: 'Consultá las tablas de posiciones y los resultados de los torneos.',
+        iconClass: 'bi bi-trophy-fill',
+        bg: '#f0fdf4',
+        color: '#16a34a'
+      },
+      {
+        label: 'Mis Datos y Certificados',
+        path: '/mis-datos',
+        description: 'Gestioná tu perfil y cargá tu certificado de entrenador habilitante.',
+        iconClass: 'bi bi-person-vcard-fill',
+        bg: '#eff6ff',
+        color: '#2563eb'
+      },
+      {
+        label: 'Mis Equipos',
+        path: '/mis-jugadores',
+        description: 'Visualizá la lista de jugadores de tus equipos.',
+        iconClass: 'bi bi-people-fill',
+        bg: '#fff7ed',
+        color: '#ea580c'
+      }
+    ];
+
+    return (
+      <div className={`${styles.container} custom_container`}>
+        <div className={styles.scrollContent} style={{ width: '100%', padding: '1.5rem 0' }}>
+          <div className={styles.dashboardLayout} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            {/* Header del Entrenador */}
+            <header>
+              <h2 className={styles.adminTitle} style={{ margin: 0 }}>Panel de Entrenador</h2>
+              <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                ¡Bienvenido/a, {user?.name?.split(' ')[0] || 'Entrenador'}! Accedé rápidamente a tus módulos.
+              </p>
+            </header>
+
+            {/* BOTONES DE ACCESO RÁPIDO */}
+            <div className={styles.quickActionsGrid} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.25rem' }}>
+              {coachActions.map((action, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => router.push(action.path)}
+                  style={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '1rem',
+                    padding: '1.5rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.03)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.25rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.05)';
+                    e.currentTarget.style.borderColor = action.color || '#ea580c';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'none';
+                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.03)';
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '3rem',
+                    height: '3rem',
+                    borderRadius: '0.75rem',
+                    backgroundColor: action.bg || '#fff7ed',
+                    color: action.color || '#ea580c',
+                    fontSize: '1.5rem',
+                    flexShrink: 0
+                  }}>
+                    <i className={action.iconClass}></i>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>{action.label}</h3>
+                    <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0, fontWeight: 500, lineHeight: 1.3 }}>
+                      {action.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* SECCIÓN DE PRÓXIMAS FECHAS */}
+            <section className={styles.card} style={{ maxWidth: '800px' }}>
+              <div className={styles.sectionHeader}>
+                <h3 className={styles.sectionTitle}>Próximos Partidos</h3>
+              </div>
+              {upcomingMatches.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2.5rem 2rem', color: '#64748b', fontSize: '0.875rem' }}>
+                  No tenés partidos programados próximamente.
+                </div>
+              ) : (
+                <div className={styles.matchList} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {upcomingMatches.map((match) => (
+                    <div key={match.id} className={styles.matchItem} style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid #e2e8f0', borderRadius: '0.75rem' }}>
+                      
+                      {/* Meta Información Detallada */}
+                      <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                        <span style={{ color: '#002F87' }}>{match.tournament_name || 'Torneo'}</span>
+                        <span style={{ color: '#cbd5e1' }}>•</span>
+                        <span>{match.category ? `Categoría: ${match.category}` : 'Categoría a confirmar'}</span>
+                        <span style={{ color: '#cbd5e1' }}>•</span>
+                        <span>{match.branch === 'MALE' ? 'Masculino' : match.branch === 'FEMALE' ? 'Femenino' : 'Rama a confirmar'}</span>
+                      </div>
+
+                      {/* Enfrentamiento */}
+                      <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.25rem 0' }}>
+                        <span>{match.local_team_name}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'normal' }}>vs</span>
+                        <span>{match.visitor_team_name}</span>
+                      </div>
+
+                      {/* Fecha, Hora y Cancha */}
+                      <div style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <i className="bi bi-calendar-event"></i>
+                          <span>{match.match_datetime ? new Date(match.match_datetime).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Fecha y hora a confirmar'}</span>
+                        </div>
+                        <span style={{ color: '#cbd5e1' }}>•</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <i className="bi bi-geo-alt"></i>
+                          <span>{match.court_name ? `Cancha: ${match.court_name}` : 'Cancha a confirmar'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
           </div>
         </div>
       </div>

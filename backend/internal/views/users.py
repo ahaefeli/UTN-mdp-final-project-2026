@@ -58,6 +58,8 @@ class UserView(BaseCrudView):
         )
         if request.user.role == 'CLUB_ADMIN':
             qs = qs.filter(club=request.user.club, role__in=['COACH', 'PLAYER'])
+        elif request.user.role == 'COACH':
+            qs = qs.filter(club=request.user.club, role='PLAYER')
         else:
             qs = qs.exclude(role__in=['ADMIN', 'OWNER'])
             
@@ -94,7 +96,13 @@ class UserView(BaseCrudView):
         if request.user.role == 'CLUB_ADMIN':
             data['club_id'] = str(request.user.club_id) if request.user.club_id else None
             data['organization_id'] = str(request.user.organization_id)
-            if data.get('role') != 'COACH':
+            if data.get('role') not in ['COACH', 'PLAYER']:
+                return JsonResponse({'error': 'No tienes permisos para crear este tipo de usuario'}, status=403)
+                
+        elif request.user.role == 'COACH':
+            data['club_id'] = str(request.user.club_id) if request.user.club_id else None
+            data['organization_id'] = str(request.user.organization_id)
+            if data.get('role') != 'PLAYER':
                 return JsonResponse({'error': 'No tienes permisos para crear este tipo de usuario'}, status=403)
                 
         for f in ['role', 'user', 'password', 'organization_id', 'dni']:

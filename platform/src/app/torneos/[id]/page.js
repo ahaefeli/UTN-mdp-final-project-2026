@@ -47,7 +47,8 @@ export default function TorneoDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-
+  const [isStageModalOpen, setIsStageModalOpen] = useState(false);
+  const [newStageDate, setNewStageDate] = useState("");
   // Formateador de Fecha Dinámico
   const formatMatchDate = (dateString) => {
     if (!dateString) return 'Fecha a confirmar';
@@ -148,12 +149,15 @@ export default function TorneoDetailPage() {
     }
   };
 
-  const handleAddStage = async () => {
-    const inputDate = prompt('Ingrese la fecha de la jornada (formato YYYY-MM-DD):');
-    if (!inputDate) return;
+  const handleAddStage = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!newStageDate) {
+      alert('Por favor ingrese una fecha.');
+      return;
+    }
 
     const regex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!regex.test(inputDate)) {
+    if (!regex.test(newStageDate)) {
       alert('Formato de fecha inválido. Debe usar YYYY-MM-DD.');
       return;
     }
@@ -162,7 +166,7 @@ export default function TorneoDetailPage() {
       const nextNum = stages.length + 1;
       const res = await tournamentService.addStage({
         tournament_id: tournamentId,
-        date: inputDate,
+        date: newStageDate,
         name: `Fecha ${nextNum}`
       });
 
@@ -175,9 +179,12 @@ export default function TorneoDetailPage() {
         setActiveStageId(res.data.id);
       }
       setSuccessMsg(`¡Fecha ${nextNum} agregada con éxito!`);
+      setNewStageDate("");
+      setIsStageModalOpen(false);
     } catch (err) {
       console.error('Error al agregar fecha:', err);
       setError(err?.response?.data?.error || 'No se pudo agregar la fecha.');
+      setIsStageModalOpen(false);
     }
   };
 
@@ -303,9 +310,6 @@ export default function TorneoDetailPage() {
       setRefereeId('');
       setScorerId('');
       setMatchStatus('');
-
-      // Recargar partidos
-      await loadMatchesForStage(activeStageId);
     } catch (err) {
       console.error('Error al guardar el partido:', err);
       if (err.response && err.response.status === 400) {
@@ -316,6 +320,18 @@ export default function TorneoDetailPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    if (!confirm(`¿Estás seguro de cambiar el estado del torneo?`)) return;
+    try {
+      await tournamentService.updateTournament(tournamentId, { status: newStatus });
+      setTournament(prev => ({ ...prev, status: newStatus }));
+      setSuccessMsg('Estado del torneo actualizado correctamente.');
+    } catch (err) {
+      console.error('Error al actualizar estado:', err);
+      setError('No se pudo actualizar el estado del torneo.');
     }
   };
 
@@ -340,7 +356,19 @@ export default function TorneoDetailPage() {
               ← Volver a Torneos
             </button>
           </div>
-          <h1 className={styles.title}>{tournament?.name}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <h1 className={styles.title} style={{ marginBottom: 0 }}>{tournament?.name}</h1>
+            <select 
+              value={tournament?.status || ''} 
+              onChange={(e) => handleStatusChange(e.target.value)}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', cursor: 'pointer' }}
+            >
+              <option value="PREPARATION">En Preparación</option>
+              <option value="IN_PROGRESS">En Progreso</option>
+              <option value="FINISHED">Finalizado</option>
+              <option value="CANCELLED">Cancelado</option>
+            </select>
+          </div>
           <p className={styles.subtitle}>
             Fase de Planificación: Gestioná las fechas y programá los partidos en las canchas de juego.
           </p>
@@ -371,7 +399,12 @@ export default function TorneoDetailPage() {
             })}
             <button
               type="button"
-              onClick={handleAddStage}
+              onClick={() => {
+                setError('');
+                setSuccessMsg('');
+                setNewStageDate('');
+                setIsStageModalOpen(true);
+              }}
               className={styles.btnAddStage}
             >
               <i className="bi bi-plus-lg" style={{ marginRight: '0.25rem' }}></i>
@@ -664,6 +697,47 @@ export default function TorneoDetailPage() {
           </div>
 
         </div>
+
+        {isStageModalOpen && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-3xl border border-slate-200/60 p-8 shadow-2xl max-w-md w-full">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-black text-[#002F87] tracking-tight uppercase italic">Agregar Nueva Fecha</h3>
+                <p className="text-slate-500 text-xs font-semibold mt-1">Seleccione la fecha correspondiente para la nueva jornada.</p>
+              </div>
+              <form onSubmit={handleAddStage} className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 tracking-wider mb-2 block uppercase">Fecha de Jornada</label>
+                  <input
+                    type="date"
+                    required
+                    value={newStageDate}
+                    onChange={(e) => setNewStageDate(e.target.value)}
+                    className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#002F87] transition-all"
+                  />
+                </div>
+                <div className="flex gap-4 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsStageModalOpen(false);
+                      setNewStageDate("");
+                    }}
+                    className="flex-1 py-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 font-extrabold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer text-center"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3.5 rounded-xl bg-[#002F87] hover:bg-blue-950 text-white font-extrabold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-md text-center"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

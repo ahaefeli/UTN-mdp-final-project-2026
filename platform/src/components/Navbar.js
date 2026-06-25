@@ -51,11 +51,20 @@ export default function Navbar() {
           Inicio
         </Link>
         
+        {role === 'ADMIN' && (
+          <Link 
+            href="/torneos" 
+            className={`${styles.navLink} ${isActive('/torneos') ? styles.navLinkActive : ''}`}
+          >
+            Torneos
+          </Link>
+        )}
+
         <Link 
-          href="/torneos" 
-          className={`${styles.navLink} ${isActive('/torneos') ? styles.navLinkActive : ''}`}
+          href="/resultados" 
+          className={`${styles.navLink} ${isActive('/resultados') ? styles.navLinkActive : ''}`}
         >
-          Torneos
+          Resultados y Posiciones
         </Link>
 
         {/* Enlace para todos los roles (PLAYER y COACH) */}

@@ -12,7 +12,10 @@ def serialize_match_detail(m):
     from core.utils.match_status import evaluate_and_update_match_status
     evaluate_and_update_match_status(m)
     m.refresh_from_db()
-    d = {'id': m.id, 'tournament_stage_id': m.tournament_stage_id, 'local_team_id': m.local_team_id, 'local_team_name': m.local_team.name, 'visitor_team_id': m.visitor_team_id, 'visitor_team_name': m.visitor_team.name, 'court_id': m.court_id, 'court_name': m.court.name if m.court else None, 'match_datetime': m.match_datetime.isoformat() if m.match_datetime else None, 'referee_id': m.referee_id, 'referee_name': f"{m.referee.first_name} {m.referee.last_name}".strip() if m.referee else None, 'scorer_id': m.scorer_id, 'scorer_name': f"{m.scorer.first_name} {m.scorer.last_name}".strip() if m.scorer else None, 'status': m.status, 'score_summary': m.score_summary, 'sets': [{'set_number': s.set_number, 'local_points': s.local_points, 'visitor_points': s.visitor_points} for s in m.sets.all().order_by('set_number')] if hasattr(m, 'sets') else []}
+    d = {'id': m.id, 'tournament_stage_id': m.tournament_stage_id, 'local_team_id': m.local_team_id, 'local_team_name': m.local_team.name, 'visitor_team_id': m.visitor_team_id, 'visitor_team_name': m.visitor_team.name, 'court_id': m.court_id, 'court_name': m.court.name if m.court else None, 'match_datetime': m.match_datetime.isoformat() if m.match_datetime else None, 'referee_id': m.referee_id, 'referee_name': f"{m.referee.first_name} {m.referee.last_name}".strip() if m.referee else None, 'scorer_id': m.scorer_id, 'scorer_name': f"{m.scorer.first_name} {m.scorer.last_name}".strip() if m.scorer else None, 'status': m.status, 'score_summary': m.score_summary, 'sets_data': m.sets_data if m.sets_data else {'sets': []}}
+    d['tournament_name'] = m.tournament_stage.tournament.name if m.tournament_stage and m.tournament_stage.tournament else None
+    d['category'] = m.tournament_stage.tournament.category if m.tournament_stage and m.tournament_stage.tournament else None
+    d['branch'] = m.tournament_stage.tournament.branch if m.tournament_stage and m.tournament_stage.tournament else None
     return d
 
 @method_decorator(jwt_required, name='dispatch')
@@ -47,6 +50,13 @@ class MatchView(BaseCrudView):
         if s:
             qs = qs.filter(status=s)
         
+        if request.user.role == 'CLUB_ADMIN':
+            from django.db.models import Q
+            qs = qs.filter(Q(local_team__club=request.user.club) | Q(visitor_team__club=request.user.club))
+        elif request.user.role == 'COACH':
+            from django.db.models import Q
+            qs = qs.filter(Q(local_team__coach=request.user) | Q(visitor_team__coach=request.user))
+            
         if request.GET.get('upcoming') == 'true':
             from django.utils import timezone
             qs = qs.filter(match_datetime__gte=timezone.now())
@@ -95,6 +105,13 @@ class MatchView(BaseCrudView):
             o = self.model.objects.get(id=mid)
             if o.status == 'FINISHED': return JsonResponse({'error': 'No se puede editar un partido finalizado.'}, status=400)
             if data.get('status') == 'FINISHED' and getattr(request.user, 'role', None) != 'REFEREE': return JsonResponse({'error': 'Solo el árbitro puede finalizar un partido.'}, status=403)
+            if 'status' in data:
+                valid_admin_statuses = ['SUSPENDED', 'CANCELLED', 'PREPARATION', 'IN_PROGRESS']
+                if data['status'] in valid_admin_statuses:
+                    o.status = data['status']
+                # Ignore invalid status if provided
+                del data['status']
+                
             for k, v in data.items():
                 if hasattr(o, k): setattr(o, k, v)
             o.save()

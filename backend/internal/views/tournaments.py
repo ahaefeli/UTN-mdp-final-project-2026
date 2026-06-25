@@ -1,7 +1,10 @@
 from django.http import JsonResponse
+from datetime import datetime
 from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 from django.db import transaction
+from django.views import View
+from public.utils.standings_calculator import calculate_standings
 from core.auth import jwt_required
 from .base import BaseCrudView, parse_body
 from core.models import Tournament, TournamentEnrollment, TournamentStage, Team, Match
@@ -70,8 +73,22 @@ class TournamentView(BaseCrudView):
         data = parse_body(request)
         try:
             o = self.model.objects.get(id=tid, organization=request.user.organization)
+            original_status = o.status
+            
             for k, v in data.items():
                 if hasattr(o, k): setattr(o, k, v)
+                
+            if original_status == 'FINISHED' and o.status != 'FINISHED':
+                return JsonResponse({'error': 'No se puede reabrir un torneo ya finalizado.'}, status=400)
+            if original_status == 'CANCELLED' and o.status != 'CANCELLED':
+                return JsonResponse({'error': 'No se puede reabrir un torneo cancelado.'}, status=400)
+                
+            if original_status != o.status:
+                if o.status == 'CANCELLED':
+                    Match.objects.filter(tournament_stage__tournament=o).exclude(status__in=['FINISHED', 'CANCELLED']).update(status='CANCELLED')
+                elif o.status == 'FINISHED':
+                    Match.objects.filter(tournament_stage__tournament=o).exclude(status__in=['FINISHED', 'CANCELLED']).update(status='FINISHED')
+                    
             o.save(); return JsonResponse({'data': serialize_tournament(o)}, status=200)
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
@@ -124,6 +141,10 @@ class TournamentStageView(BaseCrudView):
     def post(self, request, *args, **kwargs):
         data = parse_body(request)
         if not all(k in data for k in ['tournament_id', 'date', 'name']): return JsonResponse({'error': 'Missing fields'}, status=400)
+        
+        # Parseo explícito para evitar fallas de tipado en memoria
+        data['date'] = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        
         try: return JsonResponse({'data': serialize_stage(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
@@ -134,3 +155,20 @@ class TournamentStageView(BaseCrudView):
             if Match.objects.filter(tournament_stage=s).exists(): return JsonResponse({'error': 'Has matches'}, status=400)
             s.delete(); return JsonResponse({'message': 'Deleted'}, status=200)
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+
+@method_decorator(jwt_required, name='dispatch')
+class InternalStandingsView(View):
+    def get(self, request, tournament_id, *args, **kwargs):
+        try:
+            tournament = Tournament.objects.get(id=tournament_id)
+        except Tournament.DoesNotExist:
+            return JsonResponse({'error': 'Torneo no encontrado'}, status=404)
+        
+        if tournament.organization_id != request.user.organization_id:
+            return JsonResponse({'error': 'No autorizado'}, status=403)
+            
+        try:
+            standings = calculate_standings(str(tournament_id))
+            return JsonResponse(standings, safe=False, status=200)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)

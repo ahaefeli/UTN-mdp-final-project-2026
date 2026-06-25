@@ -21,6 +21,8 @@ class TeamView(BaseCrudView):
         qs = self.model.objects.filter(is_deleted=False).order_by('id')
         if request.user.role == 'CLUB_ADMIN':
             qs = qs.filter(club=request.user.club)
+        elif request.user.role == 'COACH':
+            qs = qs.filter(coach=request.user)
         else:
             cid = request.GET.get('club_id')
             if cid: qs = qs.filter(club_id=cid)
@@ -62,6 +64,9 @@ class TeamView(BaseCrudView):
             t = self.model.objects.get(id=tid, is_deleted=False)
             if request.user.role == 'CLUB_ADMIN' and t.club != request.user.club:
                 return JsonResponse({'error': 'Forbidden'}, status=403)
+            if 'players' in data:
+                players_ids = data.pop('players')
+                t.players.set(players_ids)
             for k, v in data.items():
                 if hasattr(t, k): setattr(t, k, v)
             t.save(); return JsonResponse({'data': serialize_team(t)}, status=200)

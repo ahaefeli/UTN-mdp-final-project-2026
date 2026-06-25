@@ -17,6 +17,26 @@ export const teamService = {
       console.error('Error al obtener equipos por categoría y rama:', error);
       throw error;
     }
+  },
+
+  async getTeams(params = {}) {
+    try {
+      const response = await apiClient.get('internal/equipos/', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener equipos:', error);
+      throw error;
+    }
+  },
+
+  async updateTeam(id, teamData) {
+    try {
+      const response = await apiClient.put(`internal/equipos/${id}/`, teamData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error al actualizar equipo con ID ${id}:`, error);
+      throw error;
+    }
   }
 };
 

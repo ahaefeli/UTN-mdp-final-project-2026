@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/';
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/';
 const adaptMatchesForUI = (apiMatches) => {
   return apiMatches.map(match => {
     let localSetsWon = 0;
@@ -88,8 +88,8 @@ export default function TorneoDetallePage() {
       try {
         setIsLoading(true);
         const [matchesRes, standingsRes] = await Promise.all([
-          fetch(`http://${NEXT_PUBLIC_API_URL}/public/partidos/?tournament_id=${id}`),
-          fetch(`http://${NEXT_PUBLIC_API_URL}/public/torneos/${id}/posiciones/`)
+          fetch(`${BASE_URL}/public/partidos/?tournament_id=${id}`),
+          fetch(`${BASE_URL}/public/torneos/${id}/posiciones/`)
         ]);
         if (!matchesRes.ok || !standingsRes.ok) throw new Error("Error fetching");
         
