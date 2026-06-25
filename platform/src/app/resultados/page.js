@@ -103,7 +103,7 @@ export default function ResultadosPosicionesPage() {
           setIsLoadingTournaments(true);
           setError('');
           const token = typeof window !== 'undefined' ? localStorage.getItem('lnv_token') : '';
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.88.24:8000';
           
           const response = await fetch(`${baseUrl}/internal/torneos/`, {
             headers: {
@@ -143,7 +143,7 @@ export default function ResultadosPosicionesPage() {
           setIsLoadingData(true);
           setError('');
           const token = typeof window !== 'undefined' ? localStorage.getItem('lnv_token') : '';
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.88.24:8000';
           
           const headers = {
             'Authorization': `Bearer ${token}`,

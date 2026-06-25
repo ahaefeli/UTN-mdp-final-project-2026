@@ -37,7 +37,7 @@ export default function LoginPage() {
       router.push("/");
     } catch (err) {
       console.error("Login failure:", err);
-      let errorMsg = "Credenciales inválidas o error de conexión con el backend.";
+      let errorMsg = "Credenciales inválidas";
       if (err && err.response && err.response.data && err.response.data.error) {
         errorMsg = err.response.data.error;
       }

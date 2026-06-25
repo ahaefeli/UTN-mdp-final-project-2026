@@ -41,7 +41,7 @@ export default function LandingPage() {
 
   const navigateToLogin = (e) => {
     e.preventDefault();
-    window.location.href = "http://192.168.1.226:3001/login";
+    window.location.href = "http://192.168.88.24:3001/login";
   };
 
 
@@ -95,7 +95,7 @@ export default function LandingPage() {
         {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
         <div className="flex items-center gap-4">
           <a
-            href="http://192.168.1.226:3001/login"
+            href="http://192.168.88.24:3001/login"
             onClick={navigateToLogin}
             className="bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-[11px] md:text-sm py-2 px-3 md:py-2.5 md:px-5 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 whitespace-nowrap hidden sm:flex"
           >
@@ -142,7 +142,7 @@ export default function LandingPage() {
             </Link>
             <hr />
             <a
-              href="http://192.168.1.226:3001/login"
+              href="http://192.168.88.24:3001/login"
               onClick={(e) => {
                 setIsMobileMenuOpen(false);
                 navigateToLogin(e);

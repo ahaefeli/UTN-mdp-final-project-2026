@@ -3,7 +3,7 @@ import axios from 'axios';
 class ApiService {
     constructor() {
         this.client = axios.create({
-            baseURL: 'http://127.0.0.1:8000/api/internal/'
+            baseURL: 'http://192.168.88.24:8000/public/'
         });
     }
 

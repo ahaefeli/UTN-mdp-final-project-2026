@@ -41,7 +41,7 @@ export default function TorneosPage() {
         setIsLoading(true);
         setError(null);
 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/internal';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.88.24:8000/public';
         const params = new URLSearchParams();
 
         if (searchTerm) {
@@ -184,13 +184,13 @@ export default function TorneosPage() {
         {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
         <div className="flex items-center gap-4">
           <a
-            href="http://192.168.1.226:3001/login"
+            href="http://192.168.88.24:3001/login"
             onClick={navigateToLogin}
             className="bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-[11px] md:text-sm py-2 px-3 md:py-2.5 md:px-5 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 whitespace-nowrap hidden sm:flex"
           >
             Acceso Clubes
           </a>
-          <a href="http://192.168.1.226:3001/login" onClick={navigateToLogin} className="hidden sm:block flex-shrink-0">
+          <a href="http://192.168.88.24:3001/login" onClick={navigateToLogin} className="hidden sm:block flex-shrink-0">
             <svg className="w-6 h-6 text-[#001F54] cursor-pointer hover:opacity-80 transition-opacity shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -236,7 +236,7 @@ export default function TorneosPage() {
             </Link>
             <hr />
             <a
-              href="http://192.168.1.226:3001/login"
+              href="http://192.168.88.24:3001/login"
               onClick={(e) => {
                 setIsMobileMenuOpen(false);
                 navigateToLogin(e);
@@ -295,8 +295,8 @@ export default function TorneosPage() {
           </div>
 
           {/* Filtros (Ligas, Rama y Categoría) */}
-          <div className="flex gap-4 items-center flex-wrap">
-            {/* Select de Ligas */}
+          {/* <div className="flex gap-4 items-center flex-wrap">
+             Select de Ligas 
             <select
               value={selectedLiga}
               onChange={(e) => setSelectedLiga(e.target.value)}
@@ -307,7 +307,7 @@ export default function TorneosPage() {
               <option value="Liga Marplatense">Liga Marplatense</option>
             </select>
 
-            {/* Select de Rama */}
+             Select de Rama 
             <select
               value={selectedRama}
               onChange={(e) => setSelectedRama(e.target.value)}
@@ -318,7 +318,7 @@ export default function TorneosPage() {
               <option value="Masculino">Masculino</option>
             </select>
 
-            {/* Select de Categoría */}
+             Select de Categoría 
             <select
               value={selectedCategoria}
               onChange={(e) => setSelectedCategoria(e.target.value)}
@@ -333,7 +333,7 @@ export default function TorneosPage() {
               <option value="Primera">Primera</option>
               <option value="Maxi">Maxi</option>
             </select>
-          </div>
+          </div> */}
 
         </div>
       </div>
