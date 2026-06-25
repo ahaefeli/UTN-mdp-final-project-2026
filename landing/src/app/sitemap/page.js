@@ -51,6 +51,16 @@ export default function SitemapPage() {
           >
             Reglamento
           </Link>
+          <Link 
+            href="/plataforma" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${
+              pathname === '/plataforma' 
+                ? 'text-[#001F54] border-orange-500 font-bold' 
+                : 'text-slate-600 border-transparent hover:text-[#001F54]'
+            }`}
+          >
+            La Plataforma
+          </Link>
         </nav>
 
         {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
@@ -98,6 +108,13 @@ export default function SitemapPage() {
 
             <Link href="/reglamento" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Reglamento
+            </Link>
+            <Link 
+              href="/plataforma" 
+              onClick={() => setIsMobileMenuOpen(false)} 
+              className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
+            >
+              La Plataforma
             </Link>
             <hr />
             <a
@@ -166,12 +183,6 @@ export default function SitemapPage() {
                 <Link href="/equipos" className="group flex items-center gap-1.5 text-slate-600 hover:text-[#001F54] hover:translate-x-1 transition-all text-sm font-bold">
                   <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500" />
                   <span>Equipos</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/resultados" className="group flex items-center gap-1.5 text-slate-600 hover:text-[#001F54] hover:translate-x-1 transition-all text-sm font-bold">
-                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500" />
-                  <span>Resultados y Posiciones</span>
                 </Link>
               </li>
               <li>
