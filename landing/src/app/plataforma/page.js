@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Trophy, Building, Activity } from 'lucide-react';
 
 export default function PlataformaPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -54,7 +55,7 @@ export default function PlataformaPage() {
                 : 'text-slate-600 border-transparent hover:text-[#001F54]'
             }`}
           >
-            La Plataforma
+            Conocenos
           </Link>
         </nav>
 
@@ -109,7 +110,7 @@ export default function PlataformaPage() {
               onClick={() => setIsMobileMenuOpen(false)} 
               className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
             >
-              La Plataforma
+              Conocenos
             </Link>
             <hr />
             <a
@@ -128,54 +129,106 @@ export default function PlataformaPage() {
       </header>
 
       {/* 2. HERO SECTION */}
-      <section className="bg-[#f4f7f9] w-full min-h-[350px] md:min-h-[420px] overflow-hidden select-none border-b border-slate-200/50 flex items-center">
-        <div className="max-w-7xl mx-auto w-full px-6 md:px-12 lg:px-20 py-12 md:py-16 text-center">
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-[#001F54] uppercase leading-[0.95] tracking-tight mb-6">
-            ACERCA DE <br />
-            <span className="text-[#F97316]">VOLEYHUB</span>
+      <section className="bg-[#f4f7f9] w-full min-h-[300px] md:min-h-[350px] overflow-hidden select-none border-b border-slate-200/50 flex items-center py-12">
+        <div className="max-w-7xl mx-auto w-full px-6 md:px-12 lg:px-20 text-center">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black uppercase leading-tight tracking-tight mb-6">
+            <span className="text-[#001F54]">Transformando el Vóley</span> <br className="hidden sm:inline" />
+            <span className="text-[#F97316]">Punto a Punto</span>
           </h1>
-          <p className="text-slate-600 text-base sm:text-lg font-semibold max-w-2xl mx-auto leading-relaxed">
-            La plataforma integral diseñada para digitalizar y profesionalizar la gestión de ligas, clubes y torneos de vóley.
+          <p className="text-slate-800 text-lg md:text-xl font-semibold max-w-3xl mx-auto leading-relaxed">
+            VOLEYHUB nace para resolver el caos administrativo del deporte federado y amateur. No somos solo un software; somos el nexo que une a ligas, clubes y apasionados del vóley en un ecosistema ágil, transparente y conectado en tiempo real.
           </p>
         </div>
       </section>
 
-      {/* 3. BENEFICIOS */}
-      <main className="py-20 px-6 lg:px-16 max-w-7xl mx-auto w-full flex-grow">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      {/* 3. CONTENIDO PRINCIPAL */}
+      <main className="py-12 px-6 lg:px-16 max-w-7xl mx-auto w-full flex-grow flex flex-col gap-12">
+        
+        {/* Bloque de Soluciones */}
+        <section className="flex flex-col gap-8">
+          <div className="text-center">
+            <h2 className="text-3xl md:text-4xl font-black text-[#001F54] uppercase tracking-tight">¿Qué resolvemos?</h2>
+            <p className="text-slate-500 font-bold text-sm mt-2">Soluciones integrales diseñadas para potenciar cada rol del ecosistema deportivo</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Tarjeta 1 */}
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col gap-4">
+              <div className="w-14 h-14 bg-orange-50 text-[#F97316] rounded-full flex items-center justify-center flex-shrink-0">
+                <Trophy className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-[#001F54]">Para las Ligas</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Automatización total de fixtures, gestión de actas digitales y control de sanciones sin planillas de papel.
+              </p>
+            </div>
+
+            {/* Tarjeta 2 */}
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col gap-4">
+              <div className="w-14 h-14 bg-orange-50 text-[#F97316] rounded-full flex items-center justify-center flex-shrink-0">
+                <Building className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-[#001F54]">Para los Clubes</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Control centralizado de pases, fichajes de buena fe y legajos digitales de cada jugador en un solo clic.
+              </p>
+            </div>
+
+            {/* Tarjeta 3 */}
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col gap-4">
+              <div className="w-14 h-14 bg-orange-50 text-[#F97316] rounded-full flex items-center justify-center flex-shrink-0">
+                <Activity className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-[#001F54]">Para los Jugadores</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Estadísticas en vivo, seguimiento de posiciones del torneo y notificaciones al instante de sus próximos partidos.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        {/* Misión y Visión */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-slate-200/50 pt-12">
           
-          <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 p-8 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-6 border border-orange-100">
-              <span className="text-[#F97316] text-3xl font-black">1</span>
-            </div>
-            <h3 className="text-xl font-black text-[#001F54] mb-4 uppercase tracking-tight">Gestión Simplificada</h3>
-            <p className="text-sm font-semibold text-slate-500 leading-relaxed">
-              Automatiza la carga de partidos, resultados y tablas de posiciones en tiempo real. Olvídate del papel.
+          {/* Misión */}
+          <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-4">
+            <h3 className="text-2xl font-bold text-[#001F54]">Nuestra Misión</h3>
+            <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+              Digitalizar y simplificar la gestión deportiva del vóley, eliminando la burocracia para que las organizaciones puedan enfocarse en lo que de verdad importa: hacer crecer el deporte.
             </p>
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 p-8 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-6 border border-orange-100">
-              <span className="text-[#F97316] text-3xl font-black">2</span>
-            </div>
-            <h3 className="text-xl font-black text-[#001F54] mb-4 uppercase tracking-tight">Para Jugadores</h3>
-            <p className="text-sm font-semibold text-slate-500 leading-relaxed">
-              Perfiles individuales, estadísticas de temporada y seguimiento de torneos al alcance de la mano.
+          {/* Visión */}
+          <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-4">
+            <h3 className="text-2xl font-bold text-[#001F54]">Nuestra Visión</h3>
+            <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+              Convertirnos en la plataforma de gestión y comunidad de vóley referente en toda la región, impulsando la profesionalización de los torneos mediante innovación tecnológica y datos accesibles.
             </p>
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 p-8 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-6 border border-orange-100">
-              <span className="text-[#F97316] text-3xl font-black">3</span>
-            </div>
-            <h3 className="text-xl font-black text-[#001F54] mb-4 uppercase tracking-tight">Escalabilidad Total</h3>
-            <p className="text-sm font-semibold text-slate-500 leading-relaxed">
-              Diseñado para soportar múltiples ligas, ramas y categorías manteniendo un rendimiento óptimo.
-            </p>
-          </div>
+        </section>
 
-        </div>
       </main>
+
+      {/* Call to Action Final */}
+      <section className="w-full bg-[#001F54]/5 border-t border-slate-200/50">
+        <div className="max-w-7xl mx-auto flex flex-col items-center text-center py-16 px-4">
+          <h2 className="text-3xl font-black text-[#001F54] mb-4">
+            ¿Listo para llevar tu liga al siguiente nivel?
+          </h2>
+          <p className="text-lg text-slate-700 mb-8 max-w-2xl leading-relaxed">
+            Unite a la red de VOLEYHUB y empezá a gestionar tus torneos de forma inteligente, rápida y 100% digital.
+          </p>
+          <Link 
+            href="/contacto" 
+            className="bg-[#F97316] text-white px-8 py-3 rounded-full font-bold shadow-md hover:scale-105 transition-transform inline-block"
+          >
+            Contactanos ahora
+          </Link>
+        </div>
+      </section>
 
       {/* 4. FOOTER PÚBLICO */}
       <footer className="bg-slate-950 text-white pt-16 pb-8 px-6 lg:px-16 w-full select-none border-t border-slate-900/60 relative overflow-hidden">
@@ -223,12 +276,7 @@ export default function PlataformaPage() {
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
                   </svg>
                 </a>
-                {/* WhatsApp Icon */}
-                <a href="#" className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 hover:text-orange-500 text-blue-200 transition-all duration-200" title="WhatsApp">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.458L0 24zm6.59-4.846c1.666.988 3.311 1.488 4.965 1.489 5.568 0 10.104-4.537 10.107-10.108.002-2.699-1.044-5.237-2.949-7.144C16.865 1.48 14.333.435 11.64.435 6.072.435 1.535 4.973 1.533 10.542c0 1.765.485 3.491 1.456 5.07l-.991 3.618 3.65-.956zm12.38-5.385c-.328-.164-1.942-.958-2.242-1.069-.3-.109-.519-.164-.738.164-.219.328-.847 1.069-1.039 1.288-.192.219-.384.246-.712.082-1.391-.698-2.285-1.161-3.197-2.733-.243-.419.243-.389.697-1.293.076-.153.038-.287-.019-.397-.058-.11-.519-1.251-.712-1.716-.188-.453-.378-.39-.519-.397-.134-.007-.287-.008-.438-.008-.151 0-.397.057-.604.284-.206.227-.788.771-.788 1.881 0 1.11.808 2.183.92 2.336.112.153 1.59 2.428 3.85 3.407.538.232.957.371 1.284.475.54.172 1.03.147 1.417.09.432-.064 1.942-.795 2.216-1.56.274-.766.274-1.423.192-1.56-.082-.138-.3-.219-.628-.383z" />
-                  </svg>
-                </a>
+                
               </div>
             </div>
 
