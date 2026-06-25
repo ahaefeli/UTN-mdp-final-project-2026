@@ -75,6 +75,60 @@ export const tournamentService = {
       console.error('Error al agregar fecha:', error);
       throw error;
     }
+  },
+
+  /**
+   * Actualiza un torneo existente.
+   * @param {string} tournamentId - UUID del torneo.
+   * @param {object} tournamentData - Payload de actualización.
+   * @returns {Promise<object>} Torneo actualizado.
+   */
+  async updateTournament(tournamentId, tournamentData) {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('lnv_token') : '';
+      const response = await apiClient.put(`internal/torneos/${tournamentId}/`, tournamentData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar el torneo:', error);
+      if (error.response) {
+        const { status } = error.response;
+        if (status === 401 || status === 403) {
+          throw new Error('Permisos insuficientes o sesión expirada');
+        }
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Elimina una fecha (stage) de un torneo.
+   * @param {string|number} stageId - ID de la fecha.
+   * @returns {Promise<object>} Respuesta del servidor.
+   */
+  async deleteStage(stageId) {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('lnv_token') : '';
+      const response = await apiClient.delete('internal/torneos/fechas/', {
+        params: { id: stageId },
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar fecha:', error);
+      if (error.response) {
+        const { status } = error.response;
+        if (status === 401 || status === 403) {
+          throw new Error('Permisos insuficientes o sesión expirada');
+        }
+      }
+      throw error;
+    }
   }
 };
 

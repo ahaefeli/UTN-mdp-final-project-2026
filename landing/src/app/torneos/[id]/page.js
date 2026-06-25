@@ -30,7 +30,7 @@ const adaptMatchesForUI = (apiMatches) => {
     return {
       id: match.id || crypto.randomUUID(),
       category: match.tournament_stage_name || "Fase Regular",
-      location: "Sede a confirmar",
+      location:match.location || "Sede a confirmar",
       status: match.status === "IN_PROGRESS" ? "live" : match.status.toLowerCase(),
       statusText: match.status === "IN_PROGRESS" ? "EN VIVO" : match.status === "FINISHED" ? "Finalizado" : "Próximamente",
       team1: {
@@ -248,78 +248,6 @@ export default function TorneoDetallePage() {
           </h1>
         </div>
 
-        {/* 3. BARRA DE FILTROS */}
-        <section className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 mb-10 select-none">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Categoría Filter */}
-            <div className="flex flex-col">
-              <label className="text-[11px] font-black text-slate-500 tracking-wider mb-2 uppercase">
-                Categoría
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full bg-white border border-slate-200 hover:border-slate-350 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-700 appearance-none outline-none focus:border-[#001F54] transition-all pr-10 cursor-pointer shadow-sm"
-                >
-                  <option value="Primera División">Primera División</option>
-                  <option value="Sub-21">Sub-21</option>
-                  <option value="Sub-18">Sub-18</option>
-                  <option value="Sub-16">Sub-16</option>
-                </select>
-                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-
-            {/* Rama Filter */}
-            <div className="flex flex-col">
-              <label className="text-[11px] font-black text-slate-500 tracking-wider mb-2 uppercase">
-                Rama
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedBranch}
-                  onChange={(e) => setSelectedBranch(e.target.value)}
-                  className="w-full bg-white border border-slate-200 hover:border-slate-350 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-700 appearance-none outline-none focus:border-[#001F54] transition-all pr-10 cursor-pointer shadow-sm"
-                >
-                  <option value="Masculino">Masculino</option>
-                  <option value="Femenino">Femenino</option>
-                  <option value="Mixto">Mixto</option>
-                </select>
-                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-
-            {/* Jornada Filter */}
-            <div className="flex flex-col">
-              <label className="text-[11px] font-black text-slate-500 tracking-wider mb-2 uppercase">
-                Jornada
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedFixture}
-                  onChange={(e) => setSelectedFixture(e.target.value)}
-                  className="w-full bg-white border border-slate-200 hover:border-slate-350 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-700 appearance-none outline-none focus:border-[#001F54] transition-all pr-10 cursor-pointer shadow-sm"
-                >
-                  <option value="Fecha 5 (Actual)">Fecha 5 (Actual)</option>
-                  <option value="Fecha 4">Fecha 4</option>
-                  <option value="Fecha 3">Fecha 3</option>
-                  <option value="Fecha 2">Fecha 2</option>
-                  <option value="Fecha 1">Fecha 1</option>
-                </select>
-                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </section>
 
         {/* 4. GRILLA PRINCIPAL */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -332,9 +260,6 @@ export default function TorneoDetallePage() {
               <h2 className="text-2xl font-black text-[#001F54] tracking-tight">
                 Últimos Partidos
               </h2>
-              <span className="bg-orange-50 border border-orange-100 text-[#F97316] text-[10px] font-black tracking-widest px-3 py-1.5 rounded-lg uppercase shadow-sm">
-                FECHA 5
-              </span>
             </div>
 
             {/* LISTADO DE TARJETAS */}

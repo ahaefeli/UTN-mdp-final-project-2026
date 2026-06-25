@@ -41,7 +41,7 @@ export default function TorneosPage() {
         setIsLoading(true);
         setError(null);
 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/internal';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/public';
         const params = new URLSearchParams();
 
         if (searchTerm) {
