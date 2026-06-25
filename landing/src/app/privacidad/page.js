@@ -50,6 +50,16 @@ export default function PrivacidadPage() {
           >
             Reglamento
           </Link>
+          <Link 
+            href="/plataforma" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${
+              pathname === '/plataforma' 
+                ? 'text-[#001F54] border-orange-500 font-bold' 
+                : 'text-slate-600 border-transparent hover:text-[#001F54]'
+            }`}
+          >
+            La Plataforma
+          </Link>
         </nav>
 
         {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
@@ -97,6 +107,13 @@ export default function PrivacidadPage() {
 
             <Link href="/reglamento" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Reglamento
+            </Link>
+            <Link 
+              href="/plataforma" 
+              onClick={() => setIsMobileMenuOpen(false)} 
+              className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
+            >
+              La Plataforma
             </Link>
             <hr />
             <a

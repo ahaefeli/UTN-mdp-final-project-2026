@@ -324,10 +324,10 @@ export default function ContactoPage() {
                       Correo Electrónico
                     </span>
                     <a
-                      href="mailto:info@liganecocheavoley.com"
+                      href="mailto:info@voleyhub.com"
                       className="font-bold text-[#001F54] hover:text-[#002F87] text-sm md:text-base transition-colors"
                     >
-                      info@liganecocheavoley.com
+                      info@voleyhub.com
                     </a>
                   </div>
                 </div>
