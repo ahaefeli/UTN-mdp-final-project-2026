@@ -75,6 +75,7 @@ export default function TorneoDetallePage() {
   const [matches, setMatches] = useState([]);
   const [standings, setStandings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Estados de Filtros
   const [selectedCategory, setSelectedCategory] = useState("Primera División");
@@ -158,6 +159,16 @@ export default function TorneoDetallePage() {
           >
             Reglamento
           </Link>
+          <Link 
+            href="/plataforma" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${
+              pathname === '/plataforma' 
+                ? 'text-[#001F54] border-orange-500 font-bold' 
+                : 'text-slate-600 border-transparent hover:text-[#001F54]'
+            }`}
+          >
+            La Plataforma
+          </Link>
         </nav>
 
         {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
@@ -177,15 +188,55 @@ export default function TorneoDetallePage() {
 
           {/* Mobile hamburger menu button */}
           <button
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="flex sm:hidden items-center justify-center p-2 rounded-lg text-[#001F54] hover:bg-slate-50 transition-colors focus:outline-none"
             aria-label="Alternar menú móvil"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            {isMobileMenuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
           </button>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        {isMobileMenuOpen && (
+          <div className="absolute top-20 left-0 w-full bg-white shadow-lg flex-col p-6 z-40 flex flex-col gap-4">
+            <Link href="/torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+              Torneos
+            </Link>
+            <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+              Equipos
+            </Link>
+
+            <Link href="/reglamento" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+              Reglamento
+            </Link>
+            <Link 
+              href="/plataforma" 
+              onClick={() => setIsMobileMenuOpen(false)} 
+              className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
+            >
+              La Plataforma
+            </Link>
+            <hr />
+            <a
+              href="/login"
+              onClick={(e) => {
+                setIsMobileMenuOpen(false);
+                navigateToLogin(e);
+              }}
+              className="w-full bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-center py-3 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 text-sm"
+            >
+              Acceso Clubes
+            </a>
+          </div>
+        )}
 
       </header>
 
