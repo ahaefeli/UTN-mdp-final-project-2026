@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/';
 const adaptMatchesForUI = (apiMatches) => {
   return apiMatches.map(match => {
     let localSetsWon = 0;
@@ -30,7 +30,7 @@ const adaptMatchesForUI = (apiMatches) => {
     return {
       id: match.id || crypto.randomUUID(),
       category: match.tournament_stage_name || "Fase Regular",
-      location:match.location || "Sede a confirmar",
+      location: "Sede a confirmar",
       status: match.status === "IN_PROGRESS" ? "live" : match.status.toLowerCase(),
       statusText: match.status === "IN_PROGRESS" ? "EN VIVO" : match.status === "FINISHED" ? "Finalizado" : "Próximamente",
       team1: {
@@ -88,8 +88,8 @@ export default function TorneoDetallePage() {
       try {
         setIsLoading(true);
         const [matchesRes, standingsRes] = await Promise.all([
-          fetch(`${BASE_URL}/public/partidos/?tournament_id=${id}`),
-          fetch(`${BASE_URL}/public/torneos/${id}/posiciones/`)
+          fetch(`http://127.0.0.1:8000/public/partidos/?tournament_id=${id}`),
+          fetch(`http://127.0.0.1:8000/public/torneos/${id}/posiciones/`)
         ]);
         if (!matchesRes.ok || !standingsRes.ok) throw new Error("Error fetching");
         
@@ -127,7 +127,7 @@ export default function TorneoDetallePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden custom_container">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
       
       {/* 1. HEADER PÚBLICO */}
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100 h-20 w-full flex items-center justify-between px-4 md:px-8 lg:px-16 select-none relative">
@@ -167,7 +167,7 @@ export default function TorneoDetallePage() {
                 : 'text-slate-600 border-transparent hover:text-[#001F54]'
             }`}
           >
-            La Plataforma
+            Conocenos
           </Link>
         </nav>
 
@@ -222,7 +222,7 @@ export default function TorneoDetallePage() {
               onClick={() => setIsMobileMenuOpen(false)} 
               className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
             >
-              La Plataforma
+              Conocenos
             </Link>
             <hr />
             <a
@@ -248,6 +248,78 @@ export default function TorneoDetallePage() {
           </h1>
         </div>
 
+        {/* 3. BARRA DE FILTROS */}
+        <section className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 mb-10 select-none">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Categoría Filter */}
+            <div className="flex flex-col">
+              <label className="text-[11px] font-black text-slate-500 tracking-wider mb-2 uppercase">
+                Categoría
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full bg-white border border-slate-200 hover:border-slate-350 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-700 appearance-none outline-none focus:border-[#001F54] transition-all pr-10 cursor-pointer shadow-sm"
+                >
+                  <option value="Primera División">Primera División</option>
+                  <option value="Sub-21">Sub-21</option>
+                  <option value="Sub-18">Sub-18</option>
+                  <option value="Sub-16">Sub-16</option>
+                </select>
+                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* Rama Filter */}
+            <div className="flex flex-col">
+              <label className="text-[11px] font-black text-slate-500 tracking-wider mb-2 uppercase">
+                Rama
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="w-full bg-white border border-slate-200 hover:border-slate-350 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-700 appearance-none outline-none focus:border-[#001F54] transition-all pr-10 cursor-pointer shadow-sm"
+                >
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="Mixto">Mixto</option>
+                </select>
+                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* Jornada Filter */}
+            <div className="flex flex-col">
+              <label className="text-[11px] font-black text-slate-500 tracking-wider mb-2 uppercase">
+                Jornada
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedFixture}
+                  onChange={(e) => setSelectedFixture(e.target.value)}
+                  className="w-full bg-white border border-slate-200 hover:border-slate-350 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-700 appearance-none outline-none focus:border-[#001F54] transition-all pr-10 cursor-pointer shadow-sm"
+                >
+                  <option value="Fecha 5 (Actual)">Fecha 5 (Actual)</option>
+                  <option value="Fecha 4">Fecha 4</option>
+                  <option value="Fecha 3">Fecha 3</option>
+                  <option value="Fecha 2">Fecha 2</option>
+                  <option value="Fecha 1">Fecha 1</option>
+                </select>
+                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
 
         {/* 4. GRILLA PRINCIPAL */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -260,6 +332,9 @@ export default function TorneoDetallePage() {
               <h2 className="text-2xl font-black text-[#001F54] tracking-tight">
                 Últimos Partidos
               </h2>
+              <span className="bg-orange-50 border border-orange-100 text-[#F97316] text-[10px] font-black tracking-widest px-3 py-1.5 rounded-lg uppercase shadow-sm">
+                FECHA 5
+              </span>
             </div>
 
             {/* LISTADO DE TARJETAS */}
@@ -572,16 +647,12 @@ export default function TorneoDetallePage() {
                 REDES
               </h4>
               <div className="flex items-center gap-3">
-                <a href="#" className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 hover:text-orange-500 text-blue-200 transition-all duration-200" title="Instagram">
+                <a href="https://www.instagram.com/voley_hub/" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 hover:text-orange-500 text-blue-200 transition-all duration-200" title="Instagram">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
                   </svg>
                 </a>
-                <a href="#" className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 hover:text-orange-500 text-blue-200 transition-all duration-200" title="WhatsApp">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.458L0 24zm6.59-4.846c1.666.988 3.311 1.488 4.965 1.489 5.568 0 10.104-4.537 10.107-10.108.002-2.699-1.044-5.237-2.949-7.144C16.865 1.48 14.333.435 11.64.435 6.072.435 1.535 4.973 1.533 10.542c0 1.765.485 3.491 1.456 5.07l-.991 3.618 3.65-.956zm12.38-5.385c-.328-.164-1.942-.958-2.242-1.069-.3-.109-.519-.164-.738.164-.219.328-.847 1.069-1.039 1.288-.192.219-.384.246-.712.082-1.391-.698-2.285-1.161-3.197-2.733-.243-.419.243-.389.697-1.293.076-.153.038-.287-.019-.397-.058-.11-.519-1.251-.712-1.716-.188-.453-.378-.39-.519-.397-.134-.007-.287-.008-.438-.008-.151 0-.397.057-.604.284-.206.227-.788.771-.788 1.881 0 1.11.808 2.183.92 2.336.112.153 1.59 2.428 3.85 3.407.538.232.957.371 1.284.475.54.172 1.03.147 1.417.09.432-.064 1.942-.795 2.216-1.56.274-.766.274-1.423.192-1.56-.082-.138-.3-.219-.628-.383z" />
-                  </svg>
-                </a>
+                
               </div>
             </div>
           </div>
