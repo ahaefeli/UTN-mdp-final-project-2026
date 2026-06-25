@@ -21,5 +21,6 @@ body {
 
 .custom_container{
   padding-top: 15vh !important;
+  padding-inline: 3vw !important;
   width: 100vw !important;
 }
