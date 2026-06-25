@@ -10,11 +10,8 @@ class PlayerView(BaseCrudView):
         if obj_id:
             try:
                 obj = self.model.objects.get(id=obj_id, role='PLAYER')
-                from django.forms.models import model_to_dict
-                data = model_to_dict(obj)
-                if 'id' not in data: data['id'] = str(obj.id)
-                if 'password' in data: del data['password']
-                return JsonResponse({'data': data}, status=200)
+                from .users import serialize_user
+                return JsonResponse({'data': serialize_user(obj)}, status=200)
             except self.model.DoesNotExist:
                 return JsonResponse({'error': 'Not found'}, status=404)
 
@@ -34,7 +31,7 @@ class PlayerView(BaseCrudView):
             if k not in ['team_id', 'organization_id'] and hasattr(self.model, k):
                 qs = qs.filter(**{k: v})
 
-        data = list(qs.values())
-        for item in data:
-            if 'password' in item: del item['password']
+        # --- Inyección de Serializador ---
+        from .users import serialize_user
+        data = [serialize_user(u) for u in qs]
         return JsonResponse({'data': data}, status=200)

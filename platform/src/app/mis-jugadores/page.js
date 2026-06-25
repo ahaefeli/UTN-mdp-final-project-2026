@@ -23,6 +23,7 @@ export default function MisJugadoresPage() {
   
   // Selección temporal para asignación de equipos
   const [selectedTeamsMap, setSelectedTeamsMap] = useState({});
+  const [editingAssignmentMap, setEditingAssignmentMap] = useState({});
 
   // Estados para Modal de Nuevo Jugador
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -116,10 +117,34 @@ export default function MisJugadoresPage() {
       // Actualizar el equipo en el backend
       await teamService.updateTeam(team.id, { players: updatedPlayerIds });
       setSuccessMsg(`¡Jugador asignado a ${team.name} correctamente!`);
+      setEditingAssignmentMap(prev => ({...prev, [playerId]: false}));
       await loadAllData();
     } catch (err) {
       console.error('Error al asignar jugador:', err);
       setErrorMsg(err.response?.data?.error || 'No se pudo asignar el jugador al equipo.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUnassignPlayer = async (playerId, teamId) => {
+    if (!confirm('¿Seguro que deseas remover a este jugador del equipo?')) return;
+    setErrorMsg('');
+    setSuccessMsg('');
+    setIsSubmitting(true);
+    try {
+      const team = teams.find(t => t.id === teamId || t.id.toString() === teamId.toString());
+      if (!team) throw new Error('No se encontró el equipo para desasignar.');
+      
+      const existingPlayerIds = (team.players || []).map(p => p.id);
+      const updatedPlayerIds = existingPlayerIds.filter(id => id !== playerId);
+      await teamService.updateTeam(team.id, { players: updatedPlayerIds });
+      setSuccessMsg('¡Jugador desasignado del equipo correctamente!');
+      setEditingAssignmentMap(prev => ({...prev, [playerId]: false}));
+      await loadAllData();
+    } catch (err) {
+      console.error('Error al desasignar jugador:', err);
+      setErrorMsg(err.response?.data?.error || 'No se pudo desasignar el jugador.');
     } finally {
       setIsSubmitting(false);
     }
@@ -184,7 +209,8 @@ export default function MisJugadoresPage() {
                     <tr>
                       <th className={styles.th}>Nombre y Apellido</th>
                       <th className={styles.th}>DNI</th>
-                      <th className={styles.th}>Usuario</th>
+                      <th className={styles.th}>Email</th>
+                      <th className={styles.th}>Apto Físico</th>
                       <th className={styles.th}>Estado</th>
                       <th className={styles.th} style={{ width: '250px' }}>Asignación de Equipo</th>
                     </tr>
@@ -196,32 +222,65 @@ export default function MisJugadoresPage() {
                           {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
                         </td>
                         <td className={styles.td}>{player.dni || '-'}</td>
-                        <td className={styles.td}>{player.username}</td>
+                        <td className={styles.td}>{player.email || '-'}</td>
                         <td className={styles.td}>
-                          <span className={`${styles.badge} ${player.is_active ? styles.badgeActive : styles.badgeInactive}`}>
-                            {player.is_active ? 'Activo' : 'Inactivo'}
+                          <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', backgroundColor: player.medical_certificate ? '#dcfce7' : '#fef2f2', color: player.medical_certificate ? '#166534' : '#991b1b' }}>
+                            {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
                           </span>
                         </td>
                         <td className={styles.td}>
-                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                            <select
-                              value={selectedTeamsMap[player.id] || ''}
-                              onChange={(e) => setSelectedTeamsMap({ ...selectedTeamsMap, [player.id]: e.target.value })}
-                              style={{ padding: '0.35rem 0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.75rem', fontWeight: 600, color: '#334155', flex: 1 }}
-                            >
-                              <option value="">Seleccione equipo...</option>
-                              {teams.map((team) => (
-                                <option key={team.id} value={team.id}>{team.name}</option>
-                              ))}
-                            </select>
-                            <button
-                              onClick={() => handleAssignPlayerToTeam(player.id, selectedTeamsMap[player.id])}
-                              disabled={isSubmitting}
-                              style={{ backgroundColor: '#002F87', color: 'white', border: 'none', padding: '0.35rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                            >
-                              Asignar
-                            </button>
-                          </div>
+                          <span 
+                            className={`${styles.badge} ${player.team_info ? styles.badgeActive : styles.badgeInactive}`}
+                            style={!player.team_info ? { backgroundColor: '#f1f5f9', color: '#64748b' } : {}}
+                          >
+                            {player.team_info ? 'Activo' : 'Sin Equipo'}
+                          </span>
+                        </td>
+                        <td className={styles.td}>
+                          {player.team_info && !editingAssignmentMap[player.id] ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '0.4rem 0.6rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
+                                {player.team_info.category} - {player.team_info.branch === 'MALE' ? 'Masculino' : player.team_info.branch === 'FEMALE' ? 'Femenino' : player.team_info.branch}
+                              </span>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button 
+                                  onClick={() => setEditingAssignmentMap(prev => ({...prev, [player.id]: true}))}
+                                  style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                                >
+                                  Editar
+                                </button>
+                                <button 
+                                  onClick={() => handleUnassignPlayer(player.id, player.team_info.id)}
+                                  disabled={isSubmitting}
+                                  style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                                >
+                                  Desasignar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                              <select
+                                value={selectedTeamsMap[player.id] || ''}
+                                onChange={(e) => setSelectedTeamsMap({ ...selectedTeamsMap, [player.id]: e.target.value })}
+                                style={{ padding: '0.35rem 0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.75rem', fontWeight: 600, color: '#334155', flex: 1 }}
+                              >
+                                <option value="">Seleccione equipo...</option>
+                                {teams.map((team) => (
+                                  <option key={team.id} value={team.id}>
+                                    {team.category} - {team.branch === 'MALE' ? 'Masculino' : team.branch === 'FEMALE' ? 'Femenino' : team.branch}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => handleAssignPlayerToTeam(player.id, selectedTeamsMap[player.id])}
+                                disabled={isSubmitting}
+                                style={{ backgroundColor: '#002F87', color: 'white', border: 'none', padding: '0.35rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                              >
+                                Asignar
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -264,7 +323,8 @@ export default function MisJugadoresPage() {
                             <tr>
                               <th className={styles.th}>Nombre y Apellido</th>
                               <th className={styles.th}>DNI</th>
-                              <th className={styles.th}>Usuario</th>
+                              <th className={styles.th}>Email</th>
+                              <th className={styles.th}>Apto Físico</th>
                               <th className={styles.th}>Estado</th>
                             </tr>
                           </thead>
@@ -275,10 +335,18 @@ export default function MisJugadoresPage() {
                                   {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
                                 </td>
                                 <td className={styles.td}>{player.dni || '-'}</td>
-                                <td className={styles.td}>{player.username}</td>
+                                <td className={styles.td}>{player.email || '-'}</td>
                                 <td className={styles.td}>
-                                  <span className={`${styles.badge} ${player.is_active ? styles.badgeActive : styles.badgeInactive}`}>
-                                    {player.is_active ? 'Activo' : 'Inactivo'}
+                                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', backgroundColor: player.medical_certificate ? '#dcfce7' : '#fef2f2', color: player.medical_certificate ? '#166534' : '#991b1b' }}>
+                                    {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
+                                  </span>
+                                </td>
+                                <td className={styles.td}>
+                                  <span 
+                                    className={`${styles.badge} ${player.team_info ? styles.badgeActive : styles.badgeInactive}`}
+                                    style={!player.team_info ? { backgroundColor: '#f1f5f9', color: '#64748b' } : {}}
+                                  >
+                                    {player.team_info ? 'Activo' : 'Sin Equipo'}
                                   </span>
                                 </td>
                               </tr>

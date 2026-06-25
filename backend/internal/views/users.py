@@ -12,6 +12,7 @@ def serialize_user(user):
     club_id = str(user.club.id) if user.club else None
     club_name = user.club.name if user.club else None
     team_id = None
+    team_info = None  # Nueva variable
     if user.role == 'COACH':
         team = user.coached_teams.first()
         if team:
@@ -19,10 +20,21 @@ def serialize_user(user):
             if not club_id and team.club:
                 club_id = str(team.club.id)
                 club_name = team.club.name
+                
     elif user.role == 'PLAYER':
-        team = user.teams_playing.first()
+        # Consulta explícita y directa para evitar caché inverso
+        from core.models import Team
+        team = Team.objects.filter(players=user, is_deleted=False).first()
+        
         if team:
             team_id = str(team.id)
+            # Empaquetar Info del Equipo
+            team_info = {
+                'id': str(team.id),
+                'name': team.name,
+                'category': team.category,
+                'branch': team.branch
+            }
             if not club_id and team.club:
                 club_id = str(team.club.id)
                 club_name = team.club.name
@@ -36,7 +48,8 @@ def serialize_user(user):
         'coach_certificate': user.coach_certificate,
         'club_id': club_id,
         'club_name': club_name,
-        'team_id': team_id
+        'team_id': team_id,
+        'team_info': team_info
     })
     return data
 

@@ -4,7 +4,38 @@ from .base import BaseCrudView, parse_body
 from core.models import Team
 
 def serialize_team(t):
-    return {'id': t.id, 'name': t.name, 'category': t.category, 'branch': t.branch, 'club_id': t.club_id, 'organization_id': t.club.organization_id if t.club else None, 'coach_id': t.coach_id, 'coach_name': f"{t.coach.first_name} {t.coach.last_name}".strip() if t.coach else None, 'tournament_id': t.tournamentenrollment_set.values_list('tournament_id', flat=True).first()}
+    # Serializar los jugadores anidados requeridos por el frontend
+    players_data = []
+    for p in t.players.all():
+        players_data.append({
+            'id': str(p.id),
+            'name': f"{p.first_name} {p.last_name}".strip(),
+            'first_name': p.first_name,
+            'last_name': p.last_name,
+            'dni': p.dni,
+            'username': p.username,
+            'email': p.email,
+            'is_active': p.is_active,
+            'medical_certificate': p.medical_certificate,
+            'team_info': {
+                'id': str(t.id),
+                'name': t.name,
+                'category': t.category,
+                'branch': t.branch
+            }
+        })
+    return {
+        'id': str(t.id),
+        'name': t.name,
+        'category': t.category,
+        'branch': t.branch,
+        'club_id': str(t.club_id) if t.club_id else None,
+        'organization_id': str(t.club.organization_id) if t.club else None,
+        'coach_id': str(t.coach_id) if t.coach_id else None,
+        'coach_name': f"{t.coach.first_name} {t.coach.last_name}".strip() if t.coach else None,
+        'tournament_id': t.tournamentenrollment_set.values_list('tournament_id', flat=True).first(),
+        'players': players_data  # Arreglo de objetos inyectado
+    }
 
 class TeamView(BaseCrudView):
     model = Team
