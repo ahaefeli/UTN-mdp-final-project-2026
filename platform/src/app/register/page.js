@@ -59,8 +59,8 @@ function PublicRegisterForm() {
           const roleFromBackend = data.role || 'CLUB_ADMIN';
           setInvitationRole(roleFromBackend);
           
-          // Si el rol es REFEREE, omitimos el paso del Club y saltamos directamente a Datos del Usuario
-          if (roleFromBackend === 'REFEREE') {
+          // Si el rol es REFEREE o SCORER, omitimos el paso del Club y saltamos directamente a Datos del Usuario
+          if (['REFEREE', 'SCORER'].includes(roleFromBackend)) {
             setStep(2);
           }
           
@@ -81,7 +81,7 @@ function PublicRegisterForm() {
 
   const handleNextStep = (e) => {
     e.preventDefault();
-    if (invitationRole === 'REFEREE') {
+    if (['REFEREE', 'SCORER'].includes(invitationRole)) {
       setStep(2);
       return;
     }
@@ -141,7 +141,7 @@ function PublicRegisterForm() {
       formData.append('last_name', lastName.trim());
 
       // Solo si es CLUB_ADMIN se envían campos y logo del club
-      if (invitationRole !== 'REFEREE') {
+      if (!['REFEREE', 'SCORER'].includes(invitationRole)) {
         formData.append('club_name', name.trim());
         formData.append('club_address', address.trim());
         formData.append('club_phone', phone.trim());
@@ -205,8 +205,8 @@ function PublicRegisterForm() {
         
         <div role="alert" className={styles.alertBox}>
           <i className="bi bi-info-circle-fill" style={{ marginRight: '0.5rem', fontSize: '1.20rem' }}></i>
-          {invitationRole === 'REFEREE' ? (
-            <span>Tu solicitud de registro como árbitro ha sido recibida con éxito. No podrás iniciar sesión hasta que el administrador de la liga apruebe tu cuenta.</span>
+          {['REFEREE', 'SCORER'].includes(invitationRole) ? (
+            <span>Tu solicitud de registro como {invitationRole === 'REFEREE' ? 'árbitro' : 'planillero'} ha sido recibida con éxito. No podrás iniciar sesión hasta que el administrador de la liga apruebe tu cuenta.</span>
           ) : (
             <span>Tu solicitud de registro ha sido recibida con éxito. No podrás iniciar sesión con tus credenciales hasta que el administrador de la liga apruebe la cuenta de tu club.</span>
           )}
@@ -221,8 +221,8 @@ function PublicRegisterForm() {
 
   return (
     <div className={styles.card}>
-      {/* Wizard Steps Indicator - Oculto para árbitros */}
-      {invitationRole !== 'REFEREE' && (
+      {/* Wizard Steps Indicator - Oculto para árbitros y planilleros */}
+      {!['REFEREE', 'SCORER'].includes(invitationRole) && (
         <div className={styles.wizardIndicator}>
           <div className={`${styles.indicatorStep} ${step >= 1 ? styles.stepActive : ''}`}>
             <span className={styles.stepNum}>1</span>
@@ -240,21 +240,25 @@ function PublicRegisterForm() {
         <h2 className={styles.title}>
           {invitationRole === 'REFEREE' 
             ? 'Registro de Árbitro'
-            : (step === 1 ? 'Completar Registro de Club' : 'Datos del Administrador')}
+            : invitationRole === 'SCORER'
+              ? 'Registro de Planillero'
+              : (step === 1 ? 'Completar Registro de Club' : 'Datos del Administrador')}
         </h2>
         <p className={styles.subtitle}>
           {invitationRole === 'REFEREE'
             ? 'Completa tus datos personales para activar tu cuenta de árbitro oficial.'
-            : (step === 1 
-                ? 'Por favor verifica y completa la información de tu club para unirse a la liga.' 
-                : 'Configura las credenciales de acceso para administrar la cuenta del club.')}
+            : invitationRole === 'SCORER'
+              ? 'Completa tus datos personales para activar tu cuenta de planillero oficial.'
+              : (step === 1 
+                  ? 'Por favor verifica y completa la información de tu club para unirse a la liga.' 
+                  : 'Configura las credenciales de acceso para administrar la cuenta del club.')}
         </p>
       </header>
 
       {errorMsg && <div className={styles.alertError}>{errorMsg}</div>}
       {errorMessage && <div className={styles.errorAlert}>{errorMessage}</div>}
 
-      {step === 1 && invitationRole !== 'REFEREE' && (
+      {step === 1 && !['REFEREE', 'SCORER'].includes(invitationRole) && (
         <form onSubmit={handleNextStep}>
           <h3 className={styles.sectionTitle}>Datos del Club</h3>
           <div className={styles.formGrid}>
@@ -353,7 +357,7 @@ function PublicRegisterForm() {
       {step === 2 && (
         <form onSubmit={handleSubmit}>
           <h3 className={styles.sectionTitle}>
-            {invitationRole === 'REFEREE' ? 'Datos Personales' : 'Datos del Administrador del Club'}
+            {['REFEREE', 'SCORER'].includes(invitationRole) ? 'Datos Personales' : 'Datos del Administrador del Club'}
           </h3>
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
@@ -443,8 +447,8 @@ function PublicRegisterForm() {
             </div>
           </div>
 
-          <div className={styles.actionsContainer} style={{ justifyContent: invitationRole === 'REFEREE' ? 'flex-end' : 'space-between', marginTop: '2rem' }}>
-            {invitationRole !== 'REFEREE' && (
+          <div className={styles.actionsContainer} style={{ justifyContent: ['REFEREE', 'SCORER'].includes(invitationRole) ? 'flex-end' : 'space-between', marginTop: '2rem' }}>
+            {!['REFEREE', 'SCORER'].includes(invitationRole) && (
               <button
                 type="button"
                 onClick={() => setStep(1)}
@@ -464,7 +468,7 @@ function PublicRegisterForm() {
               ) : (
                 <>
                   <i className="bi bi-send-fill" style={{ marginRight: '0.25rem' }}></i>
-                  {invitationRole === 'REFEREE' ? 'Completar Registro' : 'Enviar Registro'}
+                  {['REFEREE', 'SCORER'].includes(invitationRole) ? 'Completar Registro' : 'Enviar Registro'}
                 </>
               )}
             </button>

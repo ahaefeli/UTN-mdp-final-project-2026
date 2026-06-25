@@ -124,6 +124,12 @@ export default function Navbar() {
             >
               Árbitros
             </Link>
+            <Link 
+              href="/planilleros" 
+              className={`${styles.navLink} ${isActive('/planilleros') ? styles.navLinkActive : ''}`}
+            >
+              Planilleros
+            </Link>
           </>
         )}
       </div>

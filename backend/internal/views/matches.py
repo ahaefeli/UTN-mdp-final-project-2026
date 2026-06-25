@@ -62,6 +62,8 @@ class MatchView(BaseCrudView):
             qs = qs.filter(Q(local_team__players=request.user) | Q(visitor_team__players=request.user)).distinct()
         elif request.user.role == 'REFEREE':
             qs = qs.filter(referee=request.user)
+        elif request.user.role == 'SCORER':
+            qs = qs.filter(scorer=request.user)
             
         if request.GET.get('upcoming') == 'true':
             from django.utils import timezone

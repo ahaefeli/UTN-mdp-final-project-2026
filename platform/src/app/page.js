@@ -98,7 +98,7 @@ export default function RootDashboardPage() {
           loadUpcomingMatches();
         } else if (details.role === 'COACH') {
           loadUpcomingMatches();
-        } else if (details.role === 'REFEREE') {
+        } else if (details.role === 'REFEREE' || details.role === 'SCORER') {
           loadUpcomingMatches();
         } else if (details.team_id) {
           loadUpcomingMatches(details.team_id);
@@ -514,23 +514,23 @@ export default function RootDashboardPage() {
   }
 
   // ==========================================
-  // DASHBOARD EXCLUSIVO PARA ÁRBITROS
+  // DASHBOARD EXCLUSIVO PARA ÁRBITROS Y PLANILLEROS
   // ==========================================
-  if (role === 'REFEREE') {
+  if (role === 'REFEREE' || role === 'SCORER') {
     return (
       <div className={`${styles.container} custom_container`}>
         <div className={styles.scrollContent} style={{ width: '100%', padding: '1.5rem 0' }}>
           <div className={styles.dashboardLayout} style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '800px', margin: '0 auto' }}>
             
             <header>
-              <h2 className={styles.adminTitle}>Panel Arbitral</h2>
+              <h2 className={styles.adminTitle}>{role === 'REFEREE' ? 'Panel Arbitral' : 'Panel de Planillero'}</h2>
               <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.25rem' }}>
                 Bienvenido. Aquí encontrarás tus designaciones oficiales.
               </p>
             </header>
             <section className={styles.card}>
               <div className={styles.sectionHeader}>
-                <h3 className={styles.sectionTitle}>Próximos Partidos a Dirigir</h3>
+                <h3 className={styles.sectionTitle}>{role === 'REFEREE' ? 'Próximos Partidos a Dirigir' : 'Próximos Partidos a Planillar'}</h3>
               </div>
               
               {isLoadingUpcoming ? (

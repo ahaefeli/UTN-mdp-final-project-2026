@@ -188,9 +188,10 @@ class ReviewClubRequestView(View):
                 }, status=200)
 
             elif action == 'APPROVE':
-                if getattr(req_obj, 'role', 'CLUB_ADMIN') == 'REFEREE':
+                # Flexibilización: Acepta Árbitros y Planilleros
+                if getattr(req_obj, 'role', 'CLUB_ADMIN') in ['REFEREE', 'SCORER']:
                     if not req_obj.admin_email:
-                        return JsonResponse({'error': 'La solicitud no ha sido completada por el árbitro.'}, status=400)
+                        return JsonResponse({'error': 'La solicitud no ha sido completada.'}, status=400)
                         
                     with transaction.atomic():
                         username_to_check = req_obj.admin_username or req_obj.admin_email
@@ -201,7 +202,7 @@ class ReviewClubRequestView(View):
                             email=req_obj.admin_email,
                             first_name=req_obj.admin_first_name,
                             last_name=req_obj.admin_last_name,
-                            role='REFEREE',
+                            role=req_obj.role, # <--- Asignación dinámica (No harcodear REFEREE)
                             organization=request.user.organization,
                             dni=req_obj.admin_dni
                         )
@@ -209,7 +210,7 @@ class ReviewClubRequestView(View):
                         user.save()
                         req_obj.status = 'APPROVED'
                         req_obj.save()
-                    return JsonResponse({'message': 'Árbitro aprobado con éxito.', 'data': serialize_club_request(req_obj)}, status=200)
+                    return JsonResponse({'message': f'{req_obj.role} aprobado con éxito.', 'data': serialize_club_request(req_obj)}, status=200)
                 else:
                     if not req_obj.admin_email or not req_obj.club_name:
                         return JsonResponse({'error': 'La solicitud no ha sido completada por el club invitado.'}, status=400)
