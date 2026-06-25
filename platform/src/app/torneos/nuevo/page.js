@@ -181,6 +181,20 @@ export default function TorneosNuevoPage() {
     <div className={`${styles.container} custom_container`}>
       <div className="max-w-3xl mx-auto bg-white rounded-3xl border border-slate-200/60 p-8 shadow-sm">
         
+        {/* Botón de Atrás */}
+        <div className="mb-6">
+          <button
+            type="button"
+            onClick={() => router.push('/torneos')}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-[#002F87] font-black text-xs uppercase tracking-wider transition-colors duration-200 cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Volver a Torneos
+          </button>
+        </div>
+
         {/* Header */}
         <div className="border-b border-slate-100 pb-6 mb-8 text-center">
           <h1 className="text-2xl font-black text-[#002F87] tracking-tight uppercase italic">Creación de Torneo</h1>
