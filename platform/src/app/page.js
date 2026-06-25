@@ -98,6 +98,8 @@ export default function RootDashboardPage() {
           loadUpcomingMatches();
         } else if (details.role === 'COACH') {
           loadUpcomingMatches();
+        } else if (details.role === 'REFEREE') {
+          loadUpcomingMatches();
         } else if (details.team_id) {
           loadUpcomingMatches(details.team_id);
         }
@@ -505,6 +507,80 @@ export default function RootDashboardPage() {
               )}
             </section>
 
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // DASHBOARD EXCLUSIVO PARA ÁRBITROS
+  // ==========================================
+  if (role === 'REFEREE') {
+    return (
+      <div className={`${styles.container} custom_container`}>
+        <div className={styles.scrollContent} style={{ width: '100%', padding: '1.5rem 0' }}>
+          <div className={styles.dashboardLayout} style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+            
+            <header>
+              <h2 className={styles.adminTitle}>Panel Arbitral</h2>
+              <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                Bienvenido. Aquí encontrarás tus designaciones oficiales.
+              </p>
+            </header>
+            <section className={styles.card}>
+              <div className={styles.sectionHeader}>
+                <h3 className={styles.sectionTitle}>Próximos Partidos a Dirigir</h3>
+              </div>
+              
+              {isLoadingUpcoming ? (
+                <div className={styles.spinner} style={{ margin: '2rem auto' }} />
+              ) : upcomingMatches.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b', fontSize: '0.9rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem' }}>
+                  No tienes partidos asignados próximamente.
+                </div>
+              ) : (
+                <div className={styles.matchList} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {upcomingMatches.map((match) => (
+                    <div 
+                      key={match.id} 
+                      style={{ 
+                        padding: '1.25rem', 
+                        border: '1px solid #e2e8f0', 
+                        borderLeft: '5px solid #16a34a', // Verde distintivo
+                        borderRadius: '0.5rem', 
+                        backgroundColor: '#fff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                        <span style={{ color: '#002F87' }}>{match.tournament_name || 'Torneo Oficial'}</span>
+                        <span>{match.matchday_name || 'Fecha Oficial'}</span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        {match.category ? `${match.category} - ${match.branch === 'MALE' ? 'Masculino' : match.branch === 'FEMALE' ? 'Femenino' : match.branch}` : ''}
+                      </div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b', margin: '0.25rem 0' }}>
+                        {match.local_team_name} <span style={{ fontWeight: 'normal', color: '#94a3b8', fontSize: '0.85rem', margin: '0 0.5rem' }}>vs</span> {match.visitor_team_name}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.75rem', color: '#64748b', borderTop: '1px solid #f1f5f9', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <i className="bi bi-calendar-event"></i>
+                          <span style={{ fontWeight: 600 }}>{match.match_datetime ? new Date(match.match_datetime).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' }) : 'A confirmar'}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <i className="bi bi-geo-alt"></i>
+                          <span>{match.court_name ? `Cancha: ${match.court_name}` : 'A confirmar'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
         </div>
       </div>

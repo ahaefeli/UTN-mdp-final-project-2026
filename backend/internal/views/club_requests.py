@@ -29,6 +29,7 @@ def serialize_club_request(req):
         "id": str(req.id),
         "organization_id": req.organization_id,
         "token": req.token,
+        "role": req.role,
         "club_name": req.club_name,
         "club_address": req.club_address,
         "club_phone": req.club_phone,
@@ -63,11 +64,19 @@ class GenerateLinkView(View):
         token = str(req_id)
         expires_at = timezone.now() + datetime.timedelta(hours=48)
 
+        import json
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            data = {}
+        role = data.get('role', 'CLUB_ADMIN') if data else 'CLUB_ADMIN'
+
         try:
             req_obj = ClubRegistrationRequest.objects.create(
                 id=req_id,
                 organization=request.user.organization,
                 token=token,
+                role=role,
                 expires_at=expires_at,
                 status='PENDING'
             )
@@ -95,7 +104,13 @@ class ClubRequestListView(View):
         qs = ClubRegistrationRequest.objects.filter(
             organization=request.user.organization,
             status='PENDING'
-        ).exclude(club_name__isnull=True).exclude(club_name='').order_by('-created_at')
+        ).order_by('-created_at')
+        role_filter = request.GET.get('role')
+        if role_filter:
+            qs = qs.filter(role=role_filter)
+        else:
+            # Retrocompatibilidad para /clubes
+            qs = qs.exclude(club_name__isnull=True).exclude(club_name='')
 
         page = request.GET.get('page', 1)
         paginator = Paginator(qs, 10)
@@ -173,37 +188,60 @@ class ReviewClubRequestView(View):
                 }, status=200)
 
             elif action == 'APPROVE':
-                if not req_obj.admin_email or not req_obj.club_name:
-                    return JsonResponse({'error': 'La solicitud no ha sido completada por el club invitado.'}, status=400)
-                with transaction.atomic():
-                    username_to_check = req_obj.admin_username or req_obj.admin_email
-                    if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=username_to_check).exists():
-                        return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' or '{username_to_check}' already exists."}, status=400)
-
-                    club = Club.objects.create(
-                        organization=request.user.organization,
-                        name=req_obj.club_name,
-                        address=req_obj.club_address,
-                        phone=req_obj.club_phone,
-                        email=req_obj.club_email,
-                        logo_url=req_obj.club_logo_url
-                    )
-
-                    user = User(
-                        username=username_to_check,
-                        email=req_obj.admin_email,
-                        first_name=req_obj.admin_first_name,
-                        last_name=req_obj.admin_last_name,
-                        role='CLUB_ADMIN',
-                        organization=request.user.organization,
-                        club=club,
-                        dni=req_obj.admin_dni
-                    )
-                    user.password = req_obj.password
-                    user.save()
-
-                    req_obj.status = 'APPROVED'
-                    req_obj.save()
+                if getattr(req_obj, 'role', 'CLUB_ADMIN') == 'REFEREE':
+                    if not req_obj.admin_email:
+                        return JsonResponse({'error': 'La solicitud no ha sido completada por el árbitro.'}, status=400)
+                        
+                    with transaction.atomic():
+                        username_to_check = req_obj.admin_username or req_obj.admin_email
+                        if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=username_to_check).exists():
+                            return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' already exists."}, status=400)
+                        user = User(
+                            username=username_to_check,
+                            email=req_obj.admin_email,
+                            first_name=req_obj.admin_first_name,
+                            last_name=req_obj.admin_last_name,
+                            role='REFEREE',
+                            organization=request.user.organization,
+                            dni=req_obj.admin_dni
+                        )
+                        user.password = req_obj.password
+                        user.save()
+                        req_obj.status = 'APPROVED'
+                        req_obj.save()
+                    return JsonResponse({'message': 'Árbitro aprobado con éxito.', 'data': serialize_club_request(req_obj)}, status=200)
+                else:
+                    if not req_obj.admin_email or not req_obj.club_name:
+                        return JsonResponse({'error': 'La solicitud no ha sido completada por el club invitado.'}, status=400)
+                    with transaction.atomic():
+                        username_to_check = req_obj.admin_username or req_obj.admin_email
+                        if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=username_to_check).exists():
+                            return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' or '{username_to_check}' already exists."}, status=400)
+    
+                        club = Club.objects.create(
+                            organization=request.user.organization,
+                            name=req_obj.club_name,
+                            address=req_obj.club_address,
+                            phone=req_obj.club_phone,
+                            email=req_obj.club_email,
+                            logo_url=req_obj.club_logo_url
+                        )
+    
+                        user = User(
+                            username=username_to_check,
+                            email=req_obj.admin_email,
+                            first_name=req_obj.admin_first_name,
+                            last_name=req_obj.admin_last_name,
+                            role='CLUB_ADMIN',
+                            organization=request.user.organization,
+                            club=club,
+                            dni=req_obj.admin_dni
+                        )
+                        user.password = req_obj.password
+                        user.save()
+    
+                        req_obj.status = 'APPROVED'
+                        req_obj.save()
 
                 try:
                     subject = "¡Tu Club ha sido aprobado en VoleyHub!"

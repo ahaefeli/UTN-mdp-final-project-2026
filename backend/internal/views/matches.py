@@ -60,10 +60,14 @@ class MatchView(BaseCrudView):
         elif request.user.role == 'PLAYER':
             from django.db.models import Q
             qs = qs.filter(Q(local_team__players=request.user) | Q(visitor_team__players=request.user)).distinct()
+        elif request.user.role == 'REFEREE':
+            qs = qs.filter(referee=request.user)
             
         if request.GET.get('upcoming') == 'true':
             from django.utils import timezone
-            qs = qs.filter(match_datetime__gte=timezone.now())
+            from django.db.models import Q
+            # Aceptar partidos futuros O partidos cuya fecha y hora esté 'A Confirmar'
+            qs = qs.filter(Q(match_datetime__gte=timezone.now()) | Q(match_datetime__isnull=True))
         if request.GET.get('recent') == 'true':
             qs = qs.filter(status__in=['FINISHED', 'CANCELLED'])
         page = request.GET.get('page')

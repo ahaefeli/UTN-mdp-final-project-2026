@@ -175,6 +175,7 @@ class REQUEST_STATUS_CHOICES(models.TextChoices):
 class ClubRegistrationRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, default='CLUB_ADMIN')
     token = models.CharField(max_length=255, unique=True, db_index=True)
     club_name = models.CharField(max_length=255, null=True, blank=True)
     club_address = models.CharField(max_length=255, null=True, blank=True)

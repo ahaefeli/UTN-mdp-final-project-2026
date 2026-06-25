@@ -138,12 +138,12 @@ export default function ClubesAdminPage() {
   };
 
   // Generate Invite Link (POST)
-  const handleGenerateLink = async () => {
+  const handleGenerateLink = async (targetRole = 'CLUB_ADMIN') => {
     setIsGeneratingLink(true);
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const res = await apiClient.post('admin/club-requests/generate-link/', {});
+      const res = await apiClient.post('admin/club-requests/generate-link/', { role: targetRole });
       
       const token = res.data?.token || '';
       const link = `${window.location.origin}/register?token=${token}`;
@@ -223,7 +223,7 @@ export default function ClubesAdminPage() {
           <p className={styles.subtitle}>Supervise los clubes federados activos y administre las solicitudes de registro.</p>
         </div>
           <button 
-            onClick={handleGenerateLink} 
+            onClick={() => handleGenerateLink('CLUB_ADMIN')} 
             disabled={isGeneratingLink}
             className={`${styles.btn} ${styles.btnPrimary}`}
           >
@@ -234,8 +234,8 @@ export default function ClubesAdminPage() {
               </>
             ) : (
               <>
-                <i className="bi bi-link-45deg" style={{ fontSize: '1.1rem' }}></i>
-                Generar Enlace de Invitación
+                <i className="bi bi-building" style={{ fontSize: '1rem', marginRight: '0.5rem' }}></i>
+                Invitar Club
               </>
             )}
           </button>

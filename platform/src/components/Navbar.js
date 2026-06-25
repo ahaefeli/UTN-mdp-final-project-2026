@@ -118,6 +118,12 @@ export default function Navbar() {
             >
               Clubes
             </Link>
+            <Link 
+              href="/arbitros" 
+              className={`${styles.navLink} ${isActive('/arbitros') ? styles.navLinkActive : ''}`}
+            >
+              Árbitros
+            </Link>
           </>
         )}
       </div>
