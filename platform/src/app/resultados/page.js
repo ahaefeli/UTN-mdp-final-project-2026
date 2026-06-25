@@ -185,7 +185,7 @@ export default function ResultadosPosicionesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden p-6 md:p-8 lg:p-12">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden p-6 md:p-8 lg:p-12 custom_container">
       <div className="max-w-7xl mx-auto w-full">
         
         {/* Cabecera */}
