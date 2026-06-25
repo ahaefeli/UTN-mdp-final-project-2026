@@ -1,12 +1,16 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from core.models import Organization, User, Club, Court, Tournament, Team, TournamentEnrollment, TournamentStage, Match
+from core.models import (
+    Organization, User, Club, Court, Tournament, Team,
+    TournamentEnrollment, TournamentStage, Match, ClubRegistrationRequest
+)
 
 class Command(BaseCommand):
     help = 'Seed database with mock data for testing'
 
     def handle(self, *args, **kwargs):
         self.stdout.write('Clearing database...')
+        ClubRegistrationRequest.objects.all().delete()
         Match.objects.all().delete()
         TournamentStage.objects.all().delete()
         TournamentEnrollment.objects.all().delete()
@@ -19,132 +23,490 @@ class Command(BaseCommand):
 
         self.stdout.write('Seeding database...')
         
-        # 1. Organization
+        # 1. Organizacion
         org, _ = Organization.objects.get_or_create(name='VoleyHub Central')
 
-        # 2. Usuarios Base (Admin y Jugador)
-        admin, _ = User.objects.get_or_create(username='admin_seed', defaults={'email': 'admin@voleyhub.com', 'role': 'ADMIN', 'organization': org})
-        if not admin.check_password('123456'):
-            admin.set_password('123456')
-            admin.save()
+        # 2. Administrador Central (ADMIN)
+        admin = User.objects.create(
+            username='admin_necochea',
+            email='admin@voleyhub.com',
+            first_name='Admin',
+            last_name='VoleyHub',
+            role='ADMIN',
+            organization=org
+        )
+        admin.set_password('123456')
+        admin.save()
+        self.stdout.write('Admin central creado: admin_necochea')
 
-        # Generamos jugadores con nombres realistas
-        players_data = ['Facundo Dominguez', 'Tomás Alvarez', 'Julieta Romero', 'Agustina Silva', 'Mariano Gomez', 'Luciana Perez']
-        for i, name in enumerate(players_data):
-            p_username = f'player_{name.split()[0].lower()}'
-            p, _ = User.objects.get_or_create(username=p_username, defaults={'email': f'player{i}@voleyhub.com', 'first_name': name, 'role': 'PLAYER', 'organization': org})
-            if not p.check_password('123456'):
-                p.set_password('123456')
-                p.save()
-
-        # 3. Creación masiva de Árbitros, Planilleros y Entrenadores usando listas
-        referees_data = ['Marcelo Lora', 'Sergio Gimenez', 'Laura Rodriguez', 'Carlos Ruiz']
-        scorers_data = ['Martina Sosa', 'Lucía Fernández', 'Camila Gómez']
-        coaches_data = ['Marcos Blanco', 'Esteban Lopez', 'Juan Martin', 'Matias Gonzalez']
-        
-        referees = []
-        for i, name in enumerate(referees_data):
-            ref, _ = User.objects.get_or_create(username=f'referee{i}', defaults={'email': f'ref{i}@voleyhub.com', 'first_name': name, 'role': 'REFEREE', 'organization': org})
-            ref.set_password('123456')
-            ref.save()
-            referees.append(ref)
-
-        scorers = []
-        for i, name in enumerate(scorers_data):
-            scorer, _ = User.objects.get_or_create(username=f'scorer{i}', defaults={'email': f'scorer{i}@voleyhub.com', 'first_name': name, 'role': 'SCORER', 'organization': org})
-            scorer.set_password('123456')
-            scorer.save()
-            scorers.append(scorer)
-
-        coaches = []
-        for i, name in enumerate(coaches_data):
-            coach, _ = User.objects.get_or_create(username=f'coach{i}', defaults={'email': f'coach{i}@voleyhub.com', 'first_name': name, 'role': 'COACH', 'organization': org})
-            coach.set_password('123456')
-            coach.save()
-            coaches.append(coach)
-
-        # 4. Creación de Clubes y Canchas
-        clubs_info = [
-            {'name': 'Club Atlético Huracán', 'address': 'Av. 58 3860, Necochea'},
-            {'name': 'Club Atlético Rivadavia', 'address': 'Calle 64 2851, Necochea'},
-            {'name': 'CAI de Lobería', 'address': 'Sarmiento 150, Lobería'},
-            {'name': 'Centro Basko Euzko Etxea', 'address': 'Av. 58 3160, Necochea'},
+        # 3. Clubes
+        clubs_data = [
+            {
+                'name': 'Club Atlético Huracán',
+                'address': 'Av. 58 3860, Necochea',
+                'phone': '2262423321',
+                'email': 'contacto@huracannecochea.com.ar',
+                'logo': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200'
+            },
+            {
+                'name': 'Club Atlético Rivadavia',
+                'address': 'Calle 64 2851, Necochea',
+                'phone': '2262451298',
+                'email': 'secretaria@rivadavianecochea.com',
+                'logo': 'https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=200'
+            },
+            {
+                'name': 'CAI de Lobería',
+                'address': 'Sarmiento 150, Lobería',
+                'phone': '2261442010',
+                'email': 'cailoberia@outlook.com',
+                'logo': 'https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=200'
+            },
+            {
+                'name': 'Centro Basko Euzko Etxea',
+                'address': 'Av. 58 3160, Necochea',
+                'phone': '2262432244',
+                'email': 'centrobasko@gmail.com',
+                'logo': 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=200'
+            },
         ]
         
         clubs = []
-        courts = []
-        for c_data in clubs_info:
-            club, _ = Club.objects.get_or_create(name=c_data['name'], defaults={'organization': org, 'address': c_data['address'], 'is_deleted': False})
+        club_map = {}
+        courts = {}
+        
+        for c in clubs_data:
+            club = Club.objects.create(
+                organization=org,
+                name=c['name'],
+                address=c['address'],
+                phone=c['phone'],
+                email=c['email'],
+                logo_url=c['logo']
+            )
             clubs.append(club)
+            club_map[c['name']] = club
             
-            # Le creamos 2 canchas a cada club automáticamente
-            court1, _ = Court.objects.get_or_create(name='Cancha Central', club=club, defaults={'enabled': True, 'is_deleted': False})
-            court2, _ = Court.objects.get_or_create(name='Cancha Auxiliar', club=club, defaults={'enabled': True, 'is_deleted': False})
-            courts.extend([court1, court2])
+            # 2 Canchas por club
+            court1 = Court.objects.create(name='Cancha Central', club=club, enabled=True)
+            court2 = Court.objects.create(name='Cancha Auxiliar', club=club, enabled=True)
+            courts[c['name']] = [court1, court2]
+            
+        self.stdout.write(f'{len(clubs)} Clubes y sus respectivas canchas creados.')
 
-        # 5. Creación del Torneo
-        tournament, _ = Tournament.objects.get_or_create(
-            name='Torneo Apertura 2026', 
-            year=2026,
-            defaults={
-                'organization': org,
-                'start_date': timezone.now().date(),
-                'category': 'PRIMERA',
-                'branch': 'MALE',
-                'status': 'IN_PROGRESS',
-                'is_deleted': False
-            }
-        )
-
-        # 6. Creación de Equipos y sus Inscripciones
-        teams_info = [
-            {'name': 'Huracán Primera', 'club': clubs[0], 'coach': coaches[0]},
-            {'name': 'Huracán Sub-21', 'club': clubs[0], 'coach': coaches[0]},
-            {'name': 'Rivadavia A', 'club': clubs[1], 'coach': coaches[1]},
-            {'name': 'Rivadavia B', 'club': clubs[1], 'coach': coaches[1]},
-            {'name': 'CAI Lobería Vóley', 'club': clubs[2], 'coach': coaches[2]},
-            {'name': 'Centro Basko Primera', 'club': clubs[3], 'coach': coaches[3]},
+        # 4. Administradores de Clubes (CLUB_ADMIN)
+        club_admins_data = [
+            {'username': 'claudio_huracan', 'first_name': 'Claudio', 'last_name': 'Valenzuela', 'email': 'claudio.valenzuela@huracannecochea.com', 'club': club_map['Club Atlético Huracán']},
+            {'username': 'roberto_rivadavia', 'first_name': 'Roberto', 'last_name': 'Martinez', 'email': 'roberto.martinez@rivadavianecochea.com', 'club': club_map['Club Atlético Rivadavia']},
+            {'username': 'carlos_loberia', 'first_name': 'Carlos', 'last_name': 'Perez', 'email': 'carlos.perez@cailoberia.com', 'club': club_map['CAI de Lobería']},
+            {'username': 'esteban_basko', 'first_name': 'Esteban', 'last_name': 'Iriarte', 'email': 'esteban.iriarte@centrobasko.com', 'club': club_map['Centro Basko Euzko Etxea']},
         ]
         
-        teams = []
-        for t_data in teams_info:
-            team, _ = Team.objects.get_or_create(name=t_data['name'], defaults={'club': t_data['club'], 'category': 'PRIMERA', 'branch': 'MALE', 'coach': t_data['coach'], 'is_deleted': False})
-            teams.append(team)
-            TournamentEnrollment.objects.get_or_create(tournament=tournament, team=team)
+        for ca in club_admins_data:
+            user = User.objects.create(
+                username=ca['username'],
+                first_name=ca['first_name'],
+                last_name=ca['last_name'],
+                email=ca['email'],
+                role='CLUB_ADMIN',
+                organization=org,
+                club=ca['club']
+            )
+            user.set_password('123456')
+            user.save()
+            
+        self.stdout.write('4 Administradores de clubes creados.')
 
-        # 7. Creación de Fechas (Tournament Stage)
-        stage1, _ = TournamentStage.objects.get_or_create(tournament=tournament, name='Fecha 1', defaults={'date': timezone.now().date()})
-
-        # 8. Creación de Partidos (Matches) para la Fecha 1
-        matches_data = [
-            {'local': teams[0], 'visitor': teams[2], 'court': courts[0], 'referee': referees[0], 'scorer': scorers[0], 'score': '3-0'},
-            {'local': teams[4], 'visitor': teams[5], 'court': courts[4], 'referee': referees[1], 'scorer': scorers[1], 'score': '3-1'},
-            {'local': teams[1], 'visitor': teams[3], 'court': courts[2], 'referee': referees[2], 'scorer': scorers[2], 'score': '2-3'},
+        # 5. Entrenadores (COACH - 2 por club)
+        coaches_data = [
+            # Huracán
+            {'username': 'marcos_blanco', 'first_name': 'Marcos', 'last_name': 'Blanco', 'email': 'mblanco@voleyhub.com', 'club': club_map['Club Atlético Huracán']},
+            {'username': 'agustina_silva', 'first_name': 'Agustina', 'last_name': 'Silva', 'email': 'asilva@voleyhub.com', 'club': club_map['Club Atlético Huracán']},
+            # Rivadavia
+            {'username': 'esteban_lopez', 'first_name': 'Esteban', 'last_name': 'Lopez', 'email': 'elopez@voleyhub.com', 'club': club_map['Club Atlético Rivadavia']},
+            {'username': 'sofia_perez', 'first_name': 'Sofia', 'last_name': 'Perez', 'email': 'sperez@voleyhub.com', 'club': club_map['Club Atlético Rivadavia']},
+            # Lobería
+            {'username': 'juan_martin', 'first_name': 'Juan', 'last_name': 'Martin', 'email': 'jmartin@voleyhub.com', 'club': club_map['CAI de Lobería']},
+            {'username': 'mariela_gomez', 'first_name': 'Mariela', 'last_name': 'Gomez', 'email': 'mgomez@voleyhub.com', 'club': club_map['CAI de Lobería']},
+            # Centro Basko
+            {'username': 'matias_gonzalez', 'first_name': 'Matias', 'last_name': 'Gonzalez', 'email': 'mgonzalez@voleyhub.com', 'club': club_map['Centro Basko Euzko Etxea']},
+            {'username': 'luciana_perez', 'first_name': 'Luciana', 'last_name': 'Perez', 'email': 'lperez@voleyhub.com', 'club': club_map['Centro Basko Euzko Etxea']},
         ]
+        
+        coaches = {}
+        for co in coaches_data:
+            user = User.objects.create(
+                username=co['username'],
+                first_name=co['first_name'],
+                last_name=co['last_name'],
+                email=co['email'],
+                role='COACH',
+                organization=org,
+                club=co['club'],
+                coach_certificate='https://example.com/certs/coach.pdf'
+            )
+            user.set_password('123456')
+            user.save()
+            coaches[co['username']] = user
+            
+        self.stdout.write('8 Entrenadores creados.')
 
-        sets_mock = {
+        # 6. Árbitros (REFEREE)
+        referees_data = [
+            {'username': 'marcelo_lora', 'first_name': 'Marcelo', 'last_name': 'Lora', 'email': 'mlora@voleyhub.com'},
+            {'username': 'sergio_gimenez', 'first_name': 'Sergio', 'last_name': 'Gimenez', 'email': 'sgimenez@voleyhub.com'},
+            {'username': 'laura_rodriguez', 'first_name': 'Laura', 'last_name': 'Rodriguez', 'email': 'lrodriguez@voleyhub.com'},
+            {'username': 'carlos_ruiz', 'first_name': 'Carlos', 'last_name': 'Ruiz', 'email': 'cruiz@voleyhub.com'},
+        ]
+        
+        referees = []
+        for r in referees_data:
+            user = User.objects.create(
+                username=r['username'],
+                first_name=r['first_name'],
+                last_name=r['last_name'],
+                email=r['email'],
+                role='REFEREE',
+                organization=org
+            )
+            user.set_password('123456')
+            user.save()
+            referees.append(user)
+            
+        self.stdout.write('4 Árbitros creados.')
+
+        # 7. Planilleros (SCORER)
+        scorers_data = [
+            {'username': 'martina_sosa', 'first_name': 'Martina', 'last_name': 'Sosa', 'email': 'msosa@voleyhub.com'},
+            {'username': 'lucia_fernandez', 'first_name': 'Lucia', 'last_name': 'Fernandez', 'email': 'lfernandez@voleyhub.com'},
+            {'username': 'camila_gomez', 'first_name': 'Camila', 'last_name': 'Gomez', 'email': 'cgomez@voleyhub.com'},
+            {'username': 'facundo_alvarez', 'first_name': 'Facundo', 'last_name': 'Alvarez', 'email': 'falvarez@voleyhub.com'},
+        ]
+        
+        scorers = []
+        for s in scorers_data:
+            user = User.objects.create(
+                username=s['username'],
+                first_name=s['first_name'],
+                last_name=s['last_name'],
+                email=s['email'],
+                role='SCORER',
+                organization=org
+            )
+            user.set_password('123456')
+            user.save()
+            scorers.append(user)
+            
+        self.stdout.write('4 Planilleros creados.')
+
+        # 8. Jugadores (PLAYER - 12 por club: 6 Hombres, 6 Mujeres)
+        male_first_names = ['Lucas', 'Mateo', 'Enzo', 'Joaquin', 'Bautista', 'Santiago', 'Felipe', 'Tomas', 'Nicolas', 'Martin', 'Lautaro', 'Valentin', 'Agustin', 'Francisco', 'Franco']
+        female_first_names = ['Julieta', 'Agustina', 'Sofia', 'Valentina', 'Camila', 'Martina', 'Delfina', 'Emilia', 'Lucia', 'Catalina', 'Victoria', 'Juana', 'Zoe', 'Morena', 'Paloma']
+        last_names = ['Gomez', 'Gonzalez', 'Rodriguez', 'Fernandez', 'Lopez', 'Diaz', 'Martinez', 'Perez', 'Romero', 'Sanchez', 'Alvarez', 'Ruiz', 'Torres', 'Ramirez', 'Flores', 'Acosta']
+
+        club_players = {}
+        player_counter = 1
+        
+        for club in clubs:
+            club_players[club.name] = {'M': [], 'F': []}
+            
+            # 6 Hombres
+            for idx in range(6):
+                fname = male_first_names[(player_counter * 3) % len(male_first_names)]
+                lname = last_names[(player_counter * 7) % len(last_names)]
+                username = f"jugador_{fname.lower()}_{lname.lower()}_{player_counter}"
+                p = User.objects.create(
+                    username=username,
+                    first_name=fname,
+                    last_name=lname,
+                    email=f"{username}@voleyhub.com",
+                    role='PLAYER',
+                    organization=org,
+                    club=club,
+                    gender='M',
+                    is_federated=True,
+                    dni=f"200000{player_counter:02d}",
+                    phone=f"+54922621000{player_counter:02d}",
+                    medical_certificate='https://example.com/certs/med.pdf'
+                )
+                p.set_password('123456')
+                p.save()
+                club_players[club.name]['M'].append(p)
+                player_counter += 1
+                
+            # 6 Mujeres
+            for idx in range(6):
+                fname = female_first_names[(player_counter * 3) % len(female_first_names)]
+                lname = last_names[(player_counter * 7) % len(last_names)]
+                username = f"jugadora_{fname.lower()}_{lname.lower()}_{player_counter}"
+                p = User.objects.create(
+                    username=username,
+                    first_name=fname,
+                    last_name=lname,
+                    email=f"{username}@voleyhub.com",
+                    role='PLAYER',
+                    organization=org,
+                    club=club,
+                    gender='F',
+                    is_federated=True,
+                    dni=f"200000{player_counter:02d}",
+                    phone=f"+54922621000{player_counter:02d}",
+                    medical_certificate='https://example.com/certs/med.pdf'
+                )
+                p.set_password('123456')
+                p.save()
+                club_players[club.name]['F'].append(p)
+                player_counter += 1
+                
+        self.stdout.write('48 Jugadores (24 masculinos y 24 femeninos) creados.')
+
+        # 9. Torneos
+        t_ap_masc = Tournament.objects.create(
+            organization=org,
+            name='Torneo Apertura Masculino 2026',
+            year=2026,
+            start_date=timezone.now().date() - timezone.timedelta(days=15),
+            end_date=timezone.now().date() + timezone.timedelta(days=60),
+            category='PRIMERA',
+            branch='MALE',
+            status='IN_PROGRESS'
+        )
+        
+        t_ap_fem = Tournament.objects.create(
+            organization=org,
+            name='Torneo Apertura Femenino 2026',
+            year=2026,
+            start_date=timezone.now().date() - timezone.timedelta(days=15),
+            end_date=timezone.now().date() + timezone.timedelta(days=60),
+            category='PRIMERA',
+            branch='FEMALE',
+            status='IN_PROGRESS'
+        )
+
+        t_sub21 = Tournament.objects.create(
+            organization=org,
+            name='Torneo Juvenil Sub-21 2026',
+            year=2026,
+            start_date=timezone.now().date() + timezone.timedelta(days=10),
+            end_date=timezone.now().date() + timezone.timedelta(days=90),
+            category='SUB_21',
+            branch='MALE',
+            status='PREPARATION'
+        )
+        
+        self.stdout.write('3 Torneos creados (Masculino Primera, Femenino Primera, Sub-21 Masculino).')
+
+        # 10. Equipos e inscripciones
+        teams = {}
+        
+        # Huracán
+        teams['huracan_m'] = Team.objects.create(club=club_map['Club Atlético Huracán'], name='Huracán Primera Masculino', category='PRIMERA', branch='MALE', coach=coaches['marcos_blanco'])
+        teams['huracan_m'].players.set(club_players['Club Atlético Huracán']['M'])
+        teams['huracan_f'] = Team.objects.create(club=club_map['Club Atlético Huracán'], name='Huracán Primera Femenino', category='PRIMERA', branch='FEMALE', coach=coaches['agustina_silva'])
+        teams['huracan_f'].players.set(club_players['Club Atlético Huracán']['F'])
+        teams['huracan_u21'] = Team.objects.create(club=club_map['Club Atlético Huracán'], name='Huracán Sub-21 Masculino', category='SUB_21', branch='MALE', coach=coaches['marcos_blanco'])
+        teams['huracan_u21'].players.set(club_players['Club Atlético Huracán']['M'])
+
+        # Rivadavia
+        teams['rivadavia_m'] = Team.objects.create(club=club_map['Club Atlético Rivadavia'], name='Rivadavia Primera Masculino', category='PRIMERA', branch='MALE', coach=coaches['esteban_lopez'])
+        teams['rivadavia_m'].players.set(club_players['Club Atlético Rivadavia']['M'])
+        teams['rivadavia_f'] = Team.objects.create(club=club_map['Club Atlético Rivadavia'], name='Rivadavia Primera Femenino', category='PRIMERA', branch='FEMALE', coach=coaches['sofia_perez'])
+        teams['rivadavia_f'].players.set(club_players['Club Atlético Rivadavia']['F'])
+
+        # Lobería
+        teams['loberia_m'] = Team.objects.create(club=club_map['CAI de Lobería'], name='CAI Lobería Masculino', category='PRIMERA', branch='MALE', coach=coaches['juan_martin'])
+        teams['loberia_m'].players.set(club_players['CAI de Lobería']['M'])
+        teams['loberia_f'] = Team.objects.create(club=club_map['CAI de Lobería'], name='CAI Lobería Femenino', category='PRIMERA', branch='FEMALE', coach=coaches['mariela_gomez'])
+        teams['loberia_f'].players.set(club_players['CAI de Lobería']['F'])
+
+        # Centro Basko
+        teams['basko_m'] = Team.objects.create(club=club_map['Centro Basko Euzko Etxea'], name='Centro Basko Masculino', category='PRIMERA', branch='MALE', coach=coaches['matias_gonzalez'])
+        teams['basko_m'].players.set(club_players['Centro Basko Euzko Etxea']['M'])
+        teams['basko_f'] = Team.objects.create(club=club_map['Centro Basko Euzko Etxea'], name='Centro Basko Femenino', category='PRIMERA', branch='FEMALE', coach=coaches['luciana_perez'])
+        teams['basko_f'].players.set(club_players['Centro Basko Euzko Etxea']['F'])
+
+        # Inscripciones
+        # Masculino Primera
+        for key in ['huracan_m', 'rivadavia_m', 'loberia_m', 'basko_m']:
+            TournamentEnrollment.objects.create(tournament=t_ap_masc, team=teams[key])
+        
+        # Femenino Primera
+        for key in ['huracan_f', 'rivadavia_f', 'loberia_f', 'basko_f']:
+            TournamentEnrollment.objects.create(tournament=t_ap_fem, team=teams[key])
+
+        # U21 Masculino
+        TournamentEnrollment.objects.create(tournament=t_sub21, team=teams['huracan_u21'])
+        
+        self.stdout.write('Equipos creados, rosters asignados e inscripciones a torneos completadas.')
+
+        # 11. Jornadas (Stages) y Partidos (Matches)
+        # --- Torneo Apertura Masculino ---
+        # Fecha 1 (Terminada)
+        stage_m1 = TournamentStage.objects.create(tournament=t_ap_masc, name='Fecha 1', date=timezone.now().date() - timezone.timedelta(days=7))
+        
+        sets_3_0 = {
             "sets": [
                 {"set_number": 1, "local_score": 25, "visitor_score": 20},
                 {"set_number": 2, "local_score": 25, "visitor_score": 23},
                 {"set_number": 3, "local_score": 25, "visitor_score": 15}
             ]
         }
+        
+        sets_2_3 = {
+            "sets": [
+                {"set_number": 1, "local_score": 25, "visitor_score": 22},
+                {"set_number": 2, "local_score": 21, "visitor_score": 25},
+                {"set_number": 3, "local_score": 25, "visitor_score": 18},
+                {"set_number": 4, "local_score": 19, "visitor_score": 25},
+                {"set_number": 5, "local_score": 13, "visitor_score": 15}
+            ]
+        }
 
-        for m_data in matches_data:
-            Match.objects.get_or_create(
-                tournament_stage=stage1,
-                local_team=m_data['local'],
-                visitor_team=m_data['visitor'],
-                defaults={
-                    'court': m_data['court'],
-                    'match_datetime': timezone.now(),
-                    'referee': m_data['referee'],
-                    'scorer': m_data['scorer'],
-                    'status': 'FINISHED',
-                    'score_summary': m_data['score'],
-                    'sets_data': sets_mock,
-                    'is_deleted': False
-                }
-            )
+        # Huracán Masculino vs Rivadavia Masculino
+        Match.objects.create(
+            tournament_stage=stage_m1,
+            local_team=teams['huracan_m'],
+            visitor_team=teams['rivadavia_m'],
+            court=courts['Club Atlético Huracán'][0], # Cancha Central Huracán
+            match_datetime=timezone.now() - timezone.timedelta(days=7),
+            referee=referees[0], # marcelo_lora
+            scorer=scorers[0], # martina_sosa
+            status='FINISHED',
+            score_summary='3-0',
+            sets_data=sets_3_0
+        )
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded the database with expanded data.'))
+        # CAI Lobería Masculino vs Centro Basko Masculino
+        Match.objects.create(
+            tournament_stage=stage_m1,
+            local_team=teams['loberia_m'],
+            visitor_team=teams['basko_m'],
+            court=courts['CAI de Lobería'][0], # Cancha Central Loberia
+            match_datetime=timezone.now() - timezone.timedelta(days=7),
+            referee=referees[1], # sergio_gimenez
+            scorer=scorers[1], # lucia_fernandez
+            status='FINISHED',
+            score_summary='2-3',
+            sets_data=sets_2_3
+        )
+
+        # Fecha 2 (Futura/En Curso)
+        stage_m2 = TournamentStage.objects.create(tournament=t_ap_masc, name='Fecha 2', date=timezone.now().date() + timezone.timedelta(days=2))
+
+        # Huracán vs Lobería (PREPARATION)
+        Match.objects.create(
+            tournament_stage=stage_m2,
+            local_team=teams['huracan_m'],
+            visitor_team=teams['loberia_m'],
+            court=courts['Club Atlético Huracán'][1], # Cancha Auxiliar
+            match_datetime=timezone.now() + timezone.timedelta(days=2),
+            referee=referees[0],
+            scorer=scorers[0],
+            status='PREPARATION'
+        )
+
+        # Rivadavia vs Centro Basko (IN_PROGRESS)
+        Match.objects.create(
+            tournament_stage=stage_m2,
+            local_team=teams['rivadavia_m'],
+            visitor_team=teams['basko_m'],
+            court=courts['Club Atlético Rivadavia'][0],
+            match_datetime=timezone.now(),
+            referee=referees[2], # laura_rodriguez
+            scorer=scorers[2], # camila_gomez
+            status='IN_PROGRESS'
+        )
+
+        # --- Torneo Apertura Femenino ---
+        # Fecha 1 (Terminada)
+        stage_f1 = TournamentStage.objects.create(tournament=t_ap_fem, name='Fecha 1', date=timezone.now().date() - timezone.timedelta(days=5))
+
+        sets_1_3 = {
+            "sets": [
+                {"set_number": 1, "local_score": 18, "visitor_score": 25},
+                {"set_number": 2, "local_score": 25, "visitor_score": 22},
+                {"set_number": 3, "local_score": 20, "visitor_score": 25},
+                {"set_number": 4, "local_score": 22, "visitor_score": 25}
+            ]
+        }
+
+        # Huracán Femenino vs Rivadavia Femenino
+        Match.objects.create(
+            tournament_stage=stage_f1,
+            local_team=teams['huracan_f'],
+            visitor_team=teams['rivadavia_f'],
+            court=courts['Club Atlético Huracán'][0],
+            match_datetime=timezone.now() - timezone.timedelta(days=5),
+            referee=referees[2],
+            scorer=scorers[2],
+            status='FINISHED',
+            score_summary='1-3',
+            sets_data=sets_1_3
+        )
+
+        # CAI Lobería Femenino vs Centro Basko Femenino
+        Match.objects.create(
+            tournament_stage=stage_f1,
+            local_team=teams['loberia_f'],
+            visitor_team=teams['basko_f'],
+            court=courts['CAI de Lobería'][0],
+            match_datetime=timezone.now() - timezone.timedelta(days=5),
+            referee=referees[3], # carlos_ruiz
+            scorer=scorers[3], # facundo_alvarez
+            status='FINISHED',
+            score_summary='3-0',
+            sets_data=sets_3_0
+        )
+
+        # Fecha 2 (Futura)
+        stage_f2 = TournamentStage.objects.create(tournament=t_ap_fem, name='Fecha 2', date=timezone.now().date() + timezone.timedelta(days=3))
+
+        # Huracán F vs Lobería F (PREPARATION)
+        Match.objects.create(
+            tournament_stage=stage_f2,
+            local_team=teams['huracan_f'],
+            visitor_team=teams['loberia_f'],
+            court=courts['Club Atlético Huracán'][0],
+            match_datetime=timezone.now() + timezone.timedelta(days=3),
+            referee=referees[1],
+            scorer=scorers[1],
+            status='PREPARATION'
+        )
+        
+        self.stdout.write('Partidos y jornadas (finalizados, en progreso y futuros) creados.')
+
+        # 12. Solicitudes de Registro de Clubes
+        ClubRegistrationRequest.objects.create(
+            organization=org,
+            club_name='Club Defensores de Belgrano',
+            club_address='Calle 6 1020, Necochea',
+            club_phone='2262459911',
+            club_email='contacto@defensoresbelgrano.com',
+            admin_first_name='Claudio',
+            admin_last_name='Valenzuela',
+            admin_username='claudio_defensores',
+            admin_email='claudio@defensoresbelgrano.com',
+            admin_dni='12345678',
+            status='PENDING',
+            expires_at=timezone.now() + timezone.timedelta(days=7),
+            token='token_defensores_pending_123'
+        )
+
+        ClubRegistrationRequest.objects.create(
+            organization=org,
+            club_name='Club Sudamérica Vóley',
+            club_address='Av. 75 4402, Necochea',
+            club_phone='2262498877',
+            club_email='info@sudamericavoley.com',
+            admin_first_name='Roberto',
+            admin_last_name='Martinez',
+            admin_username='roberto_sudamerica',
+            admin_email='roberto@sudamericavoley.com',
+            admin_dni='87654321',
+            status='APPROVED',
+            expires_at=timezone.now() - timezone.timedelta(days=1),
+            token='token_sudamerica_approved_456'
+        )
+
+        self.stdout.write('2 Solicitudes de registro creadas (Defensores de Belgrano - Pendiente, Sudamérica - Aprobada).')
+        self.stdout.write(self.style.SUCCESS('Successfully seeded the database with complete realistic data.'))
