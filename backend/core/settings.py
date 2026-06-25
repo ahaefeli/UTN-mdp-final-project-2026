@@ -13,7 +13,7 @@ SECRET_KEY = 'django-insecure-zkv%*n+)h4p0j*mx*t$3-*8x4jq&ats7x&k3lmmz^=k)b2m5qx
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '192.168.1.13']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '192.168.1.13', '192.168.1.226']
 
 
 # Application definition
@@ -71,8 +71,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'voley_lnv_db',
-        'USER': 'octavio',
-        'PASSWORD': '1234',
+        'USER': 'postgres',
+        'PASSWORD': '0102',
         'HOST': 'localhost',
         'PORT': '5432',
     }

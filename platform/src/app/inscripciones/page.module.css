@@ -1,7 +1,6 @@
 /* Estilo modular para la página de Inscripciones */
 
 .container {
-  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
