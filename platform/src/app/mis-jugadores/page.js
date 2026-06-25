@@ -27,7 +27,7 @@ export default function MisJugadoresPage() {
 
   // Estados para Modal de Nuevo Jugador
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [formData, setFormData] = useState({ user: '', email: '', password: '', dni: '', name: '', role: 'PLAYER' });
+  const [formData, setFormData] = useState({ user: '', email: '', password: '', dni: '', name: '', gender: '', role: 'PLAYER' });
 
   // Validación de la sesión en el cliente
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function MisJugadoresPage() {
     try {
       await userService.createUser(formData);
       setShowCreateModal(false);
-      setFormData({ user: '', email: '', password: '', dni: '', name: '', role: 'PLAYER' });
+      setFormData({ user: '', email: '', password: '', dni: '', name: '', gender: '', role: 'PLAYER' });
       setSuccessMsg('¡Jugador registrado y federado exitosamente!');
       await loadAllData();
     } catch (err) {
@@ -209,6 +209,7 @@ export default function MisJugadoresPage() {
                     <tr>
                       <th className={styles.th}>Nombre y Apellido</th>
                       <th className={styles.th}>DNI</th>
+                      <th className={styles.th}>Género</th>
                       <th className={styles.th}>Email</th>
                       <th className={styles.th}>Apto Físico</th>
                       <th className={styles.th}>Estado</th>
@@ -222,6 +223,9 @@ export default function MisJugadoresPage() {
                           {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
                         </td>
                         <td className={styles.td}>{player.dni || '-'}</td>
+                        <td className={styles.td}>
+                          {player.gender === 'M' ? 'Masculino' : player.gender === 'F' ? 'Femenino' : '-'}
+                        </td>
                         <td className={styles.td}>{player.email || '-'}</td>
                         <td className={styles.td}>
                           <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', backgroundColor: player.medical_certificate ? '#dcfce7' : '#fef2f2', color: player.medical_certificate ? '#166534' : '#991b1b' }}>
@@ -387,6 +391,21 @@ export default function MisJugadoresPage() {
               </div>
 
               <div className={styles.formGroup}>
+                <label className={styles.label}>Género *</label>
+                <select 
+                  className={styles.input}
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  required
+                  disabled={isSubmitting}
+                >
+                  <option value="">Seleccione el género...</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
                 <label className={styles.label}>DNI *</label>
                 <input
                   type="text"
@@ -442,7 +461,7 @@ export default function MisJugadoresPage() {
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false);
-                    setFormData({ user: '', email: '', password: '', dni: '', name: '', role: 'PLAYER' });
+                    setFormData({ user: '', email: '', password: '', dni: '', name: '', gender: '', role: 'PLAYER' });
                   }}
                   className={styles.btnCancel}
                   disabled={isSubmitting}

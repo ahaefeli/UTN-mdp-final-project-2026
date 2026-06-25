@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Trophy, Users, ShieldPlus } from 'lucide-react';
+import { Trophy, Users, ShieldPlus, BadgeCheck, ClipboardList } from 'lucide-react';
 import styles from './QuickActions.module.css';
 
 export default function QuickActions() {
@@ -27,6 +27,20 @@ export default function QuickActions() {
       path: '/clubes',
       description: 'Genera invitaciones para registrar nuevos clubes.',
       colorClass: styles.greenIcon
+    },
+    {
+      label: 'Gestión de Árbitros',
+      icon: BadgeCheck,
+      path: '/arbitros',
+      description: 'Administra inscripciones y designaciones arbitrales.',
+      colorClass: styles.orangeIcon
+    },
+    {
+      label: 'Gestión de Planilleros',
+      icon: ClipboardList,
+      path: '/planilleros',
+      description: 'Administra y designa a los encargados de mesa.',
+      colorClass: styles.blueIcon
     }
   ];
 

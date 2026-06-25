@@ -86,7 +86,7 @@ export default function LoginPage() {
             Nuestra Comunidad
           </h1>
           <p className="text-sm font-semibold text-slate-200/80 leading-relaxed max-w-sm">
-            Accedé al corazón del voley regional. Gestioná tus estadísticas, torneos y vinculación oficial.
+            Accedé al centro digital del voley. Gestioná tus torneos, equipos, jugadores y más.
           </p>
         </div>
 
@@ -241,16 +241,16 @@ export default function LoginPage() {
 
           {/* Form Footer link: ¿No tienes cuenta? Registra tu club aquí */}
           <div className="pt-2 text-center text-xs font-bold text-slate-400">
-            ¿No tienes cuenta?{" "}
+            ¿Queres ser parte?{" "}
             <a
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                alert("Simulación de registro");
+                alert("Simulación de contacto");
               }}
               className="text-[#002F87] font-extrabold hover:underline"
             >
-              Registra tu club aquí
+              Contactanos
             </a>
           </div>
 

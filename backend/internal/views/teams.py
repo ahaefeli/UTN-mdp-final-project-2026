@@ -97,6 +97,35 @@ class TeamView(BaseCrudView):
                 return JsonResponse({'error': 'Forbidden'}, status=403)
             if 'players' in data:
                 players_ids = data.pop('players')
+                
+                # ==============================================================
+                # CÁLCULO DEL DELTA Y AUDITORÍA RESTRINGIDA
+                # ==============================================================
+                # 1. Obtener los UUIDs actuales del equipo
+                current_ids = {str(cid) for cid in t.players.values_list('id', flat=True)}
+                
+                # 2. Obtener los UUIDs de la petición
+                incoming_ids = {str(pid) for pid in players_ids}
+                
+                # 3. Calcular la diferencia matemática (Solo los que intentan entrar)
+                new_ids = incoming_ids - current_ids
+                
+                if new_ids:
+                    from core.models import User
+                    users = User.objects.filter(id__in=new_ids)
+                    
+                    for u in users:
+                        if not u.gender:
+                            return JsonResponse({'error': f'El jugador {u.first_name} {u.last_name} no tiene su género configurado. Debe completarlo antes de unirse al equipo.'}, status=400)
+                        
+                        if t.branch == 'MALE' and u.gender != 'M':
+                            return JsonResponse({'error': f'Violación de Regla: {u.first_name} {u.last_name} no cumple el requisito para la rama MASCULINA.'}, status=400)
+                            
+                        if t.branch == 'FEMALE' and u.gender != 'F':
+                            return JsonResponse({'error': f'Violación de Regla: {u.first_name} {u.last_name} no cumple el requisito para la rama FEMENINA.'}, status=400)
+                # ==============================================================
+                
+                # Ejecutar la orden de asignación
                 t.players.set(players_ids)
             for k, v in data.items():
                 if hasattr(t, k): setattr(t, k, v)

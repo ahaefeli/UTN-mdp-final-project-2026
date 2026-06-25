@@ -15,11 +15,11 @@ class AdminDashboardView(View):
         # Total de Clubes: Conteo de Club filtrado por organization=org.
         total_clubs = Club.objects.filter(organization=org).count()
         
-        # Jugadores Federados: Filtrar usuarios con role='PLAYER', is_federated=True y vinculados a la organización.
-        # Obtener el total unificado, y usar Count con Q(gender='M') y Q(gender='F') para la discriminación.
-        federated_stats = User.objects.filter(
+        from django.db.models import Count, Q
+        
+        # Contabilizar a TODOS los jugadores reales y dividirlos por género ('M' o 'F')
+        player_stats = User.objects.filter(
             role='PLAYER',
-            is_federated=True,
             organization=org
         ).aggregate(
             total=Count('id'),
@@ -40,11 +40,25 @@ class AdminDashboardView(View):
             tournament_stage__tournament__organization=org
         ).count()
         
-        # Acciones Pendientes (Alertas): Buscar registros de ClubRegistrationRequest con status='PENDING' y organization=org.
-        pending_reqs = ClubRegistrationRequest.objects.filter(
+        # --- NUEVO CÁLCULO DE ACCIONES PENDIENTES CON FILTROS DE INTEGRIDAD ---
+        base_pending_reqs = ClubRegistrationRequest.objects.filter(
             status='PENDING',
             organization=org
-        ).exclude(club_name__isnull=True).exclude(club_name__exact='')
+        )
+        # Un club pendiente es aquel cuyo enlace ya fue llenado con el nombre del club
+        pending_clubs = base_pending_reqs.filter(
+            role='CLUB_ADMIN'
+        ).exclude(club_name__isnull=True).exclude(club_name__exact='').count()
+        # Un árbitro pendiente es aquel que ya ingresó sus datos de contacto
+        pending_referees = base_pending_reqs.filter(
+            role='REFEREE'
+        ).exclude(admin_email__isnull=True).exclude(admin_email__exact='').count()
+        # Un planillero pendiente es aquel que ya ingresó sus datos de contacto
+        pending_scorers = base_pending_reqs.filter(
+            role='SCORER'
+        ).exclude(admin_email__isnull=True).exclude(admin_email__exact='').count()
+        
+        pending_reqs = base_pending_reqs
         pending_actions = [
             {
                 "id": str(r.id),
@@ -57,11 +71,16 @@ class AdminDashboardView(View):
         return JsonResponse({
             "total_clubs": total_clubs,
             "federated_players": {
-                "total": federated_stats['total'] or 0,
-                "masculino": federated_stats['masculino'] or 0,
-                "femenino": federated_stats['femenino'] or 0
+                "total": player_stats['total'] or 0,
+                "masculino": player_stats['masculino'] or 0,
+                "femenino": player_stats['femenino'] or 0,
             },
             "active_tournaments": active_tournaments,
             "matches_without_referee": matches_without_referee,
+            "pending_counts": {
+                "clubs": pending_clubs,
+                "referees": pending_referees,
+                "scorers": pending_scorers,
+            },
             "pending_actions": list(pending_actions)
         }, status=200)

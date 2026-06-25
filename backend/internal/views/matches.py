@@ -8,6 +8,37 @@ from .base import BaseCrudView, parse_body
 from core.models import Match
 from core.auth import jwt_required
 
+def validate_match_collisions(match_datetime, referee_id, local_team_id, visitor_team_id, court_id, exclude_id=None):
+    from datetime import timedelta
+    from django.db.models import Q
+    from core.models import Match
+    if not match_datetime:
+        return None
+    qs = Match.objects.filter(match_datetime=match_datetime, status__in=['PREPARATION', 'SCHEDULED', 'IN_PROGRESS'])
+    if exclude_id:
+        qs = qs.exclude(id=exclude_id)
+    if referee_id and qs.filter(referee_id=referee_id).exists():
+        return 'El árbitro ya tiene un partido asignado a esta misma hora.'
+    if local_team_id and qs.filter(Q(local_team_id=local_team_id) | Q(visitor_team_id=local_team_id)).exists():
+        return 'El equipo local ya tiene otro partido programado a esta misma hora.'
+        
+    if visitor_team_id and qs.filter(Q(local_team_id=visitor_team_id) | Q(visitor_team_id=visitor_team_id)).exists():
+        return 'El equipo visitante ya tiene otro partido programado a esta misma hora.'
+    if court_id:
+        start_window = match_datetime - timedelta(hours=1)
+        end_window = match_datetime + timedelta(hours=1)
+        court_qs = Match.objects.filter(
+            court_id=court_id, 
+            match_datetime__gt=start_window, 
+            match_datetime__lt=end_window,
+            status__in=['PREPARATION', 'SCHEDULED', 'IN_PROGRESS']
+        )
+        if exclude_id:
+            court_qs = court_qs.exclude(id=exclude_id)
+        if court_qs.exists():
+            return 'La cancha ya tiene un partido asignado con menos de 1 hora de diferencia.'
+    return None
+
 def serialize_match_detail(m):
     from core.utils.match_status import evaluate_and_update_match_status
     evaluate_and_update_match_status(m)
@@ -89,15 +120,20 @@ class MatchView(BaseCrudView):
             court_id = data.get('court_id')
             match_datetime_str = data.get('match_datetime')
             
-            if court_id and match_datetime_str:
-                from datetime import timedelta
+            match_datetime = None
+            if match_datetime_str:
                 from django.utils.dateparse import parse_datetime
                 match_datetime = parse_datetime(match_datetime_str)
-                if match_datetime:
-                    start_window = match_datetime - timedelta(hours=1)
-                    end_window = match_datetime + timedelta(hours=1)
-                    if self.model.objects.filter(court_id=court_id, match_datetime__gt=start_window, match_datetime__lt=end_window).exists():
-                        return JsonResponse({'error': 'La cancha ya tiene un partido asignado con menos de 1 hora de diferencia.'}, status=400)
+
+            collision_error = validate_match_collisions(
+                match_datetime=match_datetime,
+                referee_id=data.get('referee_id'),
+                local_team_id=data.get('local_team_id'),
+                visitor_team_id=data.get('visitor_team_id'),
+                court_id=data.get('court_id')
+            )
+            if collision_error:
+                return JsonResponse({'error': collision_error}, status=400)
             
             data['status'] = 'PREPARATION'
             m = self.model.objects.create(**data)
@@ -124,6 +160,25 @@ class MatchView(BaseCrudView):
                 # Ignore invalid status if provided
                 del data['status']
                 
+            match_datetime_str = data.get('match_datetime')
+            match_datetime = o.match_datetime
+            if match_datetime_str:
+                from django.utils.dateparse import parse_datetime
+                match_datetime = parse_datetime(match_datetime_str)
+            elif match_datetime_str == "":
+                match_datetime = None
+            
+            collision_error = validate_match_collisions(
+                match_datetime=match_datetime,
+                referee_id=data.get('referee_id', o.referee_id_id if hasattr(o, 'referee_id_id') else o.referee_id),
+                local_team_id=data.get('local_team_id', o.local_team_id_id if hasattr(o, 'local_team_id_id') else o.local_team_id),
+                visitor_team_id=data.get('visitor_team_id', o.visitor_team_id_id if hasattr(o, 'visitor_team_id_id') else o.visitor_team_id),
+                court_id=data.get('court_id', o.court_id_id if hasattr(o, 'court_id_id') else o.court_id),
+                exclude_id=mid
+            )
+            if collision_error:
+                return JsonResponse({'error': collision_error}, status=400)
+
             for k, v in data.items():
                 if hasattr(o, k): setattr(o, k, v)
             o.save()

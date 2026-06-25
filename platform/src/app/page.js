@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import styles from './page.module.css';
 import authService from '../services/authService';
 import matchService from '../services/matchService';
@@ -53,7 +54,8 @@ export default function RootDashboardPage() {
         total_clubs: data.total_clubs || 0,
         federated_players: data.federated_players || { total: 0, masculino: 0, femenino: 0 },
         active_tournaments: data.active_tournaments || 0,
-        matches_without_referee: data.matches_without_referee || 0
+        matches_without_referee: data.matches_without_referee || 0,
+        pending_counts: data.pending_counts || { clubs: 0, referees: 0, scorers: 0 }
       });
 
       // Actualizar las alertas con fallback a array vacío
@@ -187,9 +189,18 @@ export default function RootDashboardPage() {
                     icon={Shield}
                   />
                   <InfoCard
-                    title="Jugadores Federados"
+                    title="Jugadores Registrados"
                     value={metrics?.federated_players?.total ?? 0}
-                    subValue={metrics?.federated_players ? `Masculino: ${metrics.federated_players.masculino} | Femenino: ${metrics.federated_players.femenino}` : ''}
+                    subValue={metrics?.federated_players ? (
+                      <span style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.25rem', fontSize: '0.85rem' }}>
+                        <span style={{ color: '#0ea5e9' }}>
+                          <i className="bi bi-gender-male"></i> Masc: {metrics.federated_players.masculino}
+                        </span>
+                        <span style={{ color: '#ec4899' }}>
+                          <i className="bi bi-gender-female"></i> Fem: {metrics.federated_players.femenino}
+                        </span>
+                      </span>
+                    ) : ''}
                     icon={Users}
                   />
                   <InfoCard
@@ -207,8 +218,34 @@ export default function RootDashboardPage() {
                 {/* Sección Acciones Rápidas */}
                 <QuickActions />
 
-                {/* Sección Alertas Pendientes */}
-                <PendingAlerts alerts={pendingActions} />
+                {/* Sección Alertas Pendientes por Rol */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {metrics?.pending_counts?.clubs > 0 && (
+                    <Link href="/clubes" style={{ textDecoration: 'none' }}>
+                      <div style={{ padding: '1rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '0.5rem', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '0.75rem', transition: 'all 0.2s', cursor: 'pointer' }}>
+                        <i className="bi bi-shield-fill-exclamation" style={{ fontSize: '1.2rem' }}></i>
+                        <span>Tienes <strong>{metrics.pending_counts.clubs}</strong> solicitud(es) de Clubes pendientes.</span>
+                      </div>
+                    </Link>
+                  )}
+                  
+                  {metrics?.pending_counts?.referees > 0 && (
+                    <Link href="/arbitros" style={{ textDecoration: 'none' }}>
+                      <div style={{ padding: '1rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.5rem', color: '#14532d', display: 'flex', alignItems: 'center', gap: '0.75rem', transition: 'all 0.2s', cursor: 'pointer' }}>
+                        <i className="bi bi-person-badge-fill" style={{ fontSize: '1.2rem' }}></i>
+                        <span>Tienes <strong>{metrics.pending_counts.referees}</strong> solicitud(es) de Árbitros pendientes.</span>
+                      </div>
+                    </Link>
+                  )}
+                  {metrics?.pending_counts?.scorers > 0 && (
+                    <Link href="/planilleros" style={{ textDecoration: 'none' }}>
+                      <div style={{ padding: '1rem', backgroundColor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '0.5rem', color: '#7c2d12', display: 'flex', alignItems: 'center', gap: '0.75rem', transition: 'all 0.2s', cursor: 'pointer' }}>
+                        <i className="bi bi-clipboard-data-fill" style={{ fontSize: '1.2rem' }}></i>
+                        <span>Tienes <strong>{metrics.pending_counts.scorers}</strong> solicitud(es) de Planilleros pendientes.</span>
+                      </div>
+                    </Link>
+                  )}
+                </div>
               </>
             )}
           </div>
