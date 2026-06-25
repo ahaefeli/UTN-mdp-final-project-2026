@@ -21,6 +21,10 @@ export default function MisJugadoresPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Estados de paginado (máximo 10 por página)
+  const [playersPage, setPlayersPage] = useState(1);
+  const [teamPages, setTeamPages] = useState({});
+  
   // Selección temporal para asignación de equipos
   const [selectedTeamsMap, setSelectedTeamsMap] = useState({});
   const [editingAssignmentMap, setEditingAssignmentMap] = useState({});
@@ -217,79 +221,124 @@ export default function MisJugadoresPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {players.map((player) => (
-                      <tr key={player.id} className={styles.tr}>
-                        <td className={styles.td}>
-                          {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
-                        </td>
-                        <td className={styles.td}>{player.dni || '-'}</td>
-                        <td className={styles.td}>
-                          {player.gender === 'M' ? 'Masculino' : player.gender === 'F' ? 'Femenino' : '-'}
-                        </td>
-                        <td className={styles.td}>{player.email || '-'}</td>
-                        <td className={styles.td}>
-                          <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', backgroundColor: player.medical_certificate ? '#dcfce7' : '#fef2f2', color: player.medical_certificate ? '#166534' : '#991b1b' }}>
-                            {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
-                          </span>
-                        </td>
-                        <td className={styles.td}>
-                          <span 
-                            className={`${styles.badge} ${player.team_info ? styles.badgeActive : styles.badgeInactive}`}
-                            style={!player.team_info ? { backgroundColor: '#f1f5f9', color: '#64748b' } : {}}
-                          >
-                            {player.team_info ? 'Activo' : 'Sin Equipo'}
-                          </span>
-                        </td>
-                        <td className={styles.td}>
-                          {player.team_info && !editingAssignmentMap[player.id] ? (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '0.4rem 0.6rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
-                                {player.team_info.category} - {player.team_info.branch === 'MALE' ? 'Masculino' : player.team_info.branch === 'FEMALE' ? 'Femenino' : player.team_info.branch}
-                              </span>
-                              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button 
-                                  onClick={() => setEditingAssignmentMap(prev => ({...prev, [player.id]: true}))}
-                                  style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                    {(() => {
+                      const maxPlayersPage = Math.max(1, Math.ceil(players.length / 10));
+                      const activePlayersPage = Math.min(playersPage, maxPlayersPage);
+                      return players.slice((activePlayersPage - 1) * 10, activePlayersPage * 10).map((player) => (
+                        <tr key={player.id} className={styles.tr}>
+                          <td className={styles.td}>
+                            {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
+                          </td>
+                          <td className={styles.td}>{player.dni || '-'}</td>
+                          <td className={styles.td}>
+                            {player.gender === 'M' ? 'Masculino' : player.gender === 'F' ? 'Femenino' : '-'}
+                          </td>
+                          <td className={styles.td}>{player.email || '-'}</td>
+                          <td className={styles.td}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', backgroundColor: player.medical_certificate ? '#dcfce7' : '#fef2f2', color: player.medical_certificate ? '#166534' : '#991b1b' }}>
+                              {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
+                            </span>
+                          </td>
+                          <td className={styles.td}>
+                            <span 
+                              className={`${styles.badge} ${player.team_info ? styles.badgeActive : styles.badgeInactive}`}
+                              style={!player.team_info ? { backgroundColor: '#f1f5f9', color: '#64748b' } : {}}
+                            >
+                              {player.team_info ? 'Activo' : 'Sin Equipo'}
+                            </span>
+                          </td>
+                          <td className={styles.td}>
+                            {player.team_info && !editingAssignmentMap[player.id] ? (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '0.4rem 0.6rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
+                                  {player.team_info.category} - {player.team_info.branch === 'MALE' ? 'Masculino' : player.team_info.branch === 'FEMALE' ? 'Femenino' : player.team_info.branch}
+                                </span>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                  <button 
+                                    onClick={() => setEditingAssignmentMap(prev => ({...prev, [player.id]: true}))}
+                                    style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                                  >
+                                    Editar
+                                  </button>
+                                  <button 
+                                    onClick={() => handleUnassignPlayer(player.id, player.team_info.id)}
+                                    disabled={isSubmitting}
+                                    style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                                  >
+                                    Desasignar
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <select
+                                  value={selectedTeamsMap[player.id] || ''}
+                                  onChange={(e) => setSelectedTeamsMap({ ...selectedTeamsMap, [player.id]: e.target.value })}
+                                  style={{ padding: '0.35rem 0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.75rem', fontWeight: 600, color: '#334155', flex: 1 }}
                                 >
-                                  Editar
-                                </button>
-                                <button 
-                                  onClick={() => handleUnassignPlayer(player.id, player.team_info.id)}
+                                  <option value="">Seleccione equipo...</option>
+                                  {teams.map((team) => (
+                                    <option key={team.id} value={team.id}>
+                                      {team.category} - {team.branch === 'MALE' ? 'Masculino' : team.branch === 'FEMALE' ? 'Femenino' : team.branch}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => handleAssignPlayerToTeam(player.id, selectedTeamsMap[player.id])}
                                   disabled={isSubmitting}
-                                  style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                                  style={{ backgroundColor: '#002F87', color: 'white', border: 'none', padding: '0.35rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
                                 >
-                                  Desasignar
+                                  Asignar
                                 </button>
                               </div>
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                              <select
-                                value={selectedTeamsMap[player.id] || ''}
-                                onChange={(e) => setSelectedTeamsMap({ ...selectedTeamsMap, [player.id]: e.target.value })}
-                                style={{ padding: '0.35rem 0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.75rem', fontWeight: 600, color: '#334155', flex: 1 }}
-                              >
-                                <option value="">Seleccione equipo...</option>
-                                {teams.map((team) => (
-                                  <option key={team.id} value={team.id}>
-                                    {team.category} - {team.branch === 'MALE' ? 'Masculino' : team.branch === 'FEMALE' ? 'Femenino' : team.branch}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={() => handleAssignPlayerToTeam(player.id, selectedTeamsMap[player.id])}
-                                disabled={isSubmitting}
-                                style={{ backgroundColor: '#002F87', color: 'white', border: 'none', padding: '0.35rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                              >
-                                Asignar
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                            )}
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
+              )}
+              {players.length > 10 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', paddingBottom: '0.5rem', selectNone: 'true' }}>
+                  <button
+                    onClick={() => setPlayersPage(prev => Math.max(prev - 1, 1))}
+                    disabled={playersPage === 1}
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '0.375rem',
+                      border: '1px solid #cbd5e1',
+                      backgroundColor: playersPage === 1 ? '#f1f5f9' : '#white',
+                      color: playersPage === 1 ? '#94a3b8' : '#0f172a',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: playersPage === 1 ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Anterior
+                  </button>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                    Página {Math.min(playersPage, Math.max(1, Math.ceil(players.length / 10)))} de {Math.max(1, Math.ceil(players.length / 10))}
+                  </span>
+                  <button
+                    onClick={() => setPlayersPage(prev => Math.min(prev + 1, Math.ceil(players.length / 10)))}
+                    disabled={playersPage >= Math.ceil(players.length / 10)}
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '0.375rem',
+                      border: '1px solid #cbd5e1',
+                      backgroundColor: playersPage >= Math.ceil(players.length / 10) ? '#f1f5f9' : '#white',
+                      color: playersPage >= Math.ceil(players.length / 10) ? '#94a3b8' : '#0f172a',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: playersPage >= Math.ceil(players.length / 10) ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Siguiente
+                  </button>
+                </div>
               )}
             </div>
           </section>
@@ -333,30 +382,76 @@ export default function MisJugadoresPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {team.players.map((player) => (
-                              <tr key={player.id} className={styles.tr}>
-                                <td className={styles.td}>
-                                  {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
-                                </td>
-                                <td className={styles.td}>{player.dni || '-'}</td>
-                                <td className={styles.td}>{player.email || '-'}</td>
-                                <td className={styles.td}>
-                                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', backgroundColor: player.medical_certificate ? '#dcfce7' : '#fef2f2', color: player.medical_certificate ? '#166534' : '#991b1b' }}>
-                                    {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
-                                  </span>
-                                </td>
-                                <td className={styles.td}>
-                                  <span 
-                                    className={`${styles.badge} ${player.team_info ? styles.badgeActive : styles.badgeInactive}`}
-                                    style={!player.team_info ? { backgroundColor: '#f1f5f9', color: '#64748b' } : {}}
-                                  >
-                                    {player.team_info ? 'Activo' : 'Sin Equipo'}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
+                            {(() => {
+                              const teamPage = teamPages[team.id] || 1;
+                              const maxTeamPage = Math.max(1, Math.ceil((team.players || []).length / 10));
+                              const activeTeamPage = Math.min(teamPage, maxTeamPage);
+                              return (team.players || []).slice((activeTeamPage - 1) * 10, activeTeamPage * 10).map((player) => (
+                                <tr key={player.id} className={styles.tr}>
+                                  <td className={styles.td}>
+                                    {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
+                                  </td>
+                                  <td className={styles.td}>{player.dni || '-'}</td>
+                                  <td className={styles.td}>{player.email || '-'}</td>
+                                  <td className={styles.td}>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', backgroundColor: player.medical_certificate ? '#dcfce7' : '#fef2f2', color: player.medical_certificate ? '#166534' : '#991b1b' }}>
+                                      {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
+                                    </span>
+                                  </td>
+                                  <td className={styles.td}>
+                                    <span 
+                                      className={`${styles.badge} ${player.team_info ? styles.badgeActive : styles.badgeInactive}`}
+                                      style={!player.team_info ? { backgroundColor: '#f1f5f9', color: '#64748b' } : {}}
+                                    >
+                                      {player.team_info ? 'Activo' : 'Sin Equipo'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ));
+                            })()}
                           </tbody>
                         </table>
+                      )}
+                      {team.players && team.players.length > 10 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', selectNone: 'true' }}>
+                          <button
+                            onClick={() => setTeamPages(prev => ({ ...prev, [team.id]: Math.max((prev[team.id] || 1) - 1, 1) }))}
+                            disabled={(teamPages[team.id] || 1) === 1}
+                            style={{
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '0.375rem',
+                              border: '1px solid #cbd5e1',
+                              backgroundColor: (teamPages[team.id] || 1) === 1 ? '#f1f5f9' : '#white',
+                              color: (teamPages[team.id] || 1) === 1 ? '#94a3b8' : '#0f172a',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: (teamPages[team.id] || 1) === 1 ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            Anterior
+                          </button>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                            Página {Math.min(teamPages[team.id] || 1, Math.max(1, Math.ceil(team.players.length / 10)))} de {Math.max(1, Math.ceil(team.players.length / 10))}
+                          </span>
+                          <button
+                            onClick={() => setTeamPages(prev => ({ ...prev, [team.id]: Math.min((prev[team.id] || 1) + 1, Math.ceil(team.players.length / 10)) }))}
+                            disabled={(teamPages[team.id] || 1) >= Math.ceil(team.players.length / 10)}
+                            style={{
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '0.375rem',
+                              border: '1px solid #cbd5e1',
+                              backgroundColor: (teamPages[team.id] || 1) >= Math.ceil(team.players.length / 10) ? '#f1f5f9' : '#white',
+                              color: (teamPages[team.id] || 1) >= Math.ceil(team.players.length / 10) ? '#94a3b8' : '#0f172a',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: (teamPages[team.id] || 1) >= Math.ceil(team.players.length / 10) ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            Siguiente
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
