@@ -13,6 +13,12 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setShowLogoutConfirm(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 20) {
         setIsScrolled(true);
@@ -154,7 +160,10 @@ export default function Navbar() {
                 Cancelar
               </button>
               <button 
-                onClick={logout} 
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  logout();
+                }} 
                 className={styles.btnConfirmExit}
               >
                 Sí, salir
