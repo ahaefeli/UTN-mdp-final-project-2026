@@ -112,8 +112,13 @@ export default function RootDashboardPage() {
     setIsLoading(true);
     setError('');
     try {
-      const response = await matchService.getMatches();
-      setMatches(response.data || []);
+      // Inyectar explícitamente el parámetro recent
+      const params = { recent: 'true' };
+      const response = await matchService.getMatches(params);
+      
+      // Guardar limitando a los 10 más recientes
+      const fetchedMatches = response.data || [];
+      setMatches(fetchedMatches.slice(0, 10));
     } catch (err) {
       console.error('Error al cargar partidos en Dashboard raíz:', err);
       setError('Error al sincronizar con el backend de partidos.');
@@ -509,7 +514,7 @@ export default function RootDashboardPage() {
   return (
     <div className={`${styles.container} custom_container`}>
       {/* Sección scrolleable de contenidos */}
-      <div className={styles.scrollContent} style={{ width: '100%' }}>
+      <div className={styles.scrollContent} style={{ width: '100%', padding: '1rem 0' }}>
         <div className={styles.dashboardLayout}>
           {/* Grid de 2 Columnas */}
           <div className={styles.grid}>
@@ -535,24 +540,44 @@ export default function RootDashboardPage() {
                 )}
 
                 {!isLoading && !error && matches.length > 0 && (
-                  <div className={styles.matchList}>
-                    {matches && matches.length > 0 && matches.map((match) => (
-                      <div key={match.id} className={styles.matchItem}>
-                        <div className={styles.matchTeams}>
-                          <span className={`${styles.team} ${styles.localTeam}`}>{match.local_team_name}</span>
-                          <div className={styles.scoreArea}>
-                            <span className={styles.vsBadge}>VS</span>
-                            {match.score_summary && <span className={styles.scoreText}>{match.score_summary}</span>}
-                          </div>
-                          <span className={`${styles.team} ${styles.visitorTeam}`}>{match.visitor_team_name}</span>
+                  <div className={styles.matchList} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {matches.slice(0, 10).map((match) => (
+                      <div 
+                        key={match.id} 
+                        style={{ 
+                          padding: '1.25rem', 
+                          border: '1px solid #e2e8f0', 
+                          borderRadius: '0.75rem', 
+                          backgroundColor: '#fff',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        {/* Encabezado */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                          <span style={{ color: '#002F87' }}>{match.tournament_name || 'Torneo'}</span>
+                          <span>{match.category ? `${match.category} - ${match.branch === 'MALE' ? 'Masculino' : match.branch === 'FEMALE' ? 'Femenino' : match.branch}` : ''}</span>
                         </div>
 
-                        <div className={styles.matchFooter}>
+                        {/* Cuerpo (Resultado) */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0.25rem 0' }}>
+                          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', flex: 1 }}>{match.local_team_name}</span>
+                          
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.25rem 0.75rem', backgroundColor: '#f1f5f9', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', color: '#0f172a' }}>
+                            <span>{match.local_score ?? '-'}</span>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>VS</span>
+                            <span>{match.visitor_score ?? '-'}</span>
+                          </div>
+
+                          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', flex: 1, textAlign: 'right' }}>{match.visitor_team_name}</span>
+                        </div>
+
+                        {/* Pie */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.65rem', color: '#94a3b8' }}>
                           <span>Árbitro: {match.referee_name || 'Sin asignar'}</span>
-                          <span className={`${styles.statusBadge} ${match.status === 'FINISHED' ? styles.badgeFinished : styles.badgePending
-                            }`}>
-                            {STATUS_TRANSLATIONS[match.status] || match.status}
-                          </span>
+                          <span>{match.match_datetime ? new Date(match.match_datetime).toLocaleDateString('es-AR') : ''}</span>
                         </div>
                       </div>
                     ))}
@@ -575,14 +600,48 @@ export default function RootDashboardPage() {
                     No hay partidos programados próximamente.
                   </div>
                 ) : (
-                  <div className={styles.matchList}>
-                    {upcomingMatches.slice(0, 3).map((match) => (
-                      <div key={match.id} className={styles.matchItem} style={{ padding: '0.75rem', gap: '0.5rem' }}>
-                        <div className={styles.matchMeta} style={{ fontSize: '0.65rem' }}>
-                          <span>{match.match_datetime ? new Date(match.match_datetime).toLocaleDateString() : 'A confirmar'}</span>
+                  <div className={styles.matchList} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {upcomingMatches.map((match) => (
+                      <div 
+                        key={match.id} 
+                        style={{ 
+                          padding: '1rem', 
+                          border: '1px solid #e2e8f0', 
+                          borderLeft: '5px solid #FF8A00',
+                          borderRadius: '0.5rem', 
+                          backgroundColor: '#fff',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.01)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.35rem'
+                        }}
+                      >
+                        {/* Encabezado */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>
+                          <span style={{ color: '#002F87' }}>{match.tournament_name || 'Torneo'}</span>
+                          <span>{match.matchday_name || 'Fecha por definir'}</span>
                         </div>
-                        <div className={styles.matchTeams} style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#334155' }}>
-                          <span>{match.local_team_name} vs {match.visitor_team_name}</span>
+
+                        {/* Subtítulo */}
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                          {match.category ? `${match.category} - ${match.branch === 'MALE' ? 'Masculino' : match.branch === 'FEMALE' ? 'Femenino' : match.branch}` : ''}
+                        </div>
+
+                        {/* Enfrentamiento */}
+                        <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#1e293b', margin: '0.15rem 0' }}>
+                          {match.local_team_name} <span style={{ fontWeight: 'normal', color: '#94a3b8', fontSize: '0.7rem' }}>vs</span> {match.visitor_team_name}
+                        </div>
+
+                        {/* Detalles Logísticos */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.65rem', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '0.35rem', marginTop: '0.15rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <i className="bi bi-calendar-event"></i>
+                            <span>{match.match_datetime ? new Date(match.match_datetime).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Fecha a confirmar'}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <i className="bi bi-geo-alt"></i>
+                            <span>{match.court_name ? `Cancha: ${match.court_name}` : 'Cancha a confirmar'}</span>
+                          </div>
                         </div>
                       </div>
                     ))}

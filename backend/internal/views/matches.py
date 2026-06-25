@@ -16,6 +16,7 @@ def serialize_match_detail(m):
     d['tournament_name'] = m.tournament_stage.tournament.name if m.tournament_stage and m.tournament_stage.tournament else None
     d['category'] = m.tournament_stage.tournament.category if m.tournament_stage and m.tournament_stage.tournament else None
     d['branch'] = m.tournament_stage.tournament.branch if m.tournament_stage and m.tournament_stage.tournament else None
+    d['matchday_name'] = m.tournament_stage.name if m.tournament_stage else None
     return d
 
 @method_decorator(jwt_required, name='dispatch')
@@ -56,10 +57,15 @@ class MatchView(BaseCrudView):
         elif request.user.role == 'COACH':
             from django.db.models import Q
             qs = qs.filter(Q(local_team__coach=request.user) | Q(visitor_team__coach=request.user))
+        elif request.user.role == 'PLAYER':
+            from django.db.models import Q
+            qs = qs.filter(Q(local_team__players=request.user) | Q(visitor_team__players=request.user)).distinct()
             
         if request.GET.get('upcoming') == 'true':
             from django.utils import timezone
             qs = qs.filter(match_datetime__gte=timezone.now())
+        if request.GET.get('recent') == 'true':
+            qs = qs.filter(status__in=['FINISHED', 'CANCELLED'])
         page = request.GET.get('page')
         if page:
             p = Paginator(qs, 10); p_o = p.get_page(page)
