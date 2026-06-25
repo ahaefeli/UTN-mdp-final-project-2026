@@ -16,7 +16,7 @@ export default function TorneosPage() {
   const [selectedLiga, setSelectedLiga] = useState("Todas");
 
   // Estados para la API
-  const [tournaments, setTournaments] = useState([]);
+  const [allTournaments, setAllTournaments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -32,7 +32,7 @@ export default function TorneosPage() {
     setEmailInput("");
   };
 
-  // Conexión con el Backend (useEffect)
+  // Conexión con el Backend (useEffect) - Trae todos los torneos una sola vez
   useEffect(() => {
     let active = true;
 
@@ -42,23 +42,7 @@ export default function TorneosPage() {
         setError(null);
 
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.88.24:8000/public';
-        const params = new URLSearchParams();
-
-        if (searchTerm) {
-          params.append("search", searchTerm);
-        }
-        if (selectedLiga !== "Todas") {
-          params.append("liga", selectedLiga);
-        }
-        if (selectedRama !== "Todas") {
-          params.append("rama", selectedRama);
-        }
-        if (selectedCategoria !== "Todas") {
-          params.append("categoria", selectedCategoria);
-        }
-
-        const queryString = params.toString();
-        const url = `${baseUrl}/torneos/${queryString ? `?${queryString}` : ""}`;
+        const url = `${baseUrl}/torneos/`;
 
         const res = await fetch(url);
         if (!res.ok) {
@@ -68,54 +52,7 @@ export default function TorneosPage() {
         const json = await res.json();
 
         if (active) {
-          const mapped = (json.data || []).map((t) => {
-            let badgeText = "Próximamente";
-            let badgeType = "upcoming";
-
-            if (t.status === "IN_PROGRESS") {
-              badgeText = "EN DISPUTA";
-              badgeType = "live";
-            } else if (t.status === "FINISHED") {
-              badgeText = "FINALIZADO";
-              badgeType = "default";
-            } else if (t.status === "CANCELLED") {
-              badgeText = "CANCELADO";
-              badgeType = "default";
-            }
-
-            const ramaFormatted = t.branch === "MALE" ? "Masculino" : t.branch === "FEMALE" ? "Femenino" : t.branch;
-            const catFormatted = t.category ? t.category.replace("_", " ") : "";
-            const categoryText = `${catFormatted.charAt(0).toUpperCase() + catFormatted.slice(1).toLowerCase()} - ${ramaFormatted}`;
-
-            let dateInfo = "A definir";
-            if (t.start_date) {
-              try {
-                const d = new Date(t.start_date + "T00:00:00");
-                dateInfo = d.toLocaleDateString("es-ES", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                });
-              } catch (e) {
-                dateInfo = `Inicio: ${t.start_date}`;
-              }
-            }
-
-            return {
-              id: t.id,
-              title: t.name || "Sin título",
-              category: categoryText,
-              badgeText,
-              badgeType,
-              dateInfo,
-              locationInfo: t.organization_name || "Sede a confirmar",
-              buttonText: "VER DETALLES",
-              image: "/images/inicio/torneo-apertura.jpg",
-              href: `/torneos/${t.id}`,
-            };
-          });
-
-          setTournaments(mapped);
+          setAllTournaments(json.data || []);
         }
       } catch (err) {
         if (active) {
@@ -133,7 +70,80 @@ export default function TorneosPage() {
     return () => {
       active = false;
     };
-  }, [searchTerm, selectedLiga, selectedRama, selectedCategoria]);
+  }, []);
+
+  // Filtrado front-side de los torneos obtenidos
+  const filteredRawTournaments = allTournaments.filter((t) => {
+    if (searchTerm && !t.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+    if (selectedLiga !== "Todas" && t.organization_name !== selectedLiga) {
+      return false;
+    }
+    if (selectedRama !== "Todas") {
+      const expectedBranch = selectedRama === "Masculino" ? "MALE" : "FEMALE";
+      if (t.branch !== expectedBranch) {
+        return false;
+      }
+    }
+    if (selectedCategoria !== "Todas") {
+      const expectedCategory = selectedCategoria.toUpperCase().replace("-", "_");
+      if (t.category !== expectedCategory) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  // Mapeo a la estructura visual esperada
+  const tournaments = filteredRawTournaments.map((t) => {
+    let badgeText = "Próximamente";
+    let badgeType = "upcoming";
+
+    if (t.status === "IN_PROGRESS") {
+      badgeText = "EN DISPUTA";
+      badgeType = "live";
+    } else if (t.status === "FINISHED") {
+      badgeText = "FINALIZADO";
+      badgeType = "default";
+    } else if (t.status === "CANCELLED") {
+      badgeText = "CANCELADO";
+      badgeType = "default";
+    }
+
+    const ramaFormatted = t.branch === "MALE" ? "Masculino" : t.branch === "FEMALE" ? "Femenino" : t.branch;
+    const catFormatted = t.category ? t.category.replace("_", " ") : "";
+    const categoryText = `${catFormatted.charAt(0).toUpperCase() + catFormatted.slice(1).toLowerCase()} - ${ramaFormatted}`;
+
+    let dateInfo = "A definir";
+    if (t.start_date) {
+      try {
+        const d = new Date(t.start_date + "T00:00:00");
+        dateInfo = d.toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+      } catch (e) {
+        dateInfo = `Inicio: ${t.start_date}`;
+      }
+    }
+
+    return {
+      id: t.id,
+      title: t.name || "Sin título",
+      category: categoryText,
+      badgeText,
+      badgeType,
+      dateInfo,
+      locationInfo: t.organization_name || "Sede a confirmar",
+      buttonText: "VER DETALLES",
+      image: "/images/inicio/torneo-apertura.jpg",
+      href: `/torneos/${t.id}`,
+    };
+  });
+
+  const uniqueLigas = ["Todas", ...new Set(allTournaments.map((t) => t.organization_name).filter(Boolean))];
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
@@ -295,19 +305,21 @@ export default function TorneosPage() {
           </div>
 
           {/* Filtros (Ligas, Rama y Categoría) */}
-          {/* <div className="flex gap-4 items-center flex-wrap">
-             Select de Ligas 
+          <div className="flex gap-4 items-center flex-wrap">
+            {/* Select de Ligas */}
             <select
               value={selectedLiga}
               onChange={(e) => setSelectedLiga(e.target.value)}
               className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2.5 outline-none font-semibold cursor-pointer"
             >
-              <option value="Todas">Todas las Ligas</option>
-              <option value="Liga Necochense">Liga Necochense</option>
-              <option value="Liga Marplatense">Liga Marplatense</option>
+              {uniqueLigas.map((liga) => (
+                <option key={liga} value={liga}>
+                  {liga === "Todas" ? "Todas las Ligas" : liga}
+                </option>
+              ))}
             </select>
 
-             Select de Rama 
+            {/* Select de Rama */}
             <select
               value={selectedRama}
               onChange={(e) => setSelectedRama(e.target.value)}
@@ -318,14 +330,13 @@ export default function TorneosPage() {
               <option value="Masculino">Masculino</option>
             </select>
 
-             Select de Categoría 
+            {/* Select de Categoría */}
             <select
               value={selectedCategoria}
               onChange={(e) => setSelectedCategoria(e.target.value)}
               className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2.5 outline-none font-semibold cursor-pointer"
             >
               <option value="Todas">Todas las Categorías</option>
-              <option value="Minis">Minis</option>
               <option value="Sub-14">Sub-14</option>
               <option value="Sub-16">Sub-16</option>
               <option value="Sub-18">Sub-18</option>
@@ -333,7 +344,7 @@ export default function TorneosPage() {
               <option value="Primera">Primera</option>
               <option value="Maxi">Maxi</option>
             </select>
-          </div> */}
+          </div>
 
         </div>
       </div>
