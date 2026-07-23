@@ -1,0 +1,249 @@
+/* Resultados — CSS modules with design tokens (navy / accent) */
+
+.alertContent {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.tournamentSelect {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 16rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.matchesColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.matchList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.matchCard {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.matchCardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.matchCardMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.matchCategory {
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.matchLocation {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.teamsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.teamRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.teamInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.teamLogo {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.teamInitials {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.avatarSm {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 0.5rem;
+}
+
+.initialsneutral {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.initialsprimary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.teamName {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teamScoreBlock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-shrink: 0;
+}
+
+.setPoints {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.setPoint {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.setPointActive {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.setsWon {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary);
+  width: 1.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.liveFooter {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.liveLabel {
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.liveScore {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.standingsColumn {
+  min-width: 0;
+}
+
+.standingsTeam {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.standingsTeamName {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.posCell {
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.statCell {
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 0.8125rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.statMuted {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

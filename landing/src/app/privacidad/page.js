@@ -1,4 +1,5 @@
 "use client";
+import { getPlatformLoginUrl } from '../../utils/platformUrl';
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -7,15 +8,6 @@ import { usePathname } from "next/navigation";
 export default function PrivacidadPage() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-
-  const navigateToLogin = (e) => {
-    e.preventDefault();
-    window.location.href = "/login";
-  };
-
-
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
       
@@ -65,13 +57,12 @@ export default function PrivacidadPage() {
         {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
         <div className="flex items-center gap-4">
           <a
-            href="http://192.168.88.24:3001/login"
-            onClick={navigateToLogin}
+            href={getPlatformLoginUrl()}
             className="bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-[11px] md:text-sm py-2 px-3 md:py-2.5 md:px-5 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 whitespace-nowrap hidden sm:flex"
           >
             Acceso Clubes
           </a>
-          <a href="http://192.168.88.24:3001/login" onClick={navigateToLogin} className="hidden sm:block flex-shrink-0">
+          <a href={getPlatformLoginUrl()} className="hidden sm:block flex-shrink-0">
             <svg className="w-6 h-6 text-[#001F54] cursor-pointer hover:opacity-80 transition-opacity shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -117,11 +108,8 @@ export default function PrivacidadPage() {
             </Link>
             <hr />
             <a
-              href="http://192.168.88.24:3001/login"
-              onClick={(e) => {
-                setIsMobileMenuOpen(false);
-                navigateToLogin(e);
-              }}
+              href={getPlatformLoginUrl()}
+              onClick={() => setIsMobileMenuOpen(false)}
               className="w-full bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-center py-3 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 text-sm"
             >
               Acceso Clubes

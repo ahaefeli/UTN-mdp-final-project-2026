@@ -1,43 +1,40 @@
 .container {
-  margin-top: 0.2rem;
-  margin-bottom: 0.2rem;
+  margin: 0;
 }
 
 .sectionTitle {
-  font-size: 1rem;
+  font-size: 0.8125rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 1rem 0;
-  border-bottom: 2px solid #f1f5f9;
-  padding-bottom: 0.5rem;
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-2);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
 }
 
 .actionCard {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: var(--space-3);
   text-align: left;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   width: 100%;
 }
 
 .actionCard:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  background: var(--surface);
   border-color: #cbd5e1;
 }
 
@@ -45,42 +42,42 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius);
   flex-shrink: 0;
 }
 
 .blueIcon {
-  background-color: #eff6ff;
-  color: #1d4ed8;
+  background-color: #e8eef7;
+  color: var(--primary);
 }
 
 .orangeIcon {
   background-color: #fff7ed;
-  color: #ea580c;
+  color: var(--accent);
 }
 
 .greenIcon {
   background-color: #f0fdf4;
-  color: #16a34a;
+  color: var(--success);
 }
 
 .textContainer {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
 }
 
 .label {
-  font-size: 0.9375rem;
-  font-weight: 800;
-  color: #1e293b;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .description {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
   line-height: 1.3;
 }

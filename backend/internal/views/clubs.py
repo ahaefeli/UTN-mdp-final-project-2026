@@ -10,10 +10,16 @@ class ClubView(BaseCrudView):
     model = Club
     def get(self, request, obj_id=None, *args, **kwargs):
         cid = obj_id or request.GET.get('club_id')
+        org = request.user.organization
         if cid:
-            try: return JsonResponse({'data': serialize_club(self.model.objects.get(id=cid))}, status=200)
-            except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
-        qs = self.model.objects.all().order_by('id')
+            try:
+                return JsonResponse(
+                    {'data': serialize_club(self.model.objects.get(id=cid, organization=org))},
+                    status=200,
+                )
+            except self.model.DoesNotExist:
+                return JsonResponse({'error': 'Not found'}, status=404)
+        qs = self.model.objects.filter(organization=org).order_by('id')
         page = request.GET.get('page')
         if page:
             p = Paginator(qs, 10); p_o = p.get_page(page)
@@ -31,7 +37,7 @@ class ClubView(BaseCrudView):
         if not cid: return JsonResponse({'error': 'Missing club_id'}, status=400)
         data = parse_body(request)
         try:
-            c = self.model.objects.get(id=cid)
+            c = self.model.objects.get(id=cid, organization=request.user.organization)
             for k, v in data.items():
                 if hasattr(c, k): setattr(c, k, v)
             c.save(); return JsonResponse({'data': serialize_club(c)}, status=200)
@@ -41,5 +47,8 @@ class ClubView(BaseCrudView):
     def delete(self, request, obj_id=None, *args, **kwargs):
         cid = obj_id or request.GET.get('club_id')
         if not cid: return JsonResponse({'error': 'Missing club_id'}, status=400)
-        try: self.model.objects.get(id=cid).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
-        except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        try:
+            self.model.objects.get(id=cid, organization=request.user.organization).delete()
+            return JsonResponse({'message': 'Deleted'}, status=200)
+        except self.model.DoesNotExist:
+            return JsonResponse({'error': 'Not found'}, status=404)

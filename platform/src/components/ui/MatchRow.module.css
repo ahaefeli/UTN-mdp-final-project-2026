@@ -1,0 +1,93 @@
+.row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr auto auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  text-decoration: none;
+  color: inherit;
+}
+
+.rowClickable {
+  cursor: pointer;
+}
+
+.rowClickable:hover {
+  background: var(--surface);
+  border-color: #cbd5e1;
+}
+
+.time {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.teams {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.matchup {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.statusCol {
+  justify-self: end;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: end;
+}
+
+.score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'teams status'
+      'time actions';
+  }
+
+  .time {
+    grid-area: time;
+  }
+
+  .teams {
+    grid-area: teams;
+  }
+
+  .statusCol {
+    grid-area: status;
+  }
+
+  .actions {
+    grid-area: actions;
+  }
+}

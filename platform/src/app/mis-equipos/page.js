@@ -2,9 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import styles from './page.module.css';
 import { useAuth } from '../../context/AuthContext';
+import {
+  PageHeader,
+  Button,
+  Alert,
+  Modal,
+  DataTable,
+  LoadingState,
+  EmptyState,
+  StatusBadge,
+} from '../../components/ui';
+import dirStyles from '../../components/ui/AdminDirectory.module.css';
+import styles from './page.module.css';
 
 const getApiUrl = (path) => {
   const base = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/';
@@ -14,7 +24,7 @@ const getApiUrl = (path) => {
 
 const BRANCH_LABELS = {
   MALE: 'Masculino',
-  FEMALE: 'Femenino'
+  FEMALE: 'Femenino',
 };
 
 const CATEGORY_LABELS = {
@@ -23,13 +33,25 @@ const CATEGORY_LABELS = {
   SUB_18: 'Sub 18',
   SUB_21: 'Sub 21',
   PRIMERA: 'Primera',
-  MAXI: 'Maxi'
+  MAXI: 'Maxi',
+};
+
+const TEAM_COLUMNS = [
+  { key: 'name', label: 'Nombre del Equipo' },
+  { key: 'category', label: 'Categoría' },
+  { key: 'branch', label: 'Rama' },
+  { key: 'actions', label: 'Acciones', width: '120px' },
+];
+
+const BRANCH_VARIANTS = {
+  MALE: 'primary',
+  FEMALE: 'accent',
 };
 
 export default function MisEquiposPage() {
   const router = useRouter();
   const { user, role, isAuthenticated, isInitialized } = useAuth();
-  
+
   // Acceso y Estados Principales
   const [isVerifying, setIsVerifying] = useState(true);
   const [teams, setTeams] = useState([]);
@@ -37,12 +59,12 @@ export default function MisEquiposPage() {
   const [organizationId, setOrganizationId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
-  
+
   // Estados para Modales
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
+
   // Estado de Formularios e Item Seleccionado
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [coaches, setCoaches] = useState([]);
@@ -68,36 +90,36 @@ export default function MisEquiposPage() {
     try {
       const token = localStorage.getItem('lnv_token');
       const sessionUser = JSON.parse(localStorage.getItem('lnv_session') || '{}');
-      
+
       if (!sessionUser.id) {
         throw new Error('No se encontró el identificador del usuario.');
       }
-      
+
       const profileRes = await fetch(getApiUrl(`internal/usuarios/${sessionUser.id}/`), {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       if (!profileRes.ok) {
         throw new Error('Error al obtener la información de perfil.');
       }
-      
+
       const response = await profileRes.json();
       const profile = response.data;
-      
+
       // Fallback seguro de obtención de IDs
       const userClubId = profile.club_id || profile.club;
       const userOrgId = profile.organization_id || profile.organization;
-      
+
       if (!userClubId) {
         throw new Error('Su usuario administrador de club no tiene asociado ningún club.');
       }
-      
+
       setClubId(userClubId);
       setOrganizationId(userOrgId);
-      
+
       await fetchCoaches(token);
       await fetchTeams(userClubId, token);
     } catch (err) {
@@ -112,9 +134,9 @@ export default function MisEquiposPage() {
     try {
       const res = await fetch(getApiUrl('internal/usuarios/?role=COACH'), {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
       if (res.ok) {
         const data = await res.json();
@@ -132,18 +154,18 @@ export default function MisEquiposPage() {
     try {
       const currentToken = token || localStorage.getItem('lnv_token');
       const currentClubId = targetClubId || clubId;
-      
+
       const res = await fetch(getApiUrl(`internal/equipos/?club_id=${currentClubId}`), {
         headers: {
-          'Authorization': `Bearer ${currentToken}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${currentToken}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       if (!res.ok) {
         throw new Error('Error al obtener el listado de equipos.');
       }
-      
+
       const data = await res.json();
       setTeams(data.data || []);
     } catch (err) {
@@ -158,7 +180,7 @@ export default function MisEquiposPage() {
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
-    
+
     setIsSubmitting(true);
     setErrorMsg('');
     try {
@@ -169,23 +191,23 @@ export default function MisEquiposPage() {
         branch: formData.branch,
         club_id: clubId,
         organization_id: organizationId,
-        coach_id: formData.coach_id || null
+        coach_id: formData.coach_id || null,
       };
-      
+
       const res = await fetch(getApiUrl('internal/equipos/'), {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Error al intentar crear el equipo.');
       }
-      
+
       setShowCreateModal(false);
       setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE', coach_id: '' });
       await fetchTeams(clubId, token);
@@ -201,7 +223,7 @@ export default function MisEquiposPage() {
   const handleEditTeam = async (e) => {
     e.preventDefault();
     if (!selectedTeam || !formData.name.trim()) return;
-    
+
     setIsSubmitting(true);
     setErrorMsg('');
     try {
@@ -210,23 +232,23 @@ export default function MisEquiposPage() {
         name: formData.name.trim(),
         category: formData.category,
         branch: formData.branch,
-        coach_id: formData.coach_id || null
+        coach_id: formData.coach_id || null,
       };
-      
+
       const res = await fetch(getApiUrl(`internal/equipos/${selectedTeam.id}/`), {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Error al actualizar el equipo.');
       }
-      
+
       setShowEditModal(false);
       setSelectedTeam(null);
       setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE', coach_id: '' });
@@ -242,7 +264,7 @@ export default function MisEquiposPage() {
   // Eliminación de equipo
   const handleDeleteTeam = async () => {
     if (!selectedTeam) return;
-    
+
     setIsSubmitting(true);
     setErrorMsg('');
     try {
@@ -250,16 +272,16 @@ export default function MisEquiposPage() {
       const res = await fetch(getApiUrl(`internal/equipos/${selectedTeam.id}/`), {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Error al eliminar el equipo.');
       }
-      
+
       setShowDeleteModal(false);
       setSelectedTeam(null);
       await fetchTeams(clubId, token);
@@ -278,7 +300,7 @@ export default function MisEquiposPage() {
       name: team.name || '',
       category: team.category || 'PRIMERA',
       branch: team.branch || 'FEMALE',
-      coach_id: team.coach_id || ''
+      coach_id: team.coach_id || '',
     });
     setShowEditModal(true);
   };
@@ -289,322 +311,251 @@ export default function MisEquiposPage() {
     setShowDeleteModal(true);
   };
 
-  // Renderizado del Loading General o Redirección
-  if (isVerifying) {
-    return (
-      <div style={{ display: 'flex', padding: '3rem', justifyContent: 'center' }}>
-        <div className={styles.spinner} />
+  const resetFormData = () => {
+    setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE', coach_id: '' });
+  };
+
+  const handleOpenCreateModal = () => {
+    resetFormData();
+    setShowCreateModal(true);
+  };
+
+  const renderTeamFormFields = (idPrefix) => (
+    <>
+      <div className={dirStyles.formGroup}>
+        <label className={dirStyles.label} htmlFor={`${idPrefix}-name`}>
+          Nombre del Equipo *
+        </label>
+        <input
+          id={`${idPrefix}-name`}
+          type="text"
+          required
+          placeholder={idPrefix === 'create-team' ? 'Ej: Huracán A' : undefined}
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className={dirStyles.input}
+          disabled={isSubmitting}
+        />
       </div>
-    );
+
+      <div className={dirStyles.formGroup}>
+        <label className={dirStyles.label} htmlFor={`${idPrefix}-category`}>
+          Categoría *
+        </label>
+        <select
+          id={`${idPrefix}-category`}
+          value={formData.category}
+          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+          className={dirStyles.select}
+          disabled={isSubmitting}
+        >
+          {Object.entries(CATEGORY_LABELS).map(([key, value]) => (
+            <option key={key} value={key}>
+              {value}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className={dirStyles.formGroup}>
+        <label className={dirStyles.label} htmlFor={`${idPrefix}-branch`}>
+          Rama *
+        </label>
+        <select
+          id={`${idPrefix}-branch`}
+          value={formData.branch}
+          onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+          className={dirStyles.select}
+          disabled={isSubmitting}
+        >
+          {Object.entries(BRANCH_LABELS).map(([key, value]) => (
+            <option key={key} value={key}>
+              {value}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className={dirStyles.formGroup}>
+        <label className={dirStyles.label} htmlFor={`${idPrefix}-coach`}>
+          Entrenador (Opcional)
+        </label>
+        <select
+          id={`${idPrefix}-coach`}
+          value={formData.coach_id || ''}
+          onChange={(e) => setFormData({ ...formData, coach_id: e.target.value })}
+          className={dirStyles.select}
+          disabled={isSubmitting}
+        >
+          <option value="">Sin entrenador asignado</option>
+          {coaches.map((coach) => (
+            <option key={coach.id} value={coach.id}>
+              {coach.name || coach.username || coach.email}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
+  );
+
+  if (isVerifying) {
+    return <LoadingState full />;
   }
 
   return (
-    <div className={`${styles.container} custom_container`}>
-      {/* Cabecera de Página */}
-      <header className={styles.header}>
-        <div className={styles.actions}>
-          <button onClick={() => {
-            setFormData({ name: '', category: 'PRIMERA', branch: 'FEMALE', coach_id: '' });
-            setShowCreateModal(true);
-          }} className={styles.btnCreate}>
-            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Nuevo Equipo
-          </button>
-          
-          <Link href="/" className={styles.btnBack}>
-            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-            Volver
-          </Link>
-        </div>
-      </header>
+    <div className="appShell">
+      <div className={dirStyles.page}>
+        <PageHeader
+          title="Mis"
+          highlight="Equipos"
+          subtitle="Gestiona los equipos registrados en tu club."
+          actions={
+            <Button onClick={handleOpenCreateModal}>
+              <i className="bi bi-plus-lg" aria-hidden="true" />
+              Nuevo Equipo
+            </Button>
+          }
+        />
 
-      {/* Alertas */}
-      {errorMsg && <div className={styles.error}>{errorMsg}</div>}
-
-      {/* Tabla del Listado */}
-      <div className={styles.tableWrapper}>
-        {isLoading ? (
-          <div className={styles.spinner} />
-        ) : teams.length === 0 ? (
-          <div className={styles.emptyState}>
-            No se encontraron equipos registrados en este momento. ¡Crea el primero!
+        {errorMsg && (
+          <div className={dirStyles.alerts}>
+            <Alert variant="error">
+              <div className={styles.alertContent}>
+                <span>{errorMsg}</span>
+                <Button variant="ghost" size="sm" onClick={() => setErrorMsg('')} aria-label="Cerrar alerta">
+                  ×
+                </Button>
+              </div>
+            </Alert>
           </div>
-        ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.th}>Nombre del Equipo</th>
-                <th className={styles.th}>Categoría</th>
-                <th className={styles.th}>Rama</th>
-                <th className={styles.th} style={{ width: '120px' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {teams.map((team) => (
-                <tr key={team.id} className={styles.tr}>
-                  <td className={styles.td}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                      <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{team.name}</span>
-                      {team.coach_name && (
-                        <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          Entrenador: {team.coach_name}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className={styles.td}>
-                    {CATEGORY_LABELS[team.category] || team.category}
-                  </td>
-                  <td className={styles.td}>
-                    <span className={`${styles.badge} ${
-                      team.branch === 'MALE' ? styles.badgeMale : styles.badgeFemale
-                    }`}>
-                      {BRANCH_LABELS[team.branch] || team.branch}
-                    </span>
-                  </td>
-                  <td className={styles.td}>
-                    <div className={styles.actionCell}>
-                      <button onClick={() => openEditModal(team)} className={styles.btnActionEdit}>
-                        Editar
-                      </button>
-                      <button onClick={() => openDeleteModal(team)} className={styles.btnActionDelete}>
-                        Borrar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         )}
-      </div>
 
-      {/* MODAL: Crear Equipo */}
-      {showCreateModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Crear Nuevo Equipo</h2>
-              <p className={styles.modalSubtitle}>Ingresa los datos para registrar un equipo del club</p>
-            </div>
-            
-            <form onSubmit={handleCreateTeam} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Nombre del Equipo *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Huracán A"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={styles.input}
-                  disabled={isSubmitting}
-                />
-              </div>
+        {isLoading ? (
+          <LoadingState label="Cargando equipos..." />
+        ) : teams.length === 0 ? (
+          <EmptyState title="No se encontraron equipos registrados en este momento. ¡Crea el primero!" />
+        ) : (
+          <DataTable columns={TEAM_COLUMNS}>
+            {teams.map((team) => (
+              <tr key={team.id}>
+                <td>
+                  <div className={styles.teamCell}>
+                    <span className={styles.cellStrong}>{team.name}</span>
+                    {team.coach_name && (
+                      <span className={styles.cellMuted}>
+                        <i className="bi bi-person-fill" aria-hidden="true" />
+                        Entrenador: {team.coach_name}
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td>{CATEGORY_LABELS[team.category] || team.category}</td>
+                <td>
+                  <StatusBadge variant={BRANCH_VARIANTS[team.branch] || 'neutral'}>
+                    {BRANCH_LABELS[team.branch] || team.branch}
+                  </StatusBadge>
+                </td>
+                <td className={styles.cellActions}>
+                  <div className={dirStyles.tableActions}>
+                    <Button variant="secondary" size="sm" onClick={() => openEditModal(team)}>
+                      <i className="bi bi-pencil-fill" aria-hidden="true" />
+                      Editar
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => openDeleteModal(team)}>
+                      <i className="bi bi-trash-fill" aria-hidden="true" />
+                      Borrar
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </DataTable>
+        )}
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Categoría *</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={styles.select}
-                  disabled={isSubmitting}
-                >
-                  {Object.entries(CATEGORY_LABELS).map(([key, value]) => (
-                    <option key={key} value={key}>{value}</option>
-                  ))}
-                </select>
-              </div>
+        <Modal
+          open={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Crear Nuevo Equipo"
+          subtitle="Ingresa los datos para registrar un equipo del club"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowCreateModal(false)} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button type="submit" form="create-team-form" disabled={isSubmitting}>
+                {isSubmitting ? 'Guardando...' : 'Crear Equipo'}
+              </Button>
+            </>
+          }
+        >
+          <form id="create-team-form" onSubmit={handleCreateTeam} className={dirStyles.form}>
+            {renderTeamFormFields('create-team')}
+          </form>
+        </Modal>
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Rama *</label>
-                <select
-                  value={formData.branch}
-                  onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                  className={styles.select}
-                  disabled={isSubmitting}
-                >
-                  {Object.entries(BRANCH_LABELS).map(([key, value]) => (
-                    <option key={key} value={key}>{value}</option>
-                  ))}
-                </select>
-              </div>
+        <Modal
+          open={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedTeam(null);
+          }}
+          title="Editar Equipo"
+          subtitle="Modifica los datos del equipo seleccionado"
+          footer={
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedTeam(null);
+                }}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" form="edit-team-form" disabled={isSubmitting}>
+                {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+              </Button>
+            </>
+          }
+        >
+          <form id="edit-team-form" onSubmit={handleEditTeam} className={dirStyles.form}>
+            {renderTeamFormFields('edit-team')}
+          </form>
+        </Modal>
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Entrenador (Opcional)</label>
-                <select
-                  value={formData.coach_id || ''}
-                  onChange={(e) => setFormData({ ...formData, coach_id: e.target.value })}
-                  className={styles.select}
-                  disabled={isSubmitting}
-                >
-                  <option value="">Sin entrenador asignado</option>
-                  {coaches.map((coach) => (
-                    <option key={coach.id} value={coach.id}>
-                      {coach.name || coach.username || coach.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className={styles.btnCancel}
-                  disabled={isSubmitting}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className={styles.btnSave}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Guardando...' : 'Crear Equipo'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: Editar Equipo */}
-      {showEditModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Editar Equipo</h2>
-              <p className={styles.modalSubtitle}>Modifica los datos del equipo seleccionado</p>
-            </div>
-            
-            <form onSubmit={handleEditTeam} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Nombre del Equipo *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={styles.input}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Categoría *</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={styles.select}
-                  disabled={isSubmitting}
-                >
-                  {Object.entries(CATEGORY_LABELS).map(([key, value]) => (
-                    <option key={key} value={key}>{value}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Rama *</label>
-                <select
-                  value={formData.branch}
-                  onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                  className={styles.select}
-                  disabled={isSubmitting}
-                >
-                  {Object.entries(BRANCH_LABELS).map(([key, value]) => (
-                    <option key={key} value={key}>{value}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Entrenador (Opcional)</label>
-                <select
-                  value={formData.coach_id || ''}
-                  onChange={(e) => setFormData({ ...formData, coach_id: e.target.value })}
-                  className={styles.select}
-                  disabled={isSubmitting}
-                >
-                  <option value="">Sin entrenador asignado</option>
-                  {coaches.map((coach) => (
-                    <option key={coach.id} value={coach.id}>
-                      {coach.name || coach.username || coach.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setSelectedTeam(null);
-                  }}
-                  className={styles.btnCancel}
-                  disabled={isSubmitting}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className={styles.btnSave}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: Eliminar Equipo */}
-      {showDeleteModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Confirmar Eliminación</h2>
-              <p className={styles.modalSubtitle} style={{ color: '#ef4444', fontWeight: 600 }}>Esta acción no se puede deshacer</p>
-            </div>
-            
-            <div style={{ padding: '0.5rem 0 1.5rem 0', fontSize: '0.875rem', color: '#475569', lineHeight: 1.5 }}>
-              ¿Estás seguro de que deseas eliminar el equipo <strong>{selectedTeam?.name}</strong>? Se dará de baja lógica del sistema.
-            </div>
-
-            <div className={styles.modalActions}>
-              <button
-                type="button"
+        <Modal
+          open={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedTeam(null);
+          }}
+          title="Confirmar Eliminación"
+          subtitle={<span className={styles.deleteWarning}>Esta acción no se puede deshacer</span>}
+          footer={
+            <>
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setShowDeleteModal(false);
                   setSelectedTeam(null);
                 }}
-                className={styles.btnCancel}
                 disabled={isSubmitting}
               >
                 Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteTeam}
-                className={styles.btnDanger}
-                disabled={isSubmitting}
-              >
+              </Button>
+              <Button variant="danger" onClick={handleDeleteTeam} disabled={isSubmitting}>
                 {isSubmitting ? 'Eliminando...' : 'Sí, Eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              </Button>
+            </>
+          }
+        >
+          <p className={styles.deleteMessage}>
+            ¿Estás seguro de que deseas eliminar el equipo <strong>{selectedTeam?.name}</strong>? Se dará de baja
+            lógica del sistema.
+          </p>
+        </Modal>
+      </div>
     </div>
   );
 }

@@ -14,7 +14,11 @@ def validate_match_collisions(match_datetime, referee_id, local_team_id, visitor
     from core.models import Match
     if not match_datetime:
         return None
-    qs = Match.objects.filter(match_datetime=match_datetime, status__in=['PREPARATION', 'SCHEDULED', 'IN_PROGRESS'])
+    qs = Match.objects.filter(
+        match_datetime=match_datetime,
+        status__in=['PREPARATION', 'SCHEDULED', 'IN_PROGRESS'],
+        is_deleted=False,
+    )
     if exclude_id:
         qs = qs.exclude(id=exclude_id)
     if referee_id and qs.filter(referee_id=referee_id).exists():
@@ -31,7 +35,8 @@ def validate_match_collisions(match_datetime, referee_id, local_team_id, visitor
             court_id=court_id, 
             match_datetime__gt=start_window, 
             match_datetime__lt=end_window,
-            status__in=['PREPARATION', 'SCHEDULED', 'IN_PROGRESS']
+            status__in=['PREPARATION', 'SCHEDULED', 'IN_PROGRESS'],
+            is_deleted=False,
         )
         if exclude_id:
             court_qs = court_qs.exclude(id=exclude_id)
@@ -101,6 +106,7 @@ class MatchView(BaseCrudView):
             from django.db.models import Q
             # Aceptar partidos futuros O partidos cuya fecha y hora esté 'A Confirmar'
             qs = qs.filter(Q(match_datetime__gte=timezone.now()) | Q(match_datetime__isnull=True))
+            qs = qs.exclude(status__in=['FINISHED', 'CANCELLED'])
         if request.GET.get('recent') == 'true':
             qs = qs.filter(status__in=['FINISHED', 'CANCELLED'])
         page = request.GET.get('page')
@@ -152,7 +158,11 @@ class MatchView(BaseCrudView):
         try:
             o = self.model.objects.get(id=mid)
             if o.status == 'FINISHED': return JsonResponse({'error': 'No se puede editar un partido finalizado.'}, status=400)
-            if data.get('status') == 'FINISHED' and getattr(request.user, 'role', None) != 'REFEREE': return JsonResponse({'error': 'Solo el árbitro puede finalizar un partido.'}, status=403)
+            if data.get('status') == 'FINISHED':
+                return JsonResponse(
+                    {'error': 'Para finalizar un partido use POST /internal/torneos/partidos/finalizar/.'},
+                    status=400,
+                )
             if 'status' in data:
                 valid_admin_statuses = ['SUSPENDED', 'CANCELLED', 'PREPARATION', 'IN_PROGRESS']
                 if data['status'] in valid_admin_statuses:
@@ -165,8 +175,10 @@ class MatchView(BaseCrudView):
             if match_datetime_str:
                 from django.utils.dateparse import parse_datetime
                 match_datetime = parse_datetime(match_datetime_str)
+                data['match_datetime'] = match_datetime
             elif match_datetime_str == "":
                 match_datetime = None
+                data['match_datetime'] = None
             
             collision_error = validate_match_collisions(
                 match_datetime=match_datetime,
@@ -194,25 +206,150 @@ class MatchView(BaseCrudView):
 @method_decorator(jwt_required, name='dispatch')
 class MatchRescheduleView(View):
     def post(self, request):
-        data = parse_body(request); mid = data.get('match_id')
+        data = parse_body(request)
+        mid = data.get('match_id')
+        if not mid:
+            return JsonResponse({'error': 'Missing match_id'}, status=400)
         try:
-            m = Match.objects.get(id=mid)
-            if 'court_id' in data: m.court_id = data['court_id']
-            if 'match_datetime' in data: m.match_datetime = data['match_datetime']
-            if 'referee_id' in data: m.referee_id = data['referee_id']
-            m.save(); return JsonResponse({'data': serialize_match_detail(m)}, status=200)
-        except Exception as e: return JsonResponse({'error': str(e)}, status=400)
+            m = Match.objects.get(
+                id=mid,
+                tournament_stage__tournament__organization=request.user.organization,
+            )
+            if m.status in ('FINISHED', 'CANCELLED'):
+                return JsonResponse(
+                    {'error': 'No se puede reprogramar un partido finalizado o cancelado.'},
+                    status=400,
+                )
+
+            if 'court_id' in data:
+                m.court_id = data['court_id'] if data['court_id'] != '' else None
+            if 'referee_id' in data:
+                m.referee_id = data['referee_id'] if data['referee_id'] != '' else None
+            if 'match_datetime' in data:
+                from django.utils.dateparse import parse_datetime
+                dt_raw = data['match_datetime']
+                if dt_raw == '' or dt_raw is None:
+                    m.match_datetime = None
+                elif isinstance(dt_raw, str):
+                    parsed = parse_datetime(dt_raw)
+                    if parsed is None:
+                        return JsonResponse({'error': 'match_datetime inválido.'}, status=400)
+                    m.match_datetime = parsed
+                else:
+                    m.match_datetime = dt_raw
+
+            collision_error = validate_match_collisions(
+                match_datetime=m.match_datetime,
+                referee_id=m.referee_id,
+                local_team_id=m.local_team_id,
+                visitor_team_id=m.visitor_team_id,
+                court_id=m.court_id,
+                exclude_id=m.id,
+            )
+            if collision_error:
+                return JsonResponse({'error': collision_error}, status=400)
+
+            m.save()
+            return JsonResponse({'data': serialize_match_detail(m)}, status=200)
+        except Match.DoesNotExist:
+            return JsonResponse({'error': 'Partido no encontrado'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+def validate_volleyball_sets(score_detail):
+    """Valida planilla mejor de 5 (3-0, 3-1 o 3-2). Devuelve (sets_normalized, error_msg)."""
+    if not score_detail or not isinstance(score_detail, list):
+        return None, 'Se requiere al menos un set con puntuación.'
+    if len(score_detail) < 3 or len(score_detail) > 5:
+        return None, 'Un partido de vóley se cierra con 3, 4 o 5 sets.'
+
+    sets_normalized = []
+    local_sets = 0
+    visitor_sets = 0
+
+    for i, s in enumerate(score_detail):
+        try:
+            lp = int(s.get('local_points', s.get('local_score', 0)))
+            vp = int(s.get('visitor_points', s.get('visitor_score', 0)))
+        except (TypeError, ValueError):
+            return None, f'Puntos inválidos en el set {i + 1}.'
+        if lp < 0 or vp < 0:
+            return None, f'Los puntos del set {i + 1} no pueden ser negativos.'
+        if lp == vp:
+            return None, f'El set {i + 1} no puede empatar.'
+        set_number = s.get('set_number', i + 1)
+        try:
+            set_number = int(set_number)
+        except (TypeError, ValueError):
+            set_number = i + 1
+        sets_normalized.append({
+            'set_number': set_number,
+            'local_points': lp,
+            'visitor_points': vp,
+        })
+        if lp > vp:
+            local_sets += 1
+        else:
+            visitor_sets += 1
+
+        # No continuar jugando sets después de que alguien ya llegó a 3
+        if (local_sets >= 3 or visitor_sets >= 3) and i < len(score_detail) - 1:
+            return None, 'Hay sets de más: el partido ya tenía un ganador.'
+
+    if local_sets == visitor_sets:
+        return None, 'El partido no puede terminar empatado (máximo 2-2 sin set decisivo).'
+    if max(local_sets, visitor_sets) != 3:
+        return None, 'El ganador debe ganar exactamente 3 sets (mejor de 5).'
+    if min(local_sets, visitor_sets) > 2:
+        return None, 'Resultado inválido: un equipo no puede perder más de 2 sets.'
+
+    return sets_normalized, None
+
 
 @method_decorator(jwt_required, name='dispatch')
 class MatchFinishView(View):
+    ALLOWED_ROLES = {'ADMIN', 'REFEREE', 'SCORER'}
+
     def post(self, request):
-        data = parse_body(request); mid = data.get('match_id'); score_detail = data.get('score_detail') or data.get('scores', [])
+        role = getattr(request.user, 'role', None)
+        if role not in self.ALLOWED_ROLES:
+            return JsonResponse(
+                {'error': 'Solo administradores, árbitros o planilleros pueden publicar resultados.'},
+                status=403,
+            )
+
+        data = parse_body(request)
+        mid = data.get('match_id')
+        score_detail = data.get('score_detail') or data.get('scores', [])
+
+        if not mid:
+            return JsonResponse({'error': 'Falta match_id.'}, status=400)
+
+        sets_normalized, validation_error = validate_volleyball_sets(score_detail)
+        if validation_error:
+            return JsonResponse({'error': validation_error}, status=400)
+
         try:
-            m = Match.objects.get(id=mid); m.status = 'FINISHED'; parts = []
-            for s in score_detail:
-                lp, vp = s.get('local_points', 0), s.get('visitor_points', 0); parts.append(f"{lp}-{vp}")
-                # TODO: Hay que reemplazar esto por el JSON field sets_data
-                # GameSet.objects.update_or_create(match=m, set_number=s['set_number'], defaults={'local_points': lp, 'visitor_points': vp})
-            if parts: m.score_summary = ", ".join(parts)
-            m.save(); return JsonResponse({'data': serialize_match_detail(m)}, status=200)
-        except Exception as e: return JsonResponse({'error': str(e)}, status=400)
+            m = Match.objects.select_related(
+                'tournament_stage__tournament', 'local_team', 'visitor_team', 'court', 'referee', 'scorer'
+            ).get(id=mid, tournament_stage__tournament__organization=request.user.organization)
+        except Match.DoesNotExist:
+            return JsonResponse({'error': 'Partido no encontrado.'}, status=404)
+
+        if m.status == 'FINISHED':
+            return JsonResponse({'error': 'El partido ya está finalizado.'}, status=400)
+        if m.status == 'CANCELLED':
+            return JsonResponse({'error': 'No se puede cargar resultado de un partido cancelado.'}, status=400)
+
+        if role == 'REFEREE' and m.referee_id and m.referee_id != request.user.id:
+            return JsonResponse({'error': 'Solo el árbitro asignado puede finalizar este partido.'}, status=403)
+        if role == 'SCORER' and m.scorer_id and m.scorer_id != request.user.id:
+            return JsonResponse({'error': 'Solo el planillero asignado puede finalizar este partido.'}, status=403)
+
+        parts = [f"{s['local_points']}-{s['visitor_points']}" for s in sets_normalized]
+        m.sets_data = {'sets': sets_normalized}
+        m.score_summary = ', '.join(parts)
+        m.status = 'FINISHED'
+        m.save(update_fields=['sets_data', 'score_summary', 'status'])
+
+        return JsonResponse({'data': serialize_match_detail(m)}, status=200)

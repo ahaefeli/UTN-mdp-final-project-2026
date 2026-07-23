@@ -1,4 +1,5 @@
 "use client";
+import { getPlatformLoginUrl } from '../utils/platformUrl';
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -38,14 +39,6 @@ export default function LandingPage() {
   const pathname = usePathname();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const navigateToLogin = (e) => {
-    e.preventDefault();
-    window.location.href = "http://192.168.88.24:3001/login";
-  };
-
-
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
       
@@ -95,8 +88,7 @@ export default function LandingPage() {
         {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
         <div className="flex items-center gap-4">
           <a
-            href="http://192.168.88.24:3001/login"
-            onClick={navigateToLogin}
+            href={getPlatformLoginUrl()}
             className="bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-[11px] md:text-sm py-2 px-3 md:py-2.5 md:px-5 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 whitespace-nowrap hidden sm:flex"
           >
             Acceso Clubes
@@ -142,11 +134,8 @@ export default function LandingPage() {
             </Link>
             <hr />
             <a
-              href="http://192.168.88.24:3001/login"
-              onClick={(e) => {
-                setIsMobileMenuOpen(false);
-                navigateToLogin(e);
-              }}
+              href={getPlatformLoginUrl()}
+              onClick={() => setIsMobileMenuOpen(false)}
               className="w-full bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-center py-3 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 text-sm"
             >
               Acceso Clubes

@@ -4,13 +4,47 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../services/apiClient';
+import {
+  PageHeader,
+  Button,
+  Alert,
+  Modal,
+  DataTable,
+  LoadingState,
+  EmptyState,
+  StatusBadge,
+  Tabs,
+} from '../../components/ui';
+import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
 
 const STATUS_LABELS = {
   PENDING: 'Pendiente',
   APPROVED: 'Aprobada',
-  REJECTED: 'Rechazada'
+  REJECTED: 'Rechazada',
 };
+
+const ACTIVE_COLUMNS = [
+  { key: 'name', label: 'Nombre' },
+  { key: 'dni', label: 'DNI' },
+  { key: 'email', label: 'Email' },
+  { key: 'status', label: 'Estado' },
+];
+
+const REQUEST_COLUMNS = [
+  { key: 'name', label: 'Nombre del Planillero' },
+  { key: 'email', label: 'Email' },
+  { key: 'date', label: 'Fecha' },
+  { key: 'status', label: 'Estado' },
+  { key: 'actions', label: 'Acciones' },
+];
+
+function RequestStatusBadge({ status }) {
+  const variant =
+    status === 'PENDING' ? 'warning' : status === 'APPROVED' ? 'success' : 'danger';
+
+  return <StatusBadge variant={variant} label={STATUS_LABELS[status] || status} />;
+}
 
 export default function PlanillerosAdminPage() {
   const router = useRouter();
@@ -84,6 +118,17 @@ export default function PlanillerosAdminPage() {
     setGeneratedLink('');
   };
 
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedRequest(null);
+  };
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setErrorMsg('');
+    setSuccessMsg('');
+  };
+
   // Generate Invite Link (POST)
   const handleGenerateLink = async (targetRole = 'SCORER') => {
     setIsGeneratingLink(true);
@@ -91,10 +136,10 @@ export default function PlanillerosAdminPage() {
     setSuccessMsg('');
     try {
       const res = await apiClient.post('admin/club-requests/generate-link/', { role: targetRole });
-      
+
       const token = res.data?.token || '';
       const link = `${window.location.origin}/register?token=${token}`;
-      
+
       setGeneratedLink(link);
       setIsInviteModalOpen(true);
       setSuccessMsg('Enlace generado exitosamente.');
@@ -154,305 +199,255 @@ export default function PlanillerosAdminPage() {
   };
 
   if (!isInitialized || !isAuthenticated || role !== 'ADMIN') {
-    return (
-      <div className={styles.loadingContainer} style={{ minHeight: '100vh' }}>
-        <div className={styles.spinner} />
-      </div>
-    );
+    return <LoadingState full />;
   }
 
   return (
-    <div className={`${styles.container} custom_container`}>
-      {/* Cabecera */}
-      <header className={styles.header}>
-        <div className={styles.titleArea}>
-          <h1 className={styles.title}>Gestión de Planilleros</h1>
-          <p className={styles.subtitle}>Supervise los planilleros oficiales activos y administre las solicitudes de registro.</p>
-        </div>
-        <button 
-          onClick={() => handleGenerateLink('SCORER')} 
-          disabled={isGeneratingLink}
-          className={`${styles.btn} ${styles.btnPrimary}`}
-          style={{ backgroundColor: '#16a34a', borderColor: '#16a34a' }}
-        >
-          {isGeneratingLink ? (
-            <>
-              <div className={styles.spinner} style={{ width: '1rem', height: '1rem', borderWidth: '2px', borderLeftColor: '#ffffff', marginRight: '0.5rem' }} />
-              Generando...
-            </>
-          ) : (
-            <>
-              <i className="bi bi-person-badge" style={{ fontSize: '1rem', marginRight: '0.5rem' }}></i>
-              Invitar Planillero
-            </>
-          )}
-        </button>
-      </header>
+    <div className="appShell">
+      <div className={dirStyles.page}>
+        <PageHeader
+          title="Gestión de Planilleros"
+          subtitle="Supervise los planilleros oficiales activos y administre las solicitudes de registro."
+          actions={
+            <Button
+              variant="accent"
+              onClick={() => handleGenerateLink('SCORER')}
+              disabled={isGeneratingLink}
+            >
+              {isGeneratingLink ? (
+                'Generando...'
+              ) : (
+                <>
+                  <i className="bi bi-person-badge" aria-hidden="true"></i>
+                  Invitar Planillero
+                </>
+              )}
+            </Button>
+          }
+        />
 
-      {/* Alertas de Mensaje */}
-      {successMsg && (
-        <div className={styles.successBox} style={{ marginBottom: '1.5rem' }}>
-          {successMsg}
-          <button onClick={() => setSuccessMsg('')} style={{ float: 'right', background: 'none', border: 'none', color: 'inherit', fontWeight: 'bold', cursor: 'pointer' }}>×</button>
-        </div>
-      )}
-      {errorMsg && (
-        <div className={styles.errorBox} style={{ marginBottom: '1.5rem' }}>
-          {errorMsg}
-          <button onClick={() => setErrorMsg('')} style={{ float: 'right', background: 'none', border: 'none', color: 'inherit', fontWeight: 'bold', cursor: 'pointer' }}>×</button>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className={styles.tabsContainer}>
-        <button
-          onClick={() => {
-            setActiveTab('activeScorers');
-            setErrorMsg('');
-            setSuccessMsg('');
-          }}
-          className={`${styles.tab} ${activeTab === 'activeScorers' ? styles.tabActive : styles.tabInactive}`}
-        >
-          Planilleros Activos
-        </button>
-        <button
-          onClick={() => {
-            setActiveTab('pendingRequests');
-            setErrorMsg('');
-            setSuccessMsg('');
-          }}
-          className={`${styles.tab} ${activeTab === 'pendingRequests' ? styles.tabActive : styles.tabInactive}`}
-        >
-          Solicitudes Pendientes
-        </button>
-      </div>
-
-      {/* Contenido de Tablas */}
-      {isLoading ? (
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner} />
-          <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 600 }}>Cargando información...</p>
-        </div>
-      ) : activeTab === 'activeScorers' ? (
-        scorers.length === 0 ? (
-          <div className={styles.emptyState}>No hay planilleros registrados en el sistema.</div>
-        ) : (
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th className={styles.th}>Nombre</th>
-                  <th className={styles.th}>DNI</th>
-                  <th className={styles.th}>Email</th>
-                  <th className={styles.th}>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scorers.map((sc) => (
-                  <tr key={sc.id} className={styles.trHover}>
-                    <td className={styles.td} style={{ fontWeight: 700, color: '#0f172a' }}>
-                      {sc.name || `${sc.first_name || ''} ${sc.last_name || ''}`}
-                    </td>
-                    <td className={styles.td}>{sc.dni || 'Sin especificar'}</td>
-                    <td className={styles.td}>{sc.email || 'Sin especificar'}</td>
-                    <td className={styles.td}>
-                      <span className={`${styles.badge} ${sc.is_active ? styles.badgeApproved : styles.badgeRejected}`}>
-                        {sc.is_active ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
-      ) : (
-        requests.length === 0 ? (
-          <div className={styles.emptyState}>No hay solicitudes de registro pendientes.</div>
-        ) : (
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th className={styles.th}>Nombre del Planillero</th>
-                  <th className={styles.th}>Email</th>
-                  <th className={styles.th}>Fecha</th>
-                  <th className={styles.th}>Estado</th>
-                  <th className={styles.th} style={{ textAlign: 'right' }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.map((req) => (
-                  <tr key={req.id} className={styles.trHover}>
-                    <td className={styles.td} style={{ fontWeight: 700, color: '#0f172a' }}>
-                      {req.admin_first_name} {req.admin_last_name}
-                    </td>
-                    <td className={styles.td}>{req.admin_email}</td>
-                    <td className={styles.td}>
-                      {req.created_at ? new Date(req.created_at).toLocaleDateString('es-AR') : 'Sin especificar'}
-                    </td>
-                    <td className={styles.td}>
-                      <span className={`${styles.badge} ${
-                        req.status === 'PENDING' ? styles.badgePending :
-                        req.status === 'APPROVED' ? styles.badgeApproved : styles.badgeRejected
-                      }`}>
-                        {STATUS_LABELS[req.status] || req.status}
-                      </span>
-                    </td>
-                    <td className={styles.td} style={{ textAlign: 'right' }}>
-                      {req.status === 'PENDING' && (
-                        <div className={styles.actionsCell} style={{ justifyContent: 'flex-end' }}>
-                          <button
-                            onClick={() => handleFetchRequestDetail(req.id)}
-                            disabled={isSubmitting || isFetchingDetail}
-                            className={`${styles.btn} ${styles.btnDetail}`}
-                          >
-                            <i className="bi bi-info-circle-fill"></i>
-                            Ver Detalle
-                          </button>
-                          <button
-                            onClick={() => handleReviewRequest(req.id, 'APPROVE')}
-                            disabled={isSubmitting}
-                            className={`${styles.btn} ${styles.btnApprove}`}
-                          >
-                            <i className="bi bi-check-circle-fill"></i>
-                            Aprobar
-                          </button>
-                          <button
-                            onClick={() => handleReviewRequest(req.id, 'REJECT')}
-                            disabled={isSubmitting}
-                            className={`${styles.btn} ${styles.btnReject}`}
-                          >
-                            <i className="bi bi-x-circle-fill"></i>
-                            Rechazar
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
-      )}
-
-      {/* Modal: Enlace de Invitación Generado */}
-      {isInviteModalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContainer} style={{ maxWidth: '500px' }}>
-            <header className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Invitación Generada</h3>
-              <button onClick={handleCloseInviteModal} className={styles.btnClose}>&times;</button>
-            </header>
-            <div className={styles.modalBody}>
-              <p style={{ fontSize: '0.875rem', color: '#475569', margin: '0 0 1.25rem 0', fontWeight: 600 }}>
-                Enlace generado con éxito. Compártelo con el planillero.
-              </p>
-              <div className={styles.linkGeneratedBox} style={{ marginTop: 0 }}>
-                <p className={styles.linkGeneratedTitle}>Enlace de registro:</p>
-                <div className={styles.linkInputRow}>
-                  <input
-                    type="text"
-                    readOnly
-                    value={generatedLink}
-                    className={styles.linkInput}
-                    onClick={(e) => e.target.select()}
-                  />
+        {(successMsg || errorMsg) && (
+          <div className={dirStyles.alerts}>
+            {successMsg && (
+              <Alert variant="success">
+                <div className={styles.alertRow}>
+                  <span>{successMsg}</span>
                   <button
                     type="button"
-                    onClick={handleCopyLink}
-                    className={`${styles.btn} ${styles.btnPrimary}`}
-                    style={{ padding: '0 1.25rem', height: '40px', fontSize: '0.8rem', borderRadius: '0.5rem' }}
+                    className={styles.dismissBtn}
+                    onClick={() => setSuccessMsg('')}
+                    aria-label="Cerrar mensaje"
                   >
-                    {isCopied ? '¡Copiado!' : 'Copiar Link'}
+                    ×
                   </button>
                 </div>
-              </div>
-            </div>
-            <footer className={styles.modalFooter}>
-              <button type="button" onClick={handleCloseInviteModal} className={`${styles.btn} ${styles.btnSecondary}`}>
-                Cerrar
-              </button>
-            </footer>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Detalle de Solicitud de Planillero */}
-      {isDetailModalOpen && selectedRequest && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContainer} style={{ maxWidth: '600px' }}>
-            <header className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Detalle de Solicitud</h3>
-              <button onClick={() => { setIsDetailModalOpen(false); setSelectedRequest(null); }} className={styles.btnClose}>&times;</button>
-            </header>
-            <div className={styles.modalBody}>
-              
-              <div className={styles.detailBlock}>
-                <h4 className={styles.detailBlockTitle}>Datos del Planillero</h4>
-                <div className={styles.detailGrid}>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Nombre Completo</span>
-                    <span className={styles.detailValue}>
-                      {selectedRequest.admin_first_name || ''} {selectedRequest.admin_last_name || ''}
-                    </span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>DNI</span>
-                    <span className={styles.detailValue}>{selectedRequest.admin_dni || 'Sin especificar'}</span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Email</span>
-                    <span className={styles.detailValue}>{selectedRequest.admin_email || 'Sin especificar'}</span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Estado</span>
-                    <span className={`${styles.badge} ${
-                      selectedRequest.status === 'PENDING' ? styles.badgePending :
-                      selectedRequest.status === 'APPROVED' ? styles.badgeApproved : styles.badgeRejected
-                    }`}>
-                      {STATUS_LABELS[selectedRequest.status] || selectedRequest.status}
-                    </span>
-                  </div>
+              </Alert>
+            )}
+            {errorMsg && (
+              <Alert variant="error">
+                <div className={styles.alertRow}>
+                  <span>{errorMsg}</span>
+                  <button
+                    type="button"
+                    className={styles.dismissBtn}
+                    onClick={() => setErrorMsg('')}
+                    aria-label="Cerrar mensaje"
+                  >
+                    ×
+                  </button>
                 </div>
-              </div>
+              </Alert>
+            )}
+          </div>
+        )}
 
+        <Tabs
+          tabs={[
+            { id: 'activeScorers', label: 'Planilleros Activos' },
+            { id: 'pendingRequests', label: 'Solicitudes Pendientes' },
+          ]}
+          active={activeTab}
+          onChange={handleTabChange}
+        />
+
+        {isLoading ? (
+          <LoadingState label="Cargando información..." />
+        ) : activeTab === 'activeScorers' ? (
+          scorers.length === 0 ? (
+            <EmptyState title="No hay planilleros registrados en el sistema." />
+          ) : (
+            <DataTable columns={ACTIVE_COLUMNS}>
+              {scorers.map((sc) => (
+                <tr key={sc.id}>
+                  <td className={styles.nameCell}>
+                    {sc.name || `${sc.first_name || ''} ${sc.last_name || ''}`}
+                  </td>
+                  <td>{sc.dni || 'Sin especificar'}</td>
+                  <td>{sc.email || 'Sin especificar'}</td>
+                  <td>
+                    <StatusBadge
+                      variant={sc.is_active ? 'success' : 'neutral'}
+                      label={sc.is_active ? 'Activo' : 'Inactivo'}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </DataTable>
+          )
+        ) : requests.length === 0 ? (
+          <EmptyState title="No hay solicitudes de registro pendientes." />
+        ) : (
+          <DataTable columns={REQUEST_COLUMNS}>
+            {requests.map((req) => (
+              <tr key={req.id}>
+                <td className={styles.nameCell}>
+                  {req.admin_first_name} {req.admin_last_name}
+                </td>
+                <td>{req.admin_email}</td>
+                <td>
+                  {req.created_at
+                    ? new Date(req.created_at).toLocaleDateString('es-AR')
+                    : 'Sin especificar'}
+                </td>
+                <td>
+                  <RequestStatusBadge status={req.status} />
+                </td>
+                <td>
+                  {req.status === 'PENDING' && (
+                    <div className={dirStyles.tableActions}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleFetchRequestDetail(req.id)}
+                        disabled={isSubmitting || isFetchingDetail}
+                      >
+                        <i className="bi bi-info-circle-fill" aria-hidden="true"></i>
+                        Ver Detalle
+                      </Button>
+                      <Button
+                        variant="accent"
+                        size="sm"
+                        onClick={() => handleReviewRequest(req.id, 'APPROVE')}
+                        disabled={isSubmitting}
+                      >
+                        <i className="bi bi-check-circle-fill" aria-hidden="true"></i>
+                        Aprobar
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleReviewRequest(req.id, 'REJECT')}
+                        disabled={isSubmitting}
+                      >
+                        <i className="bi bi-x-circle-fill" aria-hidden="true"></i>
+                        Rechazar
+                      </Button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </DataTable>
+        )}
+
+        <Modal
+          open={isInviteModalOpen}
+          onClose={handleCloseInviteModal}
+          title="Invitación Generada"
+          footer={
+            <Button variant="secondary" onClick={handleCloseInviteModal}>
+              Cerrar
+            </Button>
+          }
+        >
+          <p className={dirStyles.muted}>
+            Enlace generado con éxito. Compártelo con el planillero.
+          </p>
+          <div className={dirStyles.formGroup}>
+            <span className={dirStyles.label}>Enlace de registro:</span>
+            <div className={styles.linkRow}>
+              <input
+                type="text"
+                readOnly
+                value={generatedLink}
+                className={dirStyles.input}
+                onClick={(e) => e.target.select()}
+              />
+              <Button type="button" onClick={handleCopyLink} size="sm">
+                {isCopied ? '¡Copiado!' : 'Copiar Link'}
+              </Button>
             </div>
-            <footer className={styles.modalFooter} style={{ justifyContent: 'space-between' }}>
-              <div>
-                {selectedRequest.status === 'PENDING' && (
-                  <div className={styles.actionsCell}>
-                    <button
+          </div>
+        </Modal>
+
+        <Modal
+          open={isDetailModalOpen && Boolean(selectedRequest)}
+          onClose={handleCloseDetailModal}
+          title="Detalle de Solicitud"
+          size="lg"
+          footer={
+            <div className={styles.footerSplit}>
+              <div className={styles.footerActions}>
+                {selectedRequest?.status === 'PENDING' && (
+                  <>
+                    <Button
+                      variant="accent"
+                      size="sm"
                       onClick={() => handleReviewRequest(selectedRequest.id, 'APPROVE')}
                       disabled={isSubmitting}
-                      className={`${styles.btn} ${styles.btnApprove}`}
                     >
-                      <i className="bi bi-check-circle-fill"></i>
+                      <i className="bi bi-check-circle-fill" aria-hidden="true"></i>
                       Aprobar
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={() => handleReviewRequest(selectedRequest.id, 'REJECT')}
                       disabled={isSubmitting}
-                      className={`${styles.btn} ${styles.btnReject}`}
                     >
-                      <i className="bi bi-x-circle-fill"></i>
+                      <i className="bi bi-x-circle-fill" aria-hidden="true"></i>
                       Rechazar
-                    </button>
-                  </div>
+                    </Button>
+                  </>
                 )}
               </div>
-              <button 
-                type="button" 
-                onClick={() => { setIsDetailModalOpen(false); setSelectedRequest(null); }} 
-                className={`${styles.btn} ${styles.btnSecondary}`}
-              >
+              <Button variant="secondary" onClick={handleCloseDetailModal}>
                 Cerrar
-              </button>
-            </footer>
-          </div>
-        </div>
-      )}
+              </Button>
+            </div>
+          }
+        >
+          {selectedRequest && (
+            <div className={styles.detailSection}>
+              <h4 className={styles.detailSectionTitle}>Datos del Planillero</h4>
+              <div className={dirStyles.detailGrid}>
+                <div className={dirStyles.detailItem}>
+                  <span className={dirStyles.detailLabel}>Nombre Completo</span>
+                  <span className={dirStyles.detailValue}>
+                    {selectedRequest.admin_first_name || ''} {selectedRequest.admin_last_name || ''}
+                  </span>
+                </div>
+                <div className={dirStyles.detailItem}>
+                  <span className={dirStyles.detailLabel}>DNI</span>
+                  <span className={dirStyles.detailValue}>
+                    {selectedRequest.admin_dni || 'Sin especificar'}
+                  </span>
+                </div>
+                <div className={dirStyles.detailItem}>
+                  <span className={dirStyles.detailLabel}>Email</span>
+                  <span className={dirStyles.detailValue}>
+                    {selectedRequest.admin_email || 'Sin especificar'}
+                  </span>
+                </div>
+                <div className={dirStyles.detailItem}>
+                  <span className={dirStyles.detailLabel}>Estado</span>
+                  <RequestStatusBadge status={selectedRequest.status} />
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
+      </div>
     </div>
   );
 }

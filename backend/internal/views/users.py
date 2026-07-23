@@ -74,7 +74,7 @@ class UserView(BaseCrudView):
         elif request.user.role == 'COACH':
             qs = qs.filter(club=request.user.club, role='PLAYER')
         else:
-            qs = qs.exclude(role__in=['ADMIN', 'OWNER'])
+            qs = qs.exclude(role='ADMIN')
             
         qs = qs.order_by('id')
         

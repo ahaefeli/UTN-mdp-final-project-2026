@@ -80,6 +80,15 @@ def calculate_standings(tournament_id):
                 except ValueError:
                     pass
 
+        # Solo contar resultados decisivos de vóley (3-0, 3-1 o 3-2).
+        # Partidos FINISHED sin planilla válida (0-0 / summary inválido) se omiten.
+        decisive = (
+            sets_won_home != sets_won_visitor
+            and max(sets_won_home, sets_won_visitor) == 3
+        )
+        if not decisive:
+            continue
+
         # Update stats
         home_stats = teams_dict[m.local_team_id]
         visitor_stats = teams_dict[m.visitor_team_id]

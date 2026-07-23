@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import apiClient from '../../services/apiClient';
+import { Button, Alert, LoadingState } from '../../components/ui';
 import styles from './page.module.css';
 
 function PublicRegisterForm() {
@@ -172,49 +173,49 @@ function PublicRegisterForm() {
   };
 
   if (status === 'loading') {
-    return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.spinner} />
-        <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 600 }}>Verificando enlace de invitación...</p>
-      </div>
-    );
+    return <LoadingState label="Verificando enlace de invitación..." />;
   }
 
   if (status === 'error') {
     return (
-      <div className={`${styles.card} ${styles.errorCard}`}>
+      <div className={`${styles.card} ${styles.statusCard}`}>
         <div className={styles.errorIcon}>
-          <i className="bi bi-x-circle-fill" style={{ fontSize: '2rem' }}></i>
+          <i className="bi bi-x-circle-fill" aria-hidden="true" />
         </div>
         <h2 className={styles.errorTitle}>Invitación Inválida</h2>
-        <p className={styles.errorDesc}>{errorMsg || 'El enlace es inválido o ha expirado. Contacta al administrador.'}</p>
-        <a href="/" className={`${styles.btn} ${styles.btnPrimary}`} style={{ marginTop: '1rem' }}>
-          Volver al Inicio
-        </a>
+        <p className={styles.statusDesc}>
+          {errorMsg || 'El enlace es inválido o ha expirado. Contacta al administrador.'}
+        </p>
+        <div className={styles.statusActions}>
+          <a href="/" className={styles.linkButton}>
+            <Button block>Volver al Inicio</Button>
+          </a>
+        </div>
       </div>
     );
   }
 
   if (step === 3) {
     return (
-      <div className={`${styles.card} ${styles.successCard}`}>
+      <div className={`${styles.card} ${styles.statusCard}`}>
         <div className={styles.successIcon}>
-          <i className="bi bi-check-circle-fill" style={{ fontSize: '2.5rem' }}></i>
+          <i className="bi bi-check-circle-fill" aria-hidden="true" />
         </div>
         <h2 className={styles.successTitle}>¡Registro Recibido!</h2>
-        
-        <div role="alert" className={styles.alertBox}>
-          <i className="bi bi-info-circle-fill" style={{ marginRight: '0.5rem', fontSize: '1.20rem' }}></i>
+
+        <Alert variant="warning" className={styles.alertBox}>
           {['REFEREE', 'SCORER'].includes(invitationRole) ? (
             <span>Tu solicitud de registro como {invitationRole === 'REFEREE' ? 'árbitro' : 'planillero'} ha sido recibida con éxito. No podrás iniciar sesión hasta que el administrador de la liga apruebe tu cuenta.</span>
           ) : (
             <span>Tu solicitud de registro ha sido recibida con éxito. No podrás iniciar sesión con tus credenciales hasta que el administrador de la liga apruebe la cuenta de tu club.</span>
           )}
-        </div>
+        </Alert>
 
-        <a href="/" className={`${styles.btn} ${styles.btnPrimary}`} style={{ marginTop: '1.5rem' }}>
-          Volver al Inicio
-        </a>
+        <div className={styles.statusActions}>
+          <a href="/" className={styles.linkButton}>
+            <Button block>Volver al Inicio</Button>
+          </a>
+        </div>
       </div>
     );
   }
@@ -255,8 +256,8 @@ function PublicRegisterForm() {
         </p>
       </header>
 
-      {errorMsg && <div className={styles.alertError}>{errorMsg}</div>}
-      {errorMessage && <div className={styles.errorAlert}>{errorMessage}</div>}
+      {errorMsg && <Alert variant="error">{errorMsg}</Alert>}
+      {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
 
       {step === 1 && !['REFEREE', 'SCORER'].includes(invitationRole) && (
         <form onSubmit={handleNextStep}>
@@ -329,16 +330,17 @@ function PublicRegisterForm() {
                 {logoPreview && (
                   <div className={styles.previewContainer}>
                     <img src={logoPreview} alt="Vista previa del logo" className={styles.previewImage} />
-                    <button
+                    <Button
                       type="button"
+                      variant="danger"
+                      size="sm"
                       onClick={() => {
                         setLogoFile(null);
                         setLogoPreview('');
                       }}
-                      className={styles.btnRemoveLogo}
                     >
                       Quitar Logo
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -346,10 +348,10 @@ function PublicRegisterForm() {
           </div>
 
           <div className={styles.actionsContainer}>
-            <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`}>
-              <span>Siguiente</span>
-              <i className="bi bi-arrow-right-short" style={{ marginLeft: '0.25rem', fontSize: '1.2rem' }}></i>
-            </button>
+            <Button type="submit">
+              Siguiente
+              <i className="bi bi-arrow-right-short" aria-hidden="true" />
+            </Button>
           </div>
         </form>
       )}
@@ -447,31 +449,34 @@ function PublicRegisterForm() {
             </div>
           </div>
 
-          <div className={styles.actionsContainer} style={{ justifyContent: ['REFEREE', 'SCORER'].includes(invitationRole) ? 'flex-end' : 'space-between', marginTop: '2rem' }}>
+          <div
+            className={`${styles.actionsContainer} ${
+              ['REFEREE', 'SCORER'].includes(invitationRole)
+                ? styles.actionsEnd
+                : styles.actionsBetween
+            }`}
+          >
             {!['REFEREE', 'SCORER'].includes(invitationRole) && (
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => setStep(1)}
                 disabled={isSubmitting}
-                className={`${styles.btn} ${styles.btnSecondary}`}
               >
-                <i className="bi bi-arrow-left-short" style={{ marginRight: '0.25rem', fontSize: '1.2rem' }}></i>
+                <i className="bi bi-arrow-left-short" aria-hidden="true" />
                 Volver
-              </button>
+              </Button>
             )}
-            <button type="submit" disabled={isSubmitting} className={`${styles.btn} ${styles.btnPrimary}`}>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
-                <>
-                  <div className={styles.spinner} style={{ width: '1rem', height: '1rem', borderWidth: '2px', borderLeftColor: '#ffffff', marginRight: '0.5rem' }} />
-                  Enviando...
-                </>
+                'Enviando...'
               ) : (
                 <>
-                  <i className="bi bi-send-fill" style={{ marginRight: '0.25rem' }}></i>
+                  <i className="bi bi-send-fill" aria-hidden="true" />
                   {['REFEREE', 'SCORER'].includes(invitationRole) ? 'Completar Registro' : 'Enviar Registro'}
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -481,19 +486,12 @@ function PublicRegisterForm() {
 
 export default function PublicRegisterPage() {
   return (
-    <div className={styles.container}>
-      <div className={styles.brandContainer}>
-        <h1 className={styles.brandText}>
-          Voley<span className={styles.brandTextHighlight}>Hub</span>
-        </h1>
-      </div>
+    <div className={styles.authShell}>
+      <p className={styles.brand}>VoleyHub</p>
       <Suspense
         fallback={
           <div className={styles.card}>
-            <div className={styles.loadingContainer}>
-              <div className={styles.spinner} />
-              <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 600 }}>Cargando...</p>
-            </div>
+            <LoadingState label="Cargando..." />
           </div>
         }
       >

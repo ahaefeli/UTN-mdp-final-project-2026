@@ -2,16 +2,84 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import styles from './page.module.css';
 import authService from '../../services/authService';
 import playerService from '../../services/playerService';
 import { userService } from '../../services/userService';
 import teamService from '../../services/teamService';
+import {
+  PageHeader,
+  Button,
+  Alert,
+  Modal,
+  DataTable,
+  LoadingState,
+  EmptyState,
+  StatusBadge,
+} from '../../components/ui';
+import dirStyles from '../../components/ui/AdminDirectory.module.css';
+import chrome from '../../components/ui/PageChrome.module.css';
+import styles from './page.module.css';
+
+const PLAYERS_PER_PAGE = 10;
+
+const ROSTER_COLUMNS = [
+  { key: 'name', label: 'Nombre y Apellido' },
+  { key: 'dni', label: 'DNI' },
+  { key: 'gender', label: 'Género' },
+  { key: 'email', label: 'Email' },
+  { key: 'medical', label: 'Apto Físico' },
+  { key: 'status', label: 'Estado' },
+  { key: 'assignment', label: 'Asignación de Equipo', width: '250px' },
+];
+
+const TEAM_PLAYER_COLUMNS = [
+  { key: 'name', label: 'Nombre y Apellido' },
+  { key: 'dni', label: 'DNI' },
+  { key: 'email', label: 'Email' },
+  { key: 'medical', label: 'Apto Físico' },
+  { key: 'status', label: 'Estado' },
+];
+
+function formatBranch(branch) {
+  if (branch === 'MALE') return 'Masculino';
+  if (branch === 'FEMALE') return 'Femenino';
+  return branch;
+}
+
+function formatGender(gender) {
+  if (gender === 'M') return 'Masculino';
+  if (gender === 'F') return 'Femenino';
+  return '-';
+}
+
+function getPlayerName(player) {
+  return player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim();
+}
+
+function PaginationBar({ page, totalItems, onPrev, onNext }) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / PLAYERS_PER_PAGE));
+  const activePage = Math.min(page, totalPages);
+
+  if (totalItems <= PLAYERS_PER_PAGE) return null;
+
+  return (
+    <div className={styles.pagination}>
+      <Button variant="secondary" size="sm" onClick={onPrev} disabled={activePage === 1}>
+        Anterior
+      </Button>
+      <span className={styles.paginationLabel}>
+        Página {activePage} de {totalPages}
+      </span>
+      <Button variant="secondary" size="sm" onClick={onNext} disabled={activePage >= totalPages}>
+        Siguiente
+      </Button>
+    </div>
+  );
+}
 
 export default function MisJugadoresPage() {
   const router = useRouter();
-  
+
   // Estados reactivos
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [players, setPlayers] = useState([]);
@@ -20,18 +88,26 @@ export default function MisJugadoresPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Estados de paginado (máximo 10 por página)
   const [playersPage, setPlayersPage] = useState(1);
   const [teamPages, setTeamPages] = useState({});
-  
+
   // Selección temporal para asignación de equipos
   const [selectedTeamsMap, setSelectedTeamsMap] = useState({});
   const [editingAssignmentMap, setEditingAssignmentMap] = useState({});
 
   // Estados para Modal de Nuevo Jugador
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [formData, setFormData] = useState({ user: '', email: '', password: '', dni: '', name: '', gender: '', role: 'PLAYER' });
+  const [formData, setFormData] = useState({
+    user: '',
+    email: '',
+    password: '',
+    dni: '',
+    name: '',
+    gender: '',
+    role: 'PLAYER',
+  });
 
   // Validación de la sesión en el cliente
   useEffect(() => {
@@ -104,13 +180,13 @@ export default function MisJugadoresPage() {
     setSuccessMsg('');
     setIsSubmitting(true);
     try {
-      const team = teams.find(t => t.id === teamId || t.id.toString() === teamId.toString());
+      const team = teams.find((t) => t.id === teamId || t.id.toString() === teamId.toString());
       if (!team) {
         throw new Error('No se encontró el equipo seleccionado.');
       }
-      
+
       // Armar nuevo arreglo de IDs de jugadores
-      const existingPlayerIds = (team.players || []).map(p => p.id);
+      const existingPlayerIds = (team.players || []).map((p) => p.id);
       if (existingPlayerIds.includes(playerId)) {
         setErrorMsg('El jugador ya pertenece a este equipo.');
         return;
@@ -121,7 +197,7 @@ export default function MisJugadoresPage() {
       // Actualizar el equipo en el backend
       await teamService.updateTeam(team.id, { players: updatedPlayerIds });
       setSuccessMsg(`¡Jugador asignado a ${team.name} correctamente!`);
-      setEditingAssignmentMap(prev => ({...prev, [playerId]: false}));
+      setEditingAssignmentMap((prev) => ({ ...prev, [playerId]: false }));
       await loadAllData();
     } catch (err) {
       console.error('Error al asignar jugador:', err);
@@ -137,14 +213,14 @@ export default function MisJugadoresPage() {
     setSuccessMsg('');
     setIsSubmitting(true);
     try {
-      const team = teams.find(t => t.id === teamId || t.id.toString() === teamId.toString());
+      const team = teams.find((t) => t.id === teamId || t.id.toString() === teamId.toString());
       if (!team) throw new Error('No se encontró el equipo para desasignar.');
-      
-      const existingPlayerIds = (team.players || []).map(p => p.id);
-      const updatedPlayerIds = existingPlayerIds.filter(id => id !== playerId);
+
+      const existingPlayerIds = (team.players || []).map((p) => p.id);
+      const updatedPlayerIds = existingPlayerIds.filter((id) => id !== playerId);
       await teamService.updateTeam(team.id, { players: updatedPlayerIds });
       setSuccessMsg('¡Jugador desasignado del equipo correctamente!');
-      setEditingAssignmentMap(prev => ({...prev, [playerId]: false}));
+      setEditingAssignmentMap((prev) => ({ ...prev, [playerId]: false }));
       await loadAllData();
     } catch (err) {
       console.error('Error al desasignar jugador:', err);
@@ -154,427 +230,364 @@ export default function MisJugadoresPage() {
     }
   };
 
-  if (!isAuthenticated) {
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+    setFormData({ user: '', email: '', password: '', dni: '', name: '', gender: '', role: 'PLAYER' });
+  };
+
+  const handleOpenCreateModal = () => {
+    setErrorMsg('');
+    setSuccessMsg('');
+    setShowCreateModal(true);
+  };
+
+  const maxPlayersPage = Math.max(1, Math.ceil(players.length / PLAYERS_PER_PAGE));
+  const activePlayersPage = Math.min(playersPage, maxPlayersPage);
+  const paginatedPlayers = players.slice(
+    (activePlayersPage - 1) * PLAYERS_PER_PAGE,
+    activePlayersPage * PLAYERS_PER_PAGE
+  );
+
+  const renderAssignmentCell = (player) => {
+    if (player.team_info && !editingAssignmentMap[player.id]) {
+      return (
+        <div className={styles.assignmentDisplay}>
+          <span className={styles.assignmentLabel}>
+            {player.team_info.category} - {formatBranch(player.team_info.branch)}
+          </span>
+          <div className={styles.assignmentActions}>
+            <button
+              type="button"
+              className={`${styles.linkAction} ${styles.linkEdit}`}
+              onClick={() => setEditingAssignmentMap((prev) => ({ ...prev, [player.id]: true }))}
+            >
+              Editar
+            </button>
+            <button
+              type="button"
+              className={`${styles.linkAction} ${styles.linkDanger}`}
+              onClick={() => handleUnassignPlayer(player.id, player.team_info.id)}
+              disabled={isSubmitting}
+            >
+              Desasignar
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div style={{ display: 'flex', padding: '3rem', justifyContent: 'center' }}>
-        <div className={styles.spinner} />
+      <div className={styles.assignmentForm}>
+        <select
+          value={selectedTeamsMap[player.id] || ''}
+          onChange={(e) => setSelectedTeamsMap({ ...selectedTeamsMap, [player.id]: e.target.value })}
+          className={styles.teamSelect}
+        >
+          <option value="">Seleccione equipo...</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.category} - {formatBranch(team.branch)}
+            </option>
+          ))}
+        </select>
+        <Button
+          size="sm"
+          onClick={() => handleAssignPlayerToTeam(player.id, selectedTeamsMap[player.id])}
+          disabled={isSubmitting}
+        >
+          Asignar
+        </Button>
       </div>
     );
+  };
+
+  const renderPlayerStatusBadge = (player) => (
+    <StatusBadge variant={player.team_info ? 'success' : 'neutral'}>
+      {player.team_info ? 'Activo' : 'Sin Equipo'}
+    </StatusBadge>
+  );
+
+  const renderMedicalBadge = (player) => (
+    <StatusBadge variant={player.medical_certificate ? 'success' : 'danger'}>
+      {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
+    </StatusBadge>
+  );
+
+  if (!isAuthenticated) {
+    return <LoadingState full />;
   }
 
   return (
-    <div className={`${styles.container} custom_container`}>
-      {/* Cabecera del Panel */}
-      <header className={styles.header}>
-        <div className={styles.actions}>
-          <button 
-            onClick={() => {
-              setErrorMsg('');
-              setSuccessMsg('');
-              setShowCreateModal(true);
-            }} 
-            className={`${styles.btnNew} ${styles.btnNewActive}`}
-            disabled={isLoading}
-          >
-            + Nuevo Jugador
-          </button>
-          
-          <Link href="/" className={styles.btnBack}>
-            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-            Volver
-          </Link>
-        </div>
-      </header>
+    <div className="appShell">
+      <div className={dirStyles.page}>
+        <PageHeader
+          title="Mis"
+          highlight="Jugadores"
+          subtitle="Gestiona el padrón del club y las asignaciones por equipo."
+          actions={
+            <Button onClick={handleOpenCreateModal} disabled={isLoading}>
+              <i className="bi bi-plus-lg" aria-hidden="true" />
+              Nuevo Jugador
+            </Button>
+          }
+        />
 
-      {/* Alertas */}
-      {errorMsg && <div className={styles.error}>{errorMsg}</div>}
-      {successMsg && <div className={styles.success}>{successMsg}</div>}
+        {(successMsg || errorMsg) && (
+          <div className={dirStyles.alerts}>
+            {successMsg && (
+              <Alert variant="success">
+                <div className={styles.alertContent}>
+                  <span>{successMsg}</span>
+                  <Button variant="ghost" size="sm" onClick={() => setSuccessMsg('')} aria-label="Cerrar alerta">
+                    ×
+                  </Button>
+                </div>
+              </Alert>
+            )}
+            {errorMsg && (
+              <Alert variant="error">
+                <div className={styles.alertContent}>
+                  <span>{errorMsg}</span>
+                  <Button variant="ghost" size="sm" onClick={() => setErrorMsg('')} aria-label="Cerrar alerta">
+                    ×
+                  </Button>
+                </div>
+              </Alert>
+            )}
+          </div>
+        )}
 
-      {isLoading ? (
-        <div className={styles.spinner} />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-          
-          {/* SECCIÓN 1: Padrón General del Club */}
-          <section>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#002F87', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Padrón General de Jugadores
-            </h2>
-            <div className={styles.tableWrapper}>
+        {isLoading ? (
+          <LoadingState label="Cargando jugadores..." />
+        ) : (
+          <div className={chrome.page}>
+            <section className={chrome.section}>
+              <h2 className={chrome.sectionTitle}>Padrón General de Jugadores</h2>
+
               {players.length === 0 ? (
-                <div className={styles.emptyState}>
-                  No se encontraron jugadores registrados en el club.
+                <EmptyState title="No se encontraron jugadores registrados en el club." />
+              ) : (
+                <>
+                  <DataTable columns={ROSTER_COLUMNS}>
+                    {paginatedPlayers.map((player) => (
+                      <tr key={player.id}>
+                        <td>{getPlayerName(player)}</td>
+                        <td>{player.dni || '-'}</td>
+                        <td>{formatGender(player.gender)}</td>
+                        <td>{player.email || '-'}</td>
+                        <td>{renderMedicalBadge(player)}</td>
+                        <td>{renderPlayerStatusBadge(player)}</td>
+                        <td className={styles.assignmentCell}>{renderAssignmentCell(player)}</td>
+                      </tr>
+                    ))}
+                  </DataTable>
+
+                  <PaginationBar
+                    page={playersPage}
+                    totalItems={players.length}
+                    onPrev={() => setPlayersPage((prev) => Math.max(prev - 1, 1))}
+                    onNext={() =>
+                      setPlayersPage((prev) => Math.min(prev + 1, Math.ceil(players.length / PLAYERS_PER_PAGE)))
+                    }
+                  />
+                </>
+              )}
+            </section>
+
+            <section className={chrome.section}>
+              <h2 className={chrome.sectionTitle}>Equipos Coordinados</h2>
+
+              {teams.length === 0 ? (
+                <div className={styles.teamsEmpty}>
+                  No tenés equipos asignados como entrenador actualmente.
                 </div>
               ) : (
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th className={styles.th}>Nombre y Apellido</th>
-                      <th className={styles.th}>DNI</th>
-                      <th className={styles.th}>Género</th>
-                      <th className={styles.th}>Email</th>
-                      <th className={styles.th}>Apto Físico</th>
-                      <th className={styles.th}>Estado</th>
-                      <th className={styles.th} style={{ width: '250px' }}>Asignación de Equipo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const maxPlayersPage = Math.max(1, Math.ceil(players.length / 10));
-                      const activePlayersPage = Math.min(playersPage, maxPlayersPage);
-                      return players.slice((activePlayersPage - 1) * 10, activePlayersPage * 10).map((player) => (
-                        <tr key={player.id} className={styles.tr}>
-                          <td className={styles.td}>
-                            {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
-                          </td>
-                          <td className={styles.td}>{player.dni || '-'}</td>
-                          <td className={styles.td}>
-                            {player.gender === 'M' ? 'Masculino' : player.gender === 'F' ? 'Femenino' : '-'}
-                          </td>
-                          <td className={styles.td}>{player.email || '-'}</td>
-                          <td className={styles.td}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', backgroundColor: player.medical_certificate ? '#dcfce7' : '#fef2f2', color: player.medical_certificate ? '#166534' : '#991b1b' }}>
-                              {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
-                            </span>
-                          </td>
-                          <td className={styles.td}>
-                            <span 
-                              className={`${styles.badge} ${player.team_info ? styles.badgeActive : styles.badgeInactive}`}
-                              style={!player.team_info ? { backgroundColor: '#f1f5f9', color: '#64748b' } : {}}
-                            >
-                              {player.team_info ? 'Activo' : 'Sin Equipo'}
-                            </span>
-                          </td>
-                          <td className={styles.td}>
-                            {player.team_info && !editingAssignmentMap[player.id] ? (
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '0.4rem 0.6rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>
-                                  {player.team_info.category} - {player.team_info.branch === 'MALE' ? 'Masculino' : player.team_info.branch === 'FEMALE' ? 'Femenino' : player.team_info.branch}
-                                </span>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                  <button 
-                                    onClick={() => setEditingAssignmentMap(prev => ({...prev, [player.id]: true}))}
-                                    style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
-                                  >
-                                    Editar
-                                  </button>
-                                  <button 
-                                    onClick={() => handleUnassignPlayer(player.id, player.team_info.id)}
-                                    disabled={isSubmitting}
-                                    style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
-                                  >
-                                    Desasignar
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <select
-                                  value={selectedTeamsMap[player.id] || ''}
-                                  onChange={(e) => setSelectedTeamsMap({ ...selectedTeamsMap, [player.id]: e.target.value })}
-                                  style={{ padding: '0.35rem 0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.75rem', fontWeight: 600, color: '#334155', flex: 1 }}
-                                >
-                                  <option value="">Seleccione equipo...</option>
-                                  {teams.map((team) => (
-                                    <option key={team.id} value={team.id}>
-                                      {team.category} - {team.branch === 'MALE' ? 'Masculino' : team.branch === 'FEMALE' ? 'Femenino' : team.branch}
-                                    </option>
-                                  ))}
-                                </select>
-                                <button
-                                  onClick={() => handleAssignPlayerToTeam(player.id, selectedTeamsMap[player.id])}
-                                  disabled={isSubmitting}
-                                  style={{ backgroundColor: '#002F87', color: 'white', border: 'none', padding: '0.35rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                                >
-                                  Asignar
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ));
-                    })()}
-                  </tbody>
-                </table>
-              )}
-              {players.length > 10 && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', paddingBottom: '0.5rem', selectNone: 'true' }}>
-                  <button
-                    onClick={() => setPlayersPage(prev => Math.max(prev - 1, 1))}
-                    disabled={playersPage === 1}
-                    style={{
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '0.375rem',
-                      border: '1px solid #cbd5e1',
-                      backgroundColor: playersPage === 1 ? '#f1f5f9' : '#white',
-                      color: playersPage === 1 ? '#94a3b8' : '#0f172a',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      cursor: playersPage === 1 ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    Anterior
-                  </button>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
-                    Página {Math.min(playersPage, Math.max(1, Math.ceil(players.length / 10)))} de {Math.max(1, Math.ceil(players.length / 10))}
-                  </span>
-                  <button
-                    onClick={() => setPlayersPage(prev => Math.min(prev + 1, Math.ceil(players.length / 10)))}
-                    disabled={playersPage >= Math.ceil(players.length / 10)}
-                    style={{
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '0.375rem',
-                      border: '1px solid #cbd5e1',
-                      backgroundColor: playersPage >= Math.ceil(players.length / 10) ? '#f1f5f9' : '#white',
-                      color: playersPage >= Math.ceil(players.length / 10) ? '#94a3b8' : '#0f172a',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      cursor: playersPage >= Math.ceil(players.length / 10) ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    Siguiente
-                  </button>
+                <div className={chrome.stack}>
+                  {teams.map((team) => {
+                    const teamPage = teamPages[team.id] || 1;
+                    const maxTeamPage = Math.max(1, Math.ceil((team.players || []).length / PLAYERS_PER_PAGE));
+                    const activeTeamPage = Math.min(teamPage, maxTeamPage);
+                    const paginatedTeamPlayers = (team.players || []).slice(
+                      (activeTeamPage - 1) * PLAYERS_PER_PAGE,
+                      activeTeamPage * PLAYERS_PER_PAGE
+                    );
+
+                    return (
+                      <div key={team.id} className={chrome.card}>
+                        <div className={styles.teamCardHeader}>
+                          <h3 className={styles.teamCardTitle}>{team.name}</h3>
+                          <span className={styles.teamCardMeta}>
+                            {team.category} • {formatBranch(team.branch)}
+                          </span>
+                        </div>
+
+                        {!team.players || team.players.length === 0 ? (
+                          <div className={styles.teamEmpty}>
+                            <EmptyState title="No hay jugadores asignados a este equipo todavía." />
+                          </div>
+                        ) : (
+                          <>
+                            <div className={styles.teamTableWrap}>
+                              <DataTable columns={TEAM_PLAYER_COLUMNS}>
+                                {paginatedTeamPlayers.map((player) => (
+                                  <tr key={player.id}>
+                                    <td>{getPlayerName(player)}</td>
+                                    <td>{player.dni || '-'}</td>
+                                    <td>{player.email || '-'}</td>
+                                    <td>{renderMedicalBadge(player)}</td>
+                                    <td>{renderPlayerStatusBadge(player)}</td>
+                                  </tr>
+                                ))}
+                              </DataTable>
+                            </div>
+
+                            <PaginationBar
+                              page={teamPage}
+                              totalItems={team.players.length}
+                              onPrev={() =>
+                                setTeamPages((prev) => ({
+                                  ...prev,
+                                  [team.id]: Math.max((prev[team.id] || 1) - 1, 1),
+                                }))
+                              }
+                              onNext={() =>
+                                setTeamPages((prev) => ({
+                                  ...prev,
+                                  [team.id]: Math.min(
+                                    (prev[team.id] || 1) + 1,
+                                    Math.ceil(team.players.length / PLAYERS_PER_PAGE)
+                                  ),
+                                }))
+                              }
+                            />
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-            </div>
-          </section>
-
-          {/* SECCIÓN 2 a N: Tablas dedicadas por Equipo */}
-          <section>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#002F87', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Equipos Coordinados
-            </h2>
-            {teams.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', border: '1px dashed #cbd5e1', color: '#64748b', fontWeight: 700, fontSize: '0.875rem' }}>
-                No tenés equipos asignados como entrenador actualmente.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                {teams.map((team) => (
-                  <div key={team.id} style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <div style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                        {team.name}
-                      </h3>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', backgroundColor: '#eff6ff', padding: '0.15rem 0.5rem', borderRadius: '0.25rem' }}>
-                        {team.category} • {team.branch === 'MALE' ? 'Masculino' : 'Femenino'}
-                      </span>
-                    </div>
-
-                    <div className={styles.tableWrapper} style={{ boxShadow: 'none', border: 'none', padding: 0 }}>
-                      {!team.players || team.players.length === 0 ? (
-                        <div className={styles.emptyState} style={{ padding: '2rem 1rem' }}>
-                          No hay jugadores asignados a este equipo todavía.
-                        </div>
-                      ) : (
-                        <table className={styles.table}>
-                          <thead>
-                            <tr>
-                              <th className={styles.th}>Nombre y Apellido</th>
-                              <th className={styles.th}>DNI</th>
-                              <th className={styles.th}>Email</th>
-                              <th className={styles.th}>Apto Físico</th>
-                              <th className={styles.th}>Estado</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(() => {
-                              const teamPage = teamPages[team.id] || 1;
-                              const maxTeamPage = Math.max(1, Math.ceil((team.players || []).length / 10));
-                              const activeTeamPage = Math.min(teamPage, maxTeamPage);
-                              return (team.players || []).slice((activeTeamPage - 1) * 10, activeTeamPage * 10).map((player) => (
-                                <tr key={player.id} className={styles.tr}>
-                                  <td className={styles.td}>
-                                    {player.name || `${player.first_name || ''} ${player.last_name || ''}`.trim()}
-                                  </td>
-                                  <td className={styles.td}>{player.dni || '-'}</td>
-                                  <td className={styles.td}>{player.email || '-'}</td>
-                                  <td className={styles.td}>
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.25rem', backgroundColor: player.medical_certificate ? '#dcfce7' : '#fef2f2', color: player.medical_certificate ? '#166534' : '#991b1b' }}>
-                                      {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
-                                    </span>
-                                  </td>
-                                  <td className={styles.td}>
-                                    <span 
-                                      className={`${styles.badge} ${player.team_info ? styles.badgeActive : styles.badgeInactive}`}
-                                      style={!player.team_info ? { backgroundColor: '#f1f5f9', color: '#64748b' } : {}}
-                                    >
-                                      {player.team_info ? 'Activo' : 'Sin Equipo'}
-                                    </span>
-                                  </td>
-                                </tr>
-                              ));
-                            })()}
-                          </tbody>
-                        </table>
-                      )}
-                      {team.players && team.players.length > 10 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.25rem', selectNone: 'true' }}>
-                          <button
-                            onClick={() => setTeamPages(prev => ({ ...prev, [team.id]: Math.max((prev[team.id] || 1) - 1, 1) }))}
-                            disabled={(teamPages[team.id] || 1) === 1}
-                            style={{
-                              padding: '0.4rem 0.8rem',
-                              borderRadius: '0.375rem',
-                              border: '1px solid #cbd5e1',
-                              backgroundColor: (teamPages[team.id] || 1) === 1 ? '#f1f5f9' : '#white',
-                              color: (teamPages[team.id] || 1) === 1 ? '#94a3b8' : '#0f172a',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              cursor: (teamPages[team.id] || 1) === 1 ? 'not-allowed' : 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            Anterior
-                          </button>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
-                            Página {Math.min(teamPages[team.id] || 1, Math.max(1, Math.ceil(team.players.length / 10)))} de {Math.max(1, Math.ceil(team.players.length / 10))}
-                          </span>
-                          <button
-                            onClick={() => setTeamPages(prev => ({ ...prev, [team.id]: Math.min((prev[team.id] || 1) + 1, Math.ceil(team.players.length / 10)) }))}
-                            disabled={(teamPages[team.id] || 1) >= Math.ceil(team.players.length / 10)}
-                            style={{
-                              padding: '0.4rem 0.8rem',
-                              borderRadius: '0.375rem',
-                              border: '1px solid #cbd5e1',
-                              backgroundColor: (teamPages[team.id] || 1) >= Math.ceil(team.players.length / 10) ? '#f1f5f9' : '#white',
-                              color: (teamPages[team.id] || 1) >= Math.ceil(team.players.length / 10) ? '#94a3b8' : '#0f172a',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              cursor: (teamPages[team.id] || 1) >= Math.ceil(team.players.length / 10) ? 'not-allowed' : 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            Siguiente
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-        </div>
-      )}
-      {/* MODAL: Nuevo Jugador */}
-      {showCreateModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Registrar Nuevo Jugador</h2>
-              <p className={styles.modalSubtitle}>Ingresa los datos para registrar y federar un jugador</p>
-            </div>
-
-            <form onSubmit={handleCreatePlayer} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Nombre y Apellido *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Juan Pérez"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={styles.input}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Género *</label>
-                <select 
-                  className={styles.input}
-                  value={formData.gender}
-                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  required
-                  disabled={isSubmitting}
-                >
-                  <option value="">Seleccione el género...</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>DNI *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: 45678912"
-                  value={formData.dni}
-                  onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
-                  className={styles.input}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Nombre de Usuario *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: juan.perez"
-                  value={formData.user}
-                  onChange={(e) => setFormData({ ...formData, user: e.target.value })}
-                  className={styles.input}
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Correo Electrónico *</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="Ej: juan@mail.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className={styles.input}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Contraseña *</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Mínimo 6 caracteres"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className={styles.input}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setFormData({ user: '', email: '', password: '', dni: '', name: '', gender: '', role: 'PLAYER' });
-                  }}
-                  className={styles.btnCancel}
-                  disabled={isSubmitting}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className={styles.btnSave}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Guardando...' : 'Guardar Jugador'}
-                </button>
-              </div>
-            </form>
+            </section>
           </div>
-        </div>
-      )}
+        )}
+
+        <Modal
+          open={showCreateModal}
+          onClose={handleCloseCreateModal}
+          title="Registrar Nuevo Jugador"
+          subtitle="Ingresa los datos para registrar y federar un jugador"
+          footer={
+            <>
+              <Button variant="secondary" onClick={handleCloseCreateModal} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button type="submit" form="create-player-form" disabled={isSubmitting}>
+                {isSubmitting ? 'Guardando...' : 'Guardar Jugador'}
+              </Button>
+            </>
+          }
+        >
+          <form id="create-player-form" onSubmit={handleCreatePlayer} className={dirStyles.form}>
+            <div className={dirStyles.formGroup}>
+              <label className={dirStyles.label} htmlFor="create-player-name">
+                Nombre y Apellido *
+              </label>
+              <input
+                id="create-player-name"
+                type="text"
+                required
+                placeholder="Ej: Juan Pérez"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className={dirStyles.input}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={dirStyles.formGroup}>
+              <label className={dirStyles.label} htmlFor="create-player-gender">
+                Género *
+              </label>
+              <select
+                id="create-player-gender"
+                className={dirStyles.select}
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                required
+                disabled={isSubmitting}
+              >
+                <option value="">Seleccione el género...</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+              </select>
+            </div>
+
+            <div className={dirStyles.formGroup}>
+              <label className={dirStyles.label} htmlFor="create-player-dni">
+                DNI *
+              </label>
+              <input
+                id="create-player-dni"
+                type="text"
+                required
+                placeholder="Ej: 45678912"
+                value={formData.dni}
+                onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+                className={dirStyles.input}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={dirStyles.formGroup}>
+              <label className={dirStyles.label} htmlFor="create-player-user">
+                Nombre de Usuario *
+              </label>
+              <input
+                id="create-player-user"
+                type="text"
+                required
+                placeholder="Ej: juan.perez"
+                value={formData.user}
+                onChange={(e) => setFormData({ ...formData, user: e.target.value })}
+                className={dirStyles.input}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={dirStyles.formGroup}>
+              <label className={dirStyles.label} htmlFor="create-player-email">
+                Correo Electrónico *
+              </label>
+              <input
+                id="create-player-email"
+                type="email"
+                required
+                placeholder="Ej: juan@mail.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className={dirStyles.input}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={dirStyles.formGroup}>
+              <label className={dirStyles.label} htmlFor="create-player-password">
+                Contraseña *
+              </label>
+              <input
+                id="create-player-password"
+                type="password"
+                required
+                placeholder="Mínimo 6 caracteres"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className={dirStyles.input}
+                disabled={isSubmitting}
+              />
+            </div>
+          </form>
+        </Modal>
+      </div>
     </div>
   );
 }

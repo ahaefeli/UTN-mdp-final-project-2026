@@ -3,20 +3,25 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import styles from './page.module.css';
 import authService from '../../services/authService';
 import userService from '../../services/userService';
+import {
+  PageHeader,
+  Button,
+  Alert,
+  LoadingState,
+} from '../../components/ui';
+import chrome from '../../components/ui/PageChrome.module.css';
+import styles from './page.module.css';
 
 export default function MisDatosPage() {
   const router = useRouter();
 
-  // Estados de carga y sesión
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Estados del formulario
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
@@ -24,11 +29,9 @@ export default function MisDatosPage() {
   const [username, setUsername] = useState('');
   const [file, setFile] = useState(null);
 
-  // Estados de retroalimentación
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Carga inicial y validación
   useEffect(() => {
     if (!authService.isAuthenticated()) {
       router.push('/login');
@@ -43,7 +46,6 @@ export default function MisDatosPage() {
     }
   }, [router]);
 
-  // Cargar perfil completo de la base de datos
   const loadUserProfile = async () => {
     setIsLoading(true);
     setErrorMsg('');
@@ -52,7 +54,7 @@ export default function MisDatosPage() {
       if (currentUser && currentUser.id) {
         const response = await userService.getUserById(currentUser.id);
         const profile = response.data;
-        
+
         setUser(profile);
         setFirstName(profile.first_name || '');
         setLastName(profile.last_name || '');
@@ -68,14 +70,12 @@ export default function MisDatosPage() {
     }
   };
 
-  // Manejador del archivo seleccionado
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
     }
   };
 
-  // Guardar cambios del perfil
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -88,26 +88,23 @@ export default function MisDatosPage() {
 
     setIsSubmitting(true);
     try {
-      // Construir FormData para soportar multipart/form-data
       const formData = new FormData();
       formData.append('first_name', firstName.trim());
       formData.append('last_name', lastName.trim());
       formData.append('phone', phone.trim());
 
-      // Lógica basada en Roles (RBAC) para el archivo adjunto
       if (file) {
         if (user.role === 'PLAYER') {
-          formData.append('medical_clearance', file); // Apto Médico
+          formData.append('medical_clearance', file);
         } else if (user.role === 'COACH') {
-          formData.append('coach_certificate', file); // Certificado de Entrenador
+          formData.append('coach_certificate', file);
         }
       }
 
       await userService.updateProfile(user.id, formData);
       setSuccessMsg('Perfil actualizado con éxito.');
-      setFile(null); // Limpiar archivo tras subirlo
-      
-      // Recargar datos actualizados
+      setFile(null);
+
       await loadUserProfile();
     } catch (err) {
       console.error('Error al actualizar datos:', err);
@@ -122,96 +119,130 @@ export default function MisDatosPage() {
   };
 
   if (!isAuthenticated || isLoading) {
-    return (
-      <div style={{ display: 'flex', padding: '3rem', justifyContent: 'center' }}>
-        <div className={styles.spinner} />
-      </div>
-    );
+    return <LoadingState full />;
   }
 
   return (
-    <div className={`${styles.container} custom_container`}>
-      {/* Cabecera */}
-      <header className={styles.header}>
-        <h1 className={styles.headerTitle}>
-          <span className={styles.headerHighlight}>Mis</span> Datos
-        </h1>
-        <Link href="/" className={styles.btnBack}>
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-          Volver
-        </Link>
-      </header>
+    <div className="appShell">
+      <div className={`${chrome.page} ${styles.page}`}>
+        <PageHeader
+          title={
+            <>
+              <span className={styles.titleHighlight}>Mis</span> Datos
+            </>
+          }
+          actions={
+            <Link href="/" className={styles.backLink}>
+              <i className="bi bi-arrow-left" aria-hidden="true" />
+              Volver
+            </Link>
+          }
+        />
 
-      {/* Alertas */}
-      {errorMsg && <div className={styles.error}>{errorMsg}</div>}
-      {successMsg && <div className={styles.success}>{successMsg}</div>}
-
-      {/* Formulario */}
-      <div className={styles.card}>
-        <h2 className={styles.cardTitle}>Editar Perfil Personal</h2>
-        
-        <form onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Usuario</label>
-            <input
-              type="text"
-              className={styles.input}
-              value={username}
-              disabled={true}
-            />
+        {(errorMsg || successMsg) && (
+          <div className={styles.alerts}>
+            {errorMsg && (
+              <Alert variant="error">
+                <div className={styles.alertContent}>
+                  <span>{errorMsg}</span>
+                  <Button variant="ghost" size="sm" onClick={() => setErrorMsg('')} aria-label="Cerrar alerta">
+                    ×
+                  </Button>
+                </div>
+              </Alert>
+            )}
+            {successMsg && (
+              <Alert variant="success">
+                <div className={styles.alertContent}>
+                  <span>{successMsg}</span>
+                  <Button variant="ghost" size="sm" onClick={() => setSuccessMsg('')} aria-label="Cerrar alerta">
+                    ×
+                  </Button>
+                </div>
+              </Alert>
+            )}
           </div>
+        )}
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>DNI / Documento</label>
-            <input
-              type="text"
-              className={styles.input}
-              value={dni}
-              disabled={true}
-            />
-          </div>
+        <section className={chrome.card}>
+          <h2 className={chrome.sectionTitle}>Editar Perfil Personal</h2>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Nombre</label>
-            <input
-              type="text"
-              className={styles.input}
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              disabled={isSubmitting}
-            />
-          </div>
+          <form onSubmit={handleSubmit} className={chrome.form}>
+            <div className={chrome.formGroup}>
+              <label className={chrome.label} htmlFor="profile-username">
+                Usuario
+              </label>
+              <input
+                id="profile-username"
+                type="text"
+                className={chrome.input}
+                value={username}
+                disabled
+              />
+            </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Apellido</label>
-            <input
-              type="text"
-              className={styles.input}
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              disabled={isSubmitting}
-            />
-          </div>
+            <div className={chrome.formGroup}>
+              <label className={chrome.label} htmlFor="profile-dni">
+                DNI / Documento
+              </label>
+              <input
+                id="profile-dni"
+                type="text"
+                className={chrome.input}
+                value={dni}
+                disabled
+              />
+            </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Teléfono de Contacto</label>
-            <input
-              type="text"
-              className={styles.input}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              disabled={isSubmitting}
-            />
-          </div>
+            <div className={chrome.formGroup}>
+              <label className={chrome.label} htmlFor="profile-first-name">
+                Nombre
+              </label>
+              <input
+                id="profile-first-name"
+                type="text"
+                className={chrome.input}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
 
-          {/* Lógica basada en Roles (RBAC) */}
-          {user && user.role === 'PLAYER' && (
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Apto Médico (Archivo PDF o Imagen)</label>
-              <div className={styles.fileInputContainer}>
+            <div className={chrome.formGroup}>
+              <label className={chrome.label} htmlFor="profile-last-name">
+                Apellido
+              </label>
+              <input
+                id="profile-last-name"
+                type="text"
+                className={chrome.input}
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={chrome.formGroup}>
+              <label className={chrome.label} htmlFor="profile-phone">
+                Teléfono de Contacto
+              </label>
+              <input
+                id="profile-phone"
+                type="text"
+                className={chrome.input}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {user && user.role === 'PLAYER' && (
+              <div className={chrome.formGroup}>
+                <label className={chrome.label} htmlFor="profile-medical">
+                  Apto Médico (Archivo PDF o Imagen)
+                </label>
                 <input
+                  id="profile-medical"
                   type="file"
                   className={styles.fileInput}
                   accept=".pdf, image/*"
@@ -219,14 +250,15 @@ export default function MisDatosPage() {
                   disabled={isSubmitting}
                 />
               </div>
-            </div>
-          )}
+            )}
 
-          {user && user.role === 'COACH' && (
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Certificado de Entrenador (Archivo PDF o Imagen)</label>
-              <div className={styles.fileInputContainer}>
+            {user && user.role === 'COACH' && (
+              <div className={chrome.formGroup}>
+                <label className={chrome.label} htmlFor="profile-certificate">
+                  Certificado de Entrenador (Archivo PDF o Imagen)
+                </label>
                 <input
+                  id="profile-certificate"
                   type="file"
                   className={styles.fileInput}
                   accept=".pdf, image/*"
@@ -234,13 +266,13 @@ export default function MisDatosPage() {
                   disabled={isSubmitting}
                 />
               </div>
-            </div>
-          )}
+            )}
 
-          <button type="submit" className={styles.btnSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
-        </form>
+            <Button type="submit" block disabled={isSubmitting}>
+              {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          </form>
+        </section>
       </div>
     </div>
   );

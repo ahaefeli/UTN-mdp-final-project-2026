@@ -6,27 +6,49 @@ import { useAuth } from '../../context/AuthContext';
 import userService from '../../services/userService';
 import apiClient from '../../services/apiClient';
 import { ROLE_TRANSLATIONS } from '../../utils/roles';
+import {
+  PageHeader,
+  Button,
+  Alert,
+  DataTable,
+  LoadingState,
+  EmptyState,
+  StatusBadge,
+} from '../../components/ui';
+import chrome from '../../components/ui/PageChrome.module.css';
 import styles from './page.module.css';
+
+const USER_COLUMNS = [
+  { key: 'username', label: 'Usuario' },
+  { key: 'name', label: 'Nombre Completo' },
+  { key: 'role', label: 'Rol' },
+  { key: 'dni', label: 'DNI' },
+  { key: 'club', label: 'Club' },
+  { key: 'status', label: 'Estado' },
+];
+
+const ROLE_VARIANTS = {
+  ADMIN: 'primary',
+  CLUB_ADMIN: 'primary',
+  COACH: 'accent',
+  PLAYER: 'success',
+};
 
 export default function UsuariosPage() {
   const router = useRouter();
-  const { user, role, isAuthenticated, isInitialized } = useAuth();
+  const { role, isAuthenticated, isInitialized } = useAuth();
 
-  // Estados para datos
   const [usersList, setUsersList] = useState([]);
   const [clubsList, setClubsList] = useState([]);
   const [teamsList, setTeamsList] = useState([]);
 
-  // Estados para filtros
   const [search, setSearch] = useState('');
   const [selectedClub, setSelectedClub] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
 
-  // Estados de carga y error
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Redirección si no es ADMIN
   useEffect(() => {
     if (isInitialized) {
       if (!isAuthenticated) {
@@ -37,14 +59,13 @@ export default function UsuariosPage() {
     }
   }, [isInitialized, isAuthenticated, role, router]);
 
-  // Carga de clubes y equipos para los filtros
   useEffect(() => {
     if (isAuthenticated && role === 'ADMIN') {
       const fetchFiltersData = async () => {
         try {
           const [clubsRes, teamsRes] = await Promise.all([
             apiClient.get('internal/clubes/'),
-            apiClient.get('internal/equipos/')
+            apiClient.get('internal/equipos/'),
           ]);
           setClubsList(clubsRes.data?.data || []);
           setTeamsList(teamsRes.data?.data || []);
@@ -56,7 +77,6 @@ export default function UsuariosPage() {
     }
   }, [isAuthenticated, role]);
 
-  // Carga de usuarios con filtros
   const loadUsers = async () => {
     setIsLoading(true);
     setError('');
@@ -83,118 +103,114 @@ export default function UsuariosPage() {
   }, [isAuthenticated, role, search, selectedClub, selectedTeam]);
 
   if (!isInitialized || !isAuthenticated || role !== 'ADMIN') {
-    return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
-        <div className={styles.spinner} />
-      </div>
-    );
+    return <LoadingState full />;
   }
 
   return (
-      <div className={`${styles.container} custom_container`}>
-      <div className={styles.wrapper}>
-        {/* Cabecera */}
-        <header className={styles.header}>
-          <h1 className={styles.title}>Panel Global de Usuarios</h1>
-          <p className={styles.subtitle}>Gestión, búsqueda y filtrado de todos los usuarios registrados en VoleyHub.</p>
-        </header>
+    <div className="appShell">
+      <div className={chrome.page}>
+        <PageHeader
+          title="Panel Global de Usuarios"
+          subtitle="Gestión, búsqueda y filtrado de todos los usuarios registrados en VoleyHub."
+        />
 
-        {/* Barra de Búsqueda y Filtros */}
-        <section className={styles.searchBar}>
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>Buscar por nombre / DNI</label>
-            <input
-              type="text"
-              placeholder="Ej: Juan Pérez"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className={styles.inputSearch}
-            />
-          </div>
-
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>Filtrar por Club</label>
-            <select
-              value={selectedClub}
-              onChange={(e) => setSelectedClub(e.target.value)}
-              className={styles.selectFilter}
-            >
-              <option value="">Todos los Clubes</option>
-              {clubsList.map((club) => (
-                <option key={club.id} value={club.id}>
-                  {club.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>Filtrar por Equipo</label>
-            <select
-              value={selectedTeam}
-              onChange={(e) => setSelectedTeam(e.target.value)}
-              className={styles.selectFilter}
-            >
-              <option value="">Todos los Equipos</option>
-              {teamsList.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name} ({team.category})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button onClick={loadUsers} className={styles.btnRefresh} disabled={isLoading}>
-            {isLoading ? 'Cargando...' : 'Actualizar'}
-          </button>
-        </section>
-
-        {error && <div className={styles.errorBox}>{error}</div>}
-
-        {/* Tabla de Usuarios */}
-        <section className={styles.tableCard}>
-          {isLoading && usersList.length === 0 ? (
-            <div className={styles.spinner} />
-          ) : usersList.length === 0 ? (
-            <div className={styles.emptyState}>No se encontraron usuarios con los filtros seleccionados.</div>
-          ) : (
-            <div className={styles.tableWrapper}>
-              <table className={styles.userTable}>
-                <thead>
-                  <tr>
-                    <th className={styles.tableHeaderCell}>Usuario</th>
-                    <th className={styles.tableHeaderCell}>Nombre Completo</th>
-                    <th className={styles.tableHeaderCell}>Rol</th>
-                    <th className={styles.tableHeaderCell}>DNI</th>
-                    <th className={styles.tableHeaderCell}>Club</th>
-                    <th className={styles.tableHeaderCell}>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usersList.map((u) => (
-                    <tr key={u.id}>
-                      <td className={`${styles.tableBodyCell} ${styles.usernameCell}`}>{u.username}</td>
-                      <td className={`${styles.tableBodyCell} ${styles.nameCell}`}>{u.name || '-'}</td>
-                      <td className={styles.tableBodyCell}>
-                        <span className={`${styles.roleBadge} ${
-                          u.role === 'ADMIN' || u.role === 'CLUB_ADMIN' ? styles.badgeAdmin : u.role === 'COACH' ? styles.badgeCoach : styles.badgePlayer
-                        }`}>
-                          {ROLE_TRANSLATIONS[u.role] || u.role}
-                        </span>
-                      </td>
-                      <td className={styles.tableBodyCell}>{u.dni || '-'}</td>
-                      <td className={`${styles.tableBodyCell} ${styles.clubCell}`}>{u.club_name || '-'}</td>
-                      <td className={styles.tableBodyCell}>
-                        <span className={`${styles.statusDot} ${u.enable ? styles.statusActive : styles.statusInactive}`} />
-                        {u.enable ? 'Activo' : 'Inactivo'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <section className={chrome.card}>
+          <div className={styles.filterBar}>
+            <div className={`${chrome.formGroup} ${styles.filterField}`}>
+              <label className={chrome.label} htmlFor="user-search">
+                Buscar por nombre / DNI
+              </label>
+              <input
+                id="user-search"
+                type="text"
+                placeholder="Ej: Juan Pérez"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className={chrome.input}
+              />
             </div>
-          )}
+
+            <div className={`${chrome.formGroup} ${styles.filterField}`}>
+              <label className={chrome.label} htmlFor="user-club-filter">
+                Filtrar por Club
+              </label>
+              <select
+                id="user-club-filter"
+                value={selectedClub}
+                onChange={(e) => setSelectedClub(e.target.value)}
+                className={chrome.select}
+              >
+                <option value="">Todos los Clubes</option>
+                {clubsList.map((club) => (
+                  <option key={club.id} value={club.id}>
+                    {club.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={`${chrome.formGroup} ${styles.filterField}`}>
+              <label className={chrome.label} htmlFor="user-team-filter">
+                Filtrar por Equipo
+              </label>
+              <select
+                id="user-team-filter"
+                value={selectedTeam}
+                onChange={(e) => setSelectedTeam(e.target.value)}
+                className={chrome.select}
+              >
+                <option value="">Todos los Equipos</option>
+                {teamsList.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} ({team.category})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Button onClick={loadUsers} disabled={isLoading}>
+              {isLoading ? 'Cargando...' : 'Actualizar'}
+            </Button>
+          </div>
         </section>
+
+        {error && (
+          <Alert variant="error">
+            <div className={styles.alertContent}>
+              <span>{error}</span>
+              <Button variant="ghost" size="sm" onClick={() => setError('')} aria-label="Cerrar alerta">
+                ×
+              </Button>
+            </div>
+          </Alert>
+        )}
+
+        {isLoading && usersList.length === 0 ? (
+          <LoadingState label="Cargando usuarios..." />
+        ) : usersList.length === 0 ? (
+          <EmptyState title="No se encontraron usuarios con los filtros seleccionados." />
+        ) : (
+          <DataTable columns={USER_COLUMNS}>
+            {usersList.map((u) => (
+              <tr key={u.id}>
+                <td className={styles.usernameCell}>{u.username}</td>
+                <td className={styles.cellStrong}>{u.name || '-'}</td>
+                <td>
+                  <StatusBadge variant={ROLE_VARIANTS[u.role] || 'neutral'}>
+                    {ROLE_TRANSLATIONS[u.role] || u.role}
+                  </StatusBadge>
+                </td>
+                <td>{u.dni || '-'}</td>
+                <td className={styles.clubCell}>{u.club_name || '-'}</td>
+                <td>
+                  <StatusBadge variant={u.enable ? 'success' : 'neutral'}>
+                    {u.enable ? 'Activo' : 'Inactivo'}
+                  </StatusBadge>
+                </td>
+              </tr>
+            ))}
+          </DataTable>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,66 @@
+import json
+
+import pytest
+from django.utils import timezone
+
+from tests.factories import make_match
+
+
+@pytest.mark.django_db
+class TestTournamentStages:
+    def test_requires_jwt(self, api_client, tournament):
+        res = api_client.get(f'/internal/torneos/fechas/?tournament_id={tournament.id}')
+        assert res.status_code == 401
+
+    def test_list_stages(self, api_client, auth_header, tournament, stage):
+        res = api_client.get(
+            f'/internal/torneos/fechas/?tournament_id={tournament.id}',
+            **auth_header,
+        )
+        assert res.status_code == 200
+        assert len(res.json()['data']) >= 1
+
+    def test_create_stage(self, api_client, auth_header, tournament):
+        res = api_client.post(
+            '/internal/torneos/fechas/',
+            data=json.dumps({
+                'tournament_id': str(tournament.id),
+                'date': timezone.now().date().isoformat(),
+                'name': 'Fecha Extra',
+            }),
+            content_type='application/json',
+            **auth_header,
+        )
+        assert res.status_code == 201
+        assert res.json()['data']['name'] == 'Fecha Extra'
+
+    def test_create_missing_fields(self, api_client, auth_header):
+        res = api_client.post(
+            '/internal/torneos/fechas/',
+            data=json.dumps({'name': 'X'}),
+            content_type='application/json',
+            **auth_header,
+        )
+        assert res.status_code == 400
+
+    def test_delete_empty_stage(self, api_client, auth_header, tournament):
+        created = api_client.post(
+            '/internal/torneos/fechas/',
+            data=json.dumps({
+                'tournament_id': str(tournament.id),
+                'date': timezone.now().date().isoformat(),
+                'name': 'Borrar',
+            }),
+            content_type='application/json',
+            **auth_header,
+        ).json()['data']
+        res = api_client.delete(f'/internal/torneos/fechas/{created["id"]}/', **auth_header)
+        assert res.status_code == 200
+
+    def test_delete_stage_with_matches_fails(
+        self, api_client, auth_header, stage, team_a, team_b, court
+    ):
+        make_match(stage, team_a, team_b, court=court)
+        res = api_client.delete(f'/internal/torneos/fechas/{stage.id}/', **auth_header)
+        assert res.status_code == 400
+        assert 'Has matches' in res.json()['error']

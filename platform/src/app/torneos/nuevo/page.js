@@ -7,6 +7,14 @@ import teamService from '../../../services/teamService';
 import tournamentService from '../../../services/tournamentService';
 import enrollmentService from '../../../services/enrollmentService';
 import userService from '../../../services/userService';
+import {
+  PageHeader,
+  Button,
+  Alert,
+  LoadingState,
+  EmptyState,
+} from '../../../components/ui';
+import chromeStyles from '../../../components/ui/PageChrome.module.css';
 import styles from './page.module.css';
 
 export default function TorneosNuevoPage() {
@@ -170,84 +178,72 @@ export default function TorneosNuevoPage() {
   };
 
   if (!isInitialized || !isAuthenticated || role !== 'ADMIN') {
-    return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
-        <div style={{ border: '2px solid rgba(0, 47, 135, 0.1)', width: '1.5rem', height: '1.5rem', borderRadius: '50%', borderLeftColor: '#002F87', animation: 'spin 0.8s linear infinite' }} />
-      </div>
-    );
+    return <LoadingState full />;
   }
 
   return (
-    <div className={`${styles.container} custom_container`}>
-      <div className="max-w-3xl mx-auto bg-white rounded-3xl border border-slate-200/60 p-8 shadow-sm">
-        
-        {/* Botón de Atrás */}
-        <div className="mb-6">
-          <button
-            type="button"
-            onClick={() => router.push('/torneos')}
-            className="flex items-center gap-1.5 text-slate-500 hover:text-[#002F87] font-black text-xs uppercase tracking-wider transition-colors duration-200 cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
+    <div className="appShell">
+      <div className={chromeStyles.page}>
+        <div className={styles.backLink}>
+          <Button variant="ghost" size="sm" onClick={() => router.push('/torneos')}>
+            <i className="bi bi-arrow-left" aria-hidden="true" />
             Volver a Torneos
-          </button>
+          </Button>
         </div>
 
-        {/* Header */}
-        <div className="border-b border-slate-100 pb-6 mb-8 text-center">
-          <h1 className="text-2xl font-black text-[#002F87] tracking-tight uppercase italic">Creación de Torneo</h1>
-          <p className="text-slate-500 text-xs font-semibold mt-1">Configure las fechas y asocie los equipos federados al nuevo torneo.</p>
-        </div>
+        <PageHeader
+          title="Creación de Torneo"
+          subtitle="Configure las fechas y asocie los equipos federados al nuevo torneo."
+        />
 
-        {/* Steps Indicator */}
         {step < 3 && (
-          <div className="flex items-center justify-center gap-4 mb-8 select-none">
-            <div className="flex items-center gap-2">
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold ${step === 1 ? 'bg-[#002F87] text-white' : 'bg-slate-100 text-slate-400'}`}>1</span>
-              <span className={`text-xs font-bold ${step === 1 ? 'text-[#002F87]' : 'text-slate-400'}`}>Datos Generales</span>
+          <div className={styles.wizard}>
+            <div className={`${styles.wizardStep} ${step === 1 ? styles.wizardStepActive : ''}`}>
+              <span className={styles.wizardNum}>1</span>
+              Datos Generales
             </div>
-            <div className="w-12 h-[1px] bg-slate-200" />
-            <div className="flex items-center gap-2">
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold ${step === 2 ? 'bg-[#002F87] text-white' : 'bg-slate-100 text-slate-400'}`}>2</span>
-              <span className={`text-xs font-bold ${step === 2 ? 'text-[#002F87]' : 'text-slate-400'}`}>Inscribir Equipos</span>
+            <div className={styles.wizardLine} />
+            <div className={`${styles.wizardStep} ${step === 2 ? styles.wizardStepActive : ''}`}>
+              <span className={styles.wizardNum}>2</span>
+              Inscribir Equipos
             </div>
           </div>
         )}
 
-        {error && (
-          <div className="bg-rose-50 border border-rose-100 text-rose-600 font-bold text-xs p-4 rounded-xl mb-6">
-            {error}
-          </div>
-        )}
+        {error && <Alert variant="error">{error}</Alert>}
 
-        {/* Paso 1: Configuración de Torneo */}
-        {step === 1 && (
-          <form onSubmit={handleNextStep} className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-black text-slate-500 tracking-wider mb-2 block uppercase">Nombre del Torneo</label>
+        <div className={chromeStyles.card}>
+          {/* Paso 1: Configuración de Torneo */}
+          {step === 1 && (
+            <form onSubmit={handleNextStep} className={chromeStyles.form}>
+              <div className={chromeStyles.formGroup}>
+                <label className={chromeStyles.label} htmlFor="tournament-name">
+                  Nombre del Torneo
+                </label>
                 <input
+                  id="tournament-name"
                   type="text"
                   required
                   placeholder="Ej: Apertura Sub-18 Femenino 2026"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#002F87] transition-all"
+                  className={chromeStyles.input}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 tracking-wider mb-2 block uppercase">Categoría</label>
+              <div className={chromeStyles.formRow}>
+                <div className={chromeStyles.formGroup}>
+                  <label className={chromeStyles.label} htmlFor="tournament-category">
+                    Categoría
+                  </label>
                   <select
+                    id="tournament-category"
                     value={category}
                     onChange={(e) => {
                       setCategory(e.target.value);
                       setErrorMessage(null);
                     }}
-                    className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#002F87] transition-all"
+                    className={chromeStyles.select}
                   >
                     <option value="SUB_14">Sub 14</option>
                     <option value="SUB_16">Sub 16</option>
@@ -258,15 +254,18 @@ export default function TorneosNuevoPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-black text-slate-500 tracking-wider mb-2 block uppercase">Rama</label>
+                <div className={chromeStyles.formGroup}>
+                  <label className={chromeStyles.label} htmlFor="tournament-branch">
+                    Rama
+                  </label>
                   <select
+                    id="tournament-branch"
                     value={branch}
                     onChange={(e) => {
                       setBranch(e.target.value);
                       setErrorMessage(null);
                     }}
-                    className="w-full py-3 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#002F87] transition-all"
+                    className={chromeStyles.select}
                   >
                     <option value="FEMALE">Femenino</option>
                     <option value="MALE">Masculino</option>
@@ -274,167 +273,144 @@ export default function TorneosNuevoPage() {
                 </div>
               </div>
 
-              {/* Fechas del Torneo */}
-              <div className="border-t border-slate-100 pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs font-black text-slate-600 uppercase tracking-widest">Cronograma de Fechas</h3>
-                  <button
-                    type="button"
-                    onClick={handleAddStage}
-                    className="text-[#002F87] font-black text-xs hover:underline uppercase"
-                  >
+              <div className={chromeStyles.section}>
+                <div className={styles.stagesHeader}>
+                  <h3 className={chromeStyles.sectionTitle}>Cronograma de Fechas</h3>
+                  <Button type="button" variant="ghost" size="sm" onClick={handleAddStage}>
                     + Agregar Fecha
-                  </button>
+                  </Button>
                 </div>
 
-                <div className="space-y-3">
+                <div className={chromeStyles.stack}>
                   {stages.map((stage, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-slate-400 w-16">{stage.name}</span>
+                    <div key={index} className={styles.stageRow}>
+                      <span className={styles.stageLabel}>{stage.name}</span>
                       <input
                         type="date"
                         required={index === 0}
                         value={stage.date}
                         onChange={(e) => handleStageDateChange(index, e.target.value)}
-                        className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-sm font-semibold focus:outline-none focus:bg-white focus:border-[#002F87] transition-all"
+                        className={chromeStyles.input}
                       />
                       {index > 0 && (
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleRemoveStage(index)}
-                          className="text-rose-500 hover:text-rose-600 p-2"
+                          aria-label={`Eliminar ${stage.name}`}
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                          <i className="bi bi-trash" aria-hidden="true" />
+                        </Button>
                       )}
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
 
-            <div className="pt-4">
-              <button
-                type="submit"
-                className="w-full py-4 rounded-xl bg-[#002F87] hover:bg-blue-950 text-white font-extrabold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-md"
-              >
-                Continuar a Selección de Equipos
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Paso 2: Inscripción de Equipos */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
-              <h3 className="text-xs font-bold text-slate-600">Resumen del Torneo:</h3>
-              <p className="text-sm font-extrabold text-[#002F87] mt-1">{name}</p>
-              <p className="text-xs font-semibold text-slate-500 mt-1">Categoría: {category} | Rama: {branch} | Fechas: {stages.length}</p>
-            </div>
-
-            <div>
-              <h3 className="text-xs font-black text-slate-500 tracking-wider mb-3 uppercase">Equipos Disponibles ({category} - {branch})</h3>
-              
-              {isLoadingTeams ? (
-                <div className="flex justify-center py-8">
-                  <div style={{ border: '2px solid rgba(0, 47, 135, 0.1)', width: '1.5rem', height: '1.5rem', borderRadius: '50%', borderLeftColor: '#002F87', animation: 'spin 0.8s linear infinite' }} />
-                </div>
-              ) : teams.length === 0 ? (
-                <div className="text-center py-8 bg-slate-50 border border-slate-150 rounded-2xl">
-                  <p className="text-xs font-bold text-slate-400">No se encontraron equipos registrados para esta categoría y rama.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
-                  {teams.map((team) => {
-                    const isSelected = selectedTeams.includes(team.id);
-                    return (
-                      <div
-                        key={team.id}
-                        onClick={() => handleToggleTeam(team.id)}
-                        className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer select-none transition-all ${
-                          isSelected ? 'border-[#002F87] bg-blue-50/20' : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
-                          isSelected ? 'bg-[#002F87] border-[#002F87]' : 'border-slate-300 bg-white'
-                        }`}>
-                          {isSelected && (
-                            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                          )}
-                        </div>
-                        <span className="text-xs font-black text-slate-700">{team.name}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {errorMessage && (
-              <div className={styles.errorAlert}>
-                {errorMessage}
+              <div className={chromeStyles.actionsRow}>
+                <Button type="submit" block>
+                  Continuar a Selección de Equipos
+                </Button>
               </div>
-            )}
+            </form>
+          )}
 
-            <div className="flex gap-4 pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                disabled={isSubmitting}
-                className="flex-1 py-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 font-extrabold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer"
-              >
-                Volver
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateTournament}
-                disabled={isSubmitting}
-                className="flex-1 py-4 rounded-xl bg-[#002F87] hover:bg-blue-950 text-white font-extrabold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Procesando...' : 'Crear Torneo'}
-              </button>
+          {/* Paso 2: Inscripción de Equipos */}
+          {step === 2 && (
+            <div className={chromeStyles.form}>
+              <div className={styles.summary}>
+                <p className={styles.summaryTitle}>Resumen del Torneo:</p>
+                <p className={styles.summaryName}>{name}</p>
+                <p className={styles.summaryMeta}>
+                  Categoría: {category} | Rama: {branch} | Fechas: {stages.length}
+                </p>
+              </div>
+
+              <div className={chromeStyles.section}>
+                <h3 className={chromeStyles.sectionTitle}>
+                  Equipos Disponibles ({category} - {branch})
+                </h3>
+
+                {isLoadingTeams ? (
+                  <LoadingState label="Cargando equipos..." />
+                ) : teams.length === 0 ? (
+                  <EmptyState title="No se encontraron equipos registrados para esta categoría y rama." />
+                ) : (
+                  <div className={styles.teamGrid}>
+                    {teams.map((team) => {
+                      const isSelected = selectedTeams.includes(team.id);
+                      return (
+                        <div
+                          key={team.id}
+                          onClick={() => handleToggleTeam(team.id)}
+                          className={`${styles.teamCard} ${isSelected ? styles.teamCardSelected : ''}`}
+                          role="checkbox"
+                          aria-checked={isSelected}
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleToggleTeam(team.id);
+                            }
+                          }}
+                        >
+                          <span className={styles.checkbox}>
+                            {isSelected && <i className="bi bi-check" aria-hidden="true" />}
+                          </span>
+                          <span className={styles.teamName}>{team.name}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
+
+              <div className={chromeStyles.actionsRow}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setStep(1)}
+                  disabled={isSubmitting}
+                >
+                  Volver
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleCreateTournament}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Procesando...' : 'Crear Torneo'}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Paso 3: Éxito */}
-        {step === 3 && success && (
-          <div className="text-center py-8 space-y-6">
-            <div className="w-16 h-16 bg-emerald-50 text-emerald-500 border border-emerald-100 rounded-full flex items-center justify-center mx-auto shadow-sm">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
+          {/* Paso 3: Éxito */}
+          {step === 3 && success && (
+            <div className={styles.successPanel}>
+              <div className={styles.successIcon}>
+                <i className="bi bi-check-lg" aria-hidden="true" />
+              </div>
+              <div>
+                <h2 className={styles.successTitle}>¡Torneo Creado Exitosamente!</h2>
+                <p className={styles.successDesc}>
+                  El torneo ha sido registrado correctamente con su cronograma de fechas e inscripciones.
+                </p>
+              </div>
+              <div className={styles.successActions}>
+                <Button variant="secondary" onClick={handleReset}>
+                  Crear Otro Torneo
+                </Button>
+                <Button onClick={() => router.push('/torneos')}>
+                  Volver a Gestión
+                </Button>
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <h2 className="text-lg font-black text-[#002F87] uppercase italic">¡Torneo Creado Exitosamente!</h2>
-              <p className="text-slate-500 text-xs font-semibold">El torneo ha sido registrado correctamente con su cronograma de fechas e inscripciones.</p>
-            </div>
-
-            <div className="flex gap-4 max-w-sm mx-auto pt-4">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="flex-1 py-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer"
-              >
-                Crear Otro Torneo
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/torneos')}
-                className="flex-1 py-3.5 rounded-xl bg-[#002F87] hover:bg-blue-950 text-white font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm"
-              >
-                Volver a Gestión
-              </button>
-            </div>
-          </div>
-        )}
-
+          )}
+        </div>
       </div>
     </div>
   );
