@@ -15,7 +15,7 @@ const platformUrl = 'plataforma.voleyhub.com';
 // en runtime para el render del servidor.
 const publicWebEnv = {
   NODE_ENV: 'production',
-  NEXT_PUBLIC_API_URL: apiUrl,
+  NEXT_PUBLIC_API_URL: `https://${apiUrl}`,
   NEXT_PUBLIC_PLATFORM_URL: `https://${platformUrl}`,
 };
 
@@ -43,8 +43,8 @@ module.exports = {
         DB_PORT: '5432',
         DB_TEST_NAME: 'test_voley_lnv_db',
         CORS_ALLOW_ALL_ORIGINS: 'false',
-        CORS_ALLOWED_ORIGINS: `${landingUrl},${platformUrl}`,
-        CSRF_TRUSTED_ORIGINS: `${landingUrl},${platformUrl}`,
+        CORS_ALLOWED_ORIGINS: `https://${landingUrl},https://${platformUrl}`,
+        CSRF_TRUSTED_ORIGINS: `https://${landingUrl},https://${platformUrl}`,
         DEFAULT_FROM_EMAIL: 'no-reply@voleyhub.com',
         BUCKET_NAME: 'club-photo-bucket',
         PYTHONUNBUFFERED: '1',

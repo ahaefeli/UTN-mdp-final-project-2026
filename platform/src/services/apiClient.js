@@ -1,15 +1,40 @@
 import axios from 'axios';
 
-// En el navegador se usa el mismo host con el que se abrió la página (192.168.1.8 u otro).
-// NEXT_PUBLIC_API_URL solo aplica en el servidor, y se ignora si apunta a localhost.
+const PROD_API_URL = 'https://api.voleyhub.com/';
+
+function isLocalHost(hostname) {
+  return (
+    !hostname ||
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    /^192\.168\.\d+\.\d+$/.test(hostname)
+  );
+}
+
+function ensureAbsoluteApiUrl(url) {
+  const trimmed = String(url).trim().replace(/\/$/, '');
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  return `${withProtocol}/`;
+}
+
+// En la red local la API escucha en el mismo host, puerto 8000.
+// En producción el host público es api.voleyhub.com, sin puerto.
 export function getApiBaseUrl() {
   if (typeof window !== 'undefined' && window.location?.hostname) {
-    return `http://${window.location.hostname}:8000/`;
+    const hostname = window.location.hostname;
+    if (!isLocalHost(hostname)) {
+      return PROD_API_URL;
+    }
+    return `http://${hostname}:8000/`;
   }
 
   const fromEnv = process.env.NEXT_PUBLIC_API_URL;
-  if (fromEnv && !/localhost|127\.0\.0\.1/i.test(fromEnv)) {
-    return fromEnv.endsWith('/') ? fromEnv : `${fromEnv}/`;
+  if (fromEnv && !/localhost|127\.0\.0\.1|192\.168\.\d+\.\d+/i.test(fromEnv)) {
+    return ensureAbsoluteApiUrl(fromEnv);
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    return PROD_API_URL;
   }
 
   return 'http://192.168.1.8:8000/';
