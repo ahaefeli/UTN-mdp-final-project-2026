@@ -5,6 +5,50 @@
   margin-bottom: var(--space-4);
 }
 
+.scroller {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  min-width: 0;
+  margin-bottom: var(--space-4);
+}
+
+.scrollable {
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+
+.scrollable .tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.arrow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.arrow:not(:disabled):hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
 .tab {
   background: transparent;
   border: none;

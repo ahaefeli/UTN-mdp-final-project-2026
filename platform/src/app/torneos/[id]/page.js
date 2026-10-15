@@ -48,6 +48,48 @@ import chromeStyles from '../../../components/ui/PageChrome.module.css';
 
 import styles from './page.module.css';
 
+import MatchScheduleFields from './MatchScheduleFields';
+
+
+
+function sortStagesByDate(list) {
+
+  return [...(list || [])].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
+}
+
+
+
+function formatStageLabel(stage) {
+
+  const [year, month, day] = String(stage.date || '').split('-').map(Number);
+
+  const date = new Date(year, (month || 1) - 1, day || 1);
+
+  const labelDate = Number.isNaN(date.getTime())
+
+    ? stage.date
+
+    : date.toLocaleDateString('es-AR');
+
+  return `${stage.name} (${labelDate})`;
+
+}
+
+
+
+function todayLocalISO() {
+
+  const date = new Date();
+
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${date.getFullYear()}-${month}-${day}`;
+
+}
+
 
 
 export default function TorneoDetailPage() {
@@ -92,11 +134,13 @@ export default function TorneoDetailPage() {
 
   const [scorerId, setScorerId] = useState('');
 
-  const [matchStatus, setMatchStatus] = useState('');
-
 
 
   const [editingMatchId, setEditingMatchId] = useState(null);
+
+  const [editDraft, setEditDraft] = useState(null);
+
+  const [editError, setEditError] = useState('');
 
   const [scoreSheetMatch, setScoreSheetMatch] = useState(null);
 
@@ -222,7 +266,7 @@ export default function TorneoDetailPage() {
 
           setTournament(tRes.data || null);
 
-          const loadedStages = stagesRes.data || [];
+          const loadedStages = sortStagesByDate(stagesRes.data || []);
 
           setStages(loadedStages);
 
@@ -326,6 +370,16 @@ export default function TorneoDetailPage() {
 
 
 
+    if (newStageDate < todayLocalISO()) {
+
+      alert('No se puede agregar una fecha que ya pasó.');
+
+      return;
+
+    }
+
+
+
     try {
 
       const nextNum = stages.length + 1;
@@ -344,7 +398,7 @@ export default function TorneoDetailPage() {
 
       const stagesRes = await tournamentService.getStages(tournamentId);
 
-      const loadedStages = stagesRes.data || [];
+      const loadedStages = sortStagesByDate(stagesRes.data || []);
 
       setStages(loadedStages);
 
@@ -380,23 +434,9 @@ export default function TorneoDetailPage() {
 
     setEditingMatchId(null);
 
-    setLocalTeamId('');
+    setEditDraft(null);
 
-    setVisitorTeamId('');
-
-    setCourtId('');
-
-    setMatchTime('');
-
-    setRefereeId('');
-
-    setScorerId('');
-
-    setMatchStatus('');
-
-    setError('');
-
-    setSuccessMsg('');
+    setEditError('');
 
   };
 
@@ -408,15 +448,13 @@ export default function TorneoDetailPage() {
 
     setSuccessMsg('');
 
+    setEditError('');
+
     setEditingMatchId(match.id);
 
-    setLocalTeamId(match.local_team_id);
-
-    setVisitorTeamId(match.visitor_team_id);
-
-    setCourtId(match.court_id.toString());
 
 
+    let timeValue = '';
 
     if (match.match_datetime) {
 
@@ -426,21 +464,31 @@ export default function TorneoDetailPage() {
 
       const minutes = String(d.getMinutes()).padStart(2, '0');
 
-      setMatchTime(`${hours}:${minutes}`);
-
-    } else {
-
-      setMatchTime('');
+      timeValue = `${hours}:${minutes}`;
 
     }
 
 
 
-    setRefereeId(match.referee_id);
+    setEditDraft({
 
-    setScorerId(match.scorer_id);
+      id: match.id,
 
-    setMatchStatus(match.status || 'PREPARATION');
+      localTeamId: match.local_team_id != null ? String(match.local_team_id) : '',
+
+      visitorTeamId: match.visitor_team_id != null ? String(match.visitor_team_id) : '',
+
+      courtId: match.court_id != null ? String(match.court_id) : '',
+
+      matchTime: timeValue,
+
+      refereeId: match.referee_id != null ? String(match.referee_id) : '',
+
+      scorerId: match.scorer_id != null ? String(match.scorer_id) : '',
+
+      status: match.status || 'PREPARATION',
+
+    });
 
   };
 
@@ -572,35 +620,9 @@ export default function TorneoDetailPage() {
 
 
 
-      if (editingMatchId) {
+      await matchService.createMatch(payload);
 
-        payload.status = matchStatus;
-
-        const res = await matchService.updateMatch(editingMatchId, payload);
-
-        const updatedMatch = res.data;
-
-        if (updatedMatch) {
-
-          setMatches((prev) =>
-
-            prev.map((m) => (m.id === updatedMatch.id ? updatedMatch : m))
-
-          );
-
-        }
-
-        setSuccessMsg('¡Partido actualizado exitosamente!');
-
-        setEditingMatchId(null);
-
-      } else {
-
-        await matchService.createMatch(payload);
-
-        setSuccessMsg('¡Partido creado exitosamente!');
-
-      }
+      setSuccessMsg('¡Partido creado exitosamente!');
 
 
 
@@ -615,8 +637,6 @@ export default function TorneoDetailPage() {
       setRefereeId('');
 
       setScorerId('');
-
-      setMatchStatus('');
 
     } catch (err) {
 
@@ -648,6 +668,156 @@ export default function TorneoDetailPage() {
 
 
 
+  const handleSaveEdit = async (e) => {
+
+    e.preventDefault();
+
+    if (!editDraft) return;
+
+
+
+    setEditError('');
+
+    setError('');
+
+    setSuccessMsg('');
+
+
+
+    const {
+
+      id,
+
+      localTeamId: localId,
+
+      visitorTeamId: visitorId,
+
+      courtId: selectedCourtId,
+
+      matchTime: timeValue,
+
+      refereeId: selectedRefereeId,
+
+      scorerId: selectedScorerId,
+
+    } = editDraft;
+
+
+
+    if (!localId || !visitorId || !selectedCourtId || !timeValue) {
+
+      setEditError('Por favor, completa todos los campos del partido.');
+
+      return;
+
+    }
+
+
+
+    if (localId === visitorId) {
+
+      setEditError('El equipo local y el visitante no pueden ser el mismo.');
+
+      return;
+
+    }
+
+
+
+    const selectedStage = stages.find((s) => s.id === activeStageId);
+
+    if (!selectedStage) {
+
+      setEditError('Seleccione una fecha válida para programar el partido.');
+
+      return;
+
+    }
+
+
+
+    const currentMatch = matches.find((m) => m.id === id);
+
+
+
+    setIsSubmitting(true);
+
+
+
+    try {
+
+      const payload = {
+
+        tournament_stage_id: activeStageId,
+
+        local_team_id: localId,
+
+        visitor_team_id: visitorId,
+
+        court_id: parseInt(selectedCourtId, 10),
+
+        match_datetime: new Date(`${selectedStage.date}T${timeValue}`).toISOString(),
+
+        referee_id: selectedRefereeId || null,
+
+        scorer_id: selectedScorerId || null,
+
+        status: currentMatch?.status || editDraft.status,
+
+      };
+
+
+
+      const res = await matchService.updateMatch(id, payload);
+
+      const updatedMatch = res.data;
+
+
+
+      if (updatedMatch) {
+
+        setMatches((prev) => prev.map((m) => (m.id === updatedMatch.id ? updatedMatch : m)));
+
+      }
+
+
+
+      setSuccessMsg('¡Partido actualizado exitosamente!');
+
+      setEditingMatchId(null);
+
+      setEditDraft(null);
+
+    } catch (err) {
+
+      console.error('Error al actualizar el partido:', err);
+
+      if (err.response && err.response.status === 400) {
+
+        setEditError(
+
+          err.response.data?.error ||
+
+            'El backend rechazó la petición por conflicto de horarios.'
+
+        );
+
+      } else {
+
+        setEditError('Error de comunicación con el servidor al actualizar el partido.');
+
+      }
+
+    } finally {
+
+      setIsSubmitting(false);
+
+    }
+
+  };
+
+
+
   const handleStatusChange = async (newStatus) => {
 
     if (!confirm('¿Estás seguro de cambiar el estado del torneo?')) return;
@@ -664,7 +834,7 @@ export default function TorneoDetailPage() {
 
       console.error('Error al actualizar estado:', err);
 
-      setError('No se pudo actualizar el estado del torneo.');
+      setError(err?.response?.data?.error || 'No se pudo actualizar el estado del torneo.');
 
     }
 
@@ -708,15 +878,19 @@ export default function TorneoDetailPage() {
 
 
 
-  const editingMatch = matches.find((m) => m.id === editingMatchId);
+  const editingMatch = editDraft
+
+    ? matches.find((m) => m.id === editDraft.id) || null
+
+    : null;
 
 
 
-  const stageTabs = stages.map((stage) => ({
+  const stageTabs = sortStagesByDate(stages).map((stage) => ({
 
     id: stage.id,
 
-    label: `${stage.name} (${new Date(stage.date).toLocaleDateString()})`,
+    label: formatStageLabel(stage),
 
   }));
 
@@ -767,6 +941,8 @@ export default function TorneoDetailPage() {
               aria-label="Estado del torneo"
 
             >
+
+              <option value="PENDING">Pendiente</option>
 
               <option value="PREPARATION">En Preparación</option>
 
@@ -874,7 +1050,7 @@ export default function TorneoDetailPage() {
 
           {stageTabs.length > 0 ? (
 
-            <Tabs tabs={stageTabs} active={activeStageId} onChange={handleStageTabChange} />
+            <Tabs tabs={stageTabs} active={activeStageId} onChange={handleStageTabChange} scrollable />
 
           ) : (
 
@@ -912,417 +1088,39 @@ export default function TorneoDetailPage() {
 
             <form onSubmit={handleCreateMatch} className={dirStyles.form}>
 
-              <div className={styles.vsContainer}>
-
-                <div className={dirStyles.formGroup}>
-
-                  <label className={dirStyles.label} htmlFor="match-local-team">
-
-                    Equipo Local
-
-                  </label>
-
-                  <select
-
-                    id="match-local-team"
-
-                    value={localTeamId}
-
-                    onChange={(e) => setLocalTeamId(e.target.value)}
-
-                    className={dirStyles.select}
-
-                    required
-
-                  >
-
-                    <option value="">Seleccione equipo...</option>
-
-                    {enrolledTeams
-
-                      .filter((enroll) => enroll.team_id !== visitorTeamId)
-
-                      .map((enroll) => (
-
-                        <option key={enroll.team_id} value={enroll.team_id}>
-
-                          {enroll.team_name}
-
-                        </option>
-
-                      ))}
-
-                  </select>
-
-                </div>
-
-
-
-                <span className={styles.vsText}>VS.</span>
-
-
-
-                <div className={dirStyles.formGroup}>
-
-                  <label className={dirStyles.label} htmlFor="match-visitor-team">
-
-                    Equipo Visitante
-
-                  </label>
-
-                  <select
-
-                    id="match-visitor-team"
-
-                    value={visitorTeamId}
-
-                    onChange={(e) => setVisitorTeamId(e.target.value)}
-
-                    className={dirStyles.select}
-
-                    required
-
-                  >
-
-                    <option value="">Seleccione equipo...</option>
-
-                    {enrolledTeams
-
-                      .filter((enroll) => enroll.team_id !== localTeamId)
-
-                      .map((enroll) => (
-
-                        <option key={enroll.team_id} value={enroll.team_id}>
-
-                          {enroll.team_name}
-
-                        </option>
-
-                      ))}
-
-                  </select>
-
-                </div>
-
-              </div>
-
-
-
-              <div className={dirStyles.formRow}>
-
-                <div className={dirStyles.formGroup}>
-
-                  <label className={dirStyles.label} htmlFor="match-court">
-
-                    Cancha
-
-                  </label>
-
-                  <select
-
-                    id="match-court"
-
-                    value={courtId}
-
-                    onChange={(e) => setCourtId(e.target.value)}
-
-                    className={dirStyles.select}
-
-                    required
-
-                  >
-
-                    <option value="">Seleccione cancha...</option>
-
-                    {courts.map((court) => (
-
-                      <option key={court.id} value={court.id}>
-
-                        {court.name} ({court.club_name || 'Club'})
-
-                      </option>
-
-                    ))}
-
-                  </select>
-
-                </div>
-
-
-
-                <div className={dirStyles.formGroup}>
-
-                  <label className={dirStyles.label} htmlFor="match-time">
-
-                    Hora del Partido
-
-                  </label>
-
-                  <input
-
-                    id="match-time"
-
-                    type="time"
-
-                    value={matchTime}
-
-                    onChange={(e) => setMatchTime(e.target.value)}
-
-                    className={dirStyles.input}
-
-                    required
-
-                  />
-
-                </div>
-
-              </div>
-
-
-
-              <div className={dirStyles.formRow}>
-
-                <div className={dirStyles.formGroup}>
-
-                  <label className={dirStyles.label} htmlFor="match-referee">
-
-                    Árbitro Designado
-
-                  </label>
-
-                  <select
-
-                    id="match-referee"
-
-                    value={refereeId}
-
-                    onChange={(e) => setRefereeId(e.target.value)}
-
-                    className={dirStyles.select}
-
-                  >
-
-                    <option value="">Sin asignar</option>
-
-                    {referees.map((ref) => (
-
-                      <option key={ref.id} value={ref.id}>
-
-                        {ref.name || ref.username}
-
-                      </option>
-
-                    ))}
-
-                  </select>
-
-                </div>
-
-
-
-                <div className={dirStyles.formGroup}>
-
-                  <label className={dirStyles.label} htmlFor="match-scorer">
-
-                    Planillero Designado
-
-                  </label>
-
-                  <select
-
-                    id="match-scorer"
-
-                    value={scorerId}
-
-                    onChange={(e) => setScorerId(e.target.value)}
-
-                    className={dirStyles.select}
-
-                  >
-
-                    <option value="">Sin asignar</option>
-
-                    {scorers.map((sc) => (
-
-                      <option key={sc.id} value={sc.id}>
-
-                        {sc.name || sc.username}
-
-                      </option>
-
-                    ))}
-
-                  </select>
-
-                </div>
-
-              </div>
-
-
+              <MatchScheduleFields
+                idPrefix="create-match"
+                localTeamId={localTeamId}
+                visitorTeamId={visitorTeamId}
+                courtId={courtId}
+                matchTime={matchTime}
+                refereeId={refereeId}
+                scorerId={scorerId}
+                onChange={(field, value) => {
+                  const setters = {
+                    localTeamId: setLocalTeamId,
+                    visitorTeamId: setVisitorTeamId,
+                    courtId: setCourtId,
+                    matchTime: setMatchTime,
+                    refereeId: setRefereeId,
+                    scorerId: setScorerId,
+                  };
+                  setters[field]?.(value);
+                }}
+                enrolledTeams={enrolledTeams}
+                courts={courts}
+                referees={referees}
+                scorers={scorers}
+              />
 
               <Button type="submit" disabled={isSubmitting} block>
 
-                {isSubmitting
-
-                  ? editingMatchId
-
-                    ? 'Guardando Cambios...'
-
-                    : 'Registrando Partido...'
-
-                  : editingMatchId
-
-                    ? 'Guardar Cambios'
-
-                    : 'Programar Partido'}
+                {isSubmitting ? 'Registrando Partido...' : 'Programar Partido'}
 
               </Button>
 
-
-
-              {editingMatchId && (
-
-                <div className={chromeStyles.actionsRow}>
-
-                  {(editingMatch?.status === 'PREPARATION' ||
-
-                    editingMatch?.status === 'PENDING') && (
-
-                    <>
-
-                      <Button
-
-                        type="button"
-
-                        variant="accent"
-
-                        onClick={() => handleUpdateMatchStatus(editingMatchId, 'IN_PROGRESS')}
-
-                      >
-
-                        <i className="bi bi-play-circle-fill" aria-hidden="true" />
-
-                        Iniciar Partido
-
-                      </Button>
-
-                      <Button
-
-                        type="button"
-
-                        variant="primary"
-
-                        onClick={() => setScoreSheetMatch(editingMatch)}
-
-                      >
-
-                        <i className="bi bi-clipboard-data-fill" aria-hidden="true" />
-
-                        Cargar resultado
-
-                      </Button>
-
-                      <Button
-
-                        type="button"
-
-                        variant="secondary"
-
-                        onClick={() => handleUpdateMatchStatus(editingMatchId, 'CANCELLED')}
-
-                      >
-
-                        <i className="bi bi-x-circle-fill" aria-hidden="true" />
-
-                        Cancelar Partido
-
-                      </Button>
-
-                    </>
-
-                  )}
-
-
-
-                  {editingMatch?.status === 'IN_PROGRESS' && (
-
-                    <>
-
-                      <Button
-
-                        type="button"
-
-                        variant="primary"
-
-                        onClick={() => setScoreSheetMatch(editingMatch)}
-
-                      >
-
-                        <i className="bi bi-check-circle-fill" aria-hidden="true" />
-
-                        Cargar resultado
-
-                      </Button>
-
-                      <Button
-
-                        type="button"
-
-                        variant="accent"
-
-                        onClick={() => handleUpdateMatchStatus(editingMatchId, 'PREPARATION')}
-
-                      >
-
-                        <i className="bi bi-pause-circle-fill" aria-hidden="true" />
-
-                        Suspender (Volver a Prep.)
-
-                      </Button>
-
-                    </>
-
-                  )}
-
-
-
-                  {editingMatch?.status === 'CANCELLED' && (
-
-                    <Button
-
-                      type="button"
-
-                      variant="accent"
-
-                      onClick={() => handleUpdateMatchStatus(editingMatchId, 'PREPARATION')}
-
-                    >
-
-                      <i className="bi bi-arrow-counterclockwise" aria-hidden="true" />
-
-                      Retomar (Volver a Prep.)
-
-                    </Button>
-
-                  )}
-
-                </div>
-
-              )}
-
-
-
-              {editingMatchId && (
-
-                <Button type="button" variant="ghost" onClick={handleCancelEdit} block>
-
-                  Cancelar Edición
-
-                </Button>
-
-              )}
-
             </form>
+
 
           </section>
 
@@ -1366,6 +1164,8 @@ export default function TorneoDetailPage() {
 
                     venue={`Cancha: ${match.court_name || 'Sin asignar'} · Árbitro: ${match.referee_name || 'Sin asignar'} · Planillero: ${match.scorer_name || 'Sin asignar'}`}
 
+                    score={match.score_summary || undefined}
+
                     status={match.status}
 
                     statusLabel={STATUS_TRANSLATIONS[match.status] || match.status}
@@ -1391,6 +1191,26 @@ export default function TorneoDetailPage() {
                           <i className="bi bi-pencil-fill" aria-hidden="true" />
 
                         </Button>
+
+                        {match.status === 'FINISHED' && (
+
+                          <Button
+
+                            variant="secondary"
+
+                            size="sm"
+
+                            onClick={() => setScoreSheetMatch(match)}
+
+                            disabled={isSubmitting}
+
+                          >
+
+                            Editar resultado
+
+                          </Button>
+
+                        )}
 
                         <Button
 
@@ -1480,6 +1300,8 @@ export default function TorneoDetailPage() {
 
                 required
 
+                min={todayLocalISO()}
+
                 value={newStageDate}
 
                 onChange={(e) => setNewStageDate(e.target.value)}
@@ -1496,9 +1318,217 @@ export default function TorneoDetailPage() {
 
 
 
+        <Modal
+
+          open={Boolean(editDraft)}
+
+          onClose={handleCancelEdit}
+
+          title="Editar partido"
+
+          subtitle="Modificá equipos, cancha, horario y oficiales de este partido."
+
+          size="lg"
+
+          footer={
+
+            <>
+
+              <Button variant="secondary" onClick={handleCancelEdit} disabled={isSubmitting}>
+
+                Cancelar
+
+              </Button>
+
+              <Button type="submit" form="edit-match-form" disabled={isSubmitting}>
+
+                {isSubmitting ? 'Guardando Cambios...' : 'Guardar Cambios'}
+
+              </Button>
+
+            </>
+
+          }
+
+        >
+
+          {editDraft && (
+
+            <form id="edit-match-form" onSubmit={handleSaveEdit} className={dirStyles.form}>
+
+              <MatchScheduleFields
+
+                idPrefix="edit-match"
+
+                localTeamId={editDraft.localTeamId}
+
+                visitorTeamId={editDraft.visitorTeamId}
+
+                courtId={editDraft.courtId}
+
+                matchTime={editDraft.matchTime}
+
+                refereeId={editDraft.refereeId}
+
+                scorerId={editDraft.scorerId}
+
+                onChange={(field, value) =>
+
+                  setEditDraft((prev) => (prev ? { ...prev, [field]: value } : prev))
+
+                }
+
+                enrolledTeams={enrolledTeams}
+
+                courts={courts}
+
+                referees={referees}
+
+                scorers={scorers}
+
+              />
+
+
+
+              {editError && <Alert variant="error">{editError}</Alert>}
+
+
+
+              <div className={chromeStyles.actionsRow}>
+
+                {(editingMatch?.status === 'PREPARATION' || editingMatch?.status === 'PENDING') && (
+
+                  <>
+
+                    <Button
+
+                      type="button"
+
+                      variant="accent"
+
+                      onClick={() => handleUpdateMatchStatus(editDraft.id, 'IN_PROGRESS')}
+
+                    >
+
+                      <i className="bi bi-play-circle-fill" aria-hidden="true" />
+
+                      Iniciar Partido
+
+                    </Button>
+
+                    <Button type="button" variant="primary" onClick={() => setScoreSheetMatch(editingMatch)}>
+
+                      <i className="bi bi-clipboard-data-fill" aria-hidden="true" />
+
+                      Cargar resultado
+
+                    </Button>
+
+                    <Button
+
+                      type="button"
+
+                      variant="secondary"
+
+                      onClick={() => handleUpdateMatchStatus(editDraft.id, 'CANCELLED')}
+
+                    >
+
+                      <i className="bi bi-x-circle-fill" aria-hidden="true" />
+
+                      Cancelar Partido
+
+                    </Button>
+
+                  </>
+
+                )}
+
+
+
+                {editingMatch?.status === 'IN_PROGRESS' && (
+
+                  <>
+
+                    <Button type="button" variant="primary" onClick={() => setScoreSheetMatch(editingMatch)}>
+
+                      <i className="bi bi-check-circle-fill" aria-hidden="true" />
+
+                      Cargar resultado
+
+                    </Button>
+
+                    <Button
+
+                      type="button"
+
+                      variant="accent"
+
+                      onClick={() => handleUpdateMatchStatus(editDraft.id, 'PREPARATION')}
+
+                    >
+
+                      <i className="bi bi-pause-circle-fill" aria-hidden="true" />
+
+                      Suspender (Volver a Prep.)
+
+                    </Button>
+
+                  </>
+
+                )}
+
+
+
+                {editingMatch?.status === 'CANCELLED' && (
+
+                  <Button
+
+                    type="button"
+
+                    variant="accent"
+
+                    onClick={() => handleUpdateMatchStatus(editDraft.id, 'PREPARATION')}
+
+                  >
+
+                    <i className="bi bi-arrow-counterclockwise" aria-hidden="true" />
+
+                    Retomar (Volver a Prep.)
+
+                  </Button>
+
+                )}
+
+
+
+                {editingMatch?.status === 'FINISHED' && (
+
+                  <Button type="button" variant="primary" onClick={() => setScoreSheetMatch(editingMatch)}>
+
+                    <i className="bi bi-clipboard-data-fill" aria-hidden="true" />
+
+                    Editar resultado
+
+                  </Button>
+
+                )}
+
+              </div>
+
+            </form>
+
+          )}
+
+        </Modal>
+
+
+
         {scoreSheetMatch && (
 
           <ScoreSheetModal
+
+            key={scoreSheetMatch.id}
 
             match={scoreSheetMatch}
 

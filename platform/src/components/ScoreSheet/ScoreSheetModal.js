@@ -6,6 +6,21 @@ import styles from './ScoreSheetModal.module.css';
 
 const emptySet = () => ({ local_points: '', visitor_points: '' });
 
+function setsFromMatch(match) {
+  const existing = match?.sets_data?.sets;
+  if (!Array.isArray(existing) || existing.length < 3) {
+    return [emptySet(), emptySet(), emptySet()];
+  }
+  return existing.slice(0, 5).map((set) => ({
+    local_points: String(set.local_points ?? set.local_score ?? '').replace(/\D/g, '').slice(0, 2),
+    visitor_points: String(set.visitor_points ?? set.visitor_score ?? '').replace(/\D/g, '').slice(0, 2),
+  }));
+}
+
+function digitsOnly(value) {
+  return String(value).replace(/\D/g, '').slice(0, 2);
+}
+
 function validateClientSets(sets) {
   if (sets.length < 3 || sets.length > 5) {
     return 'Un partido se cierra con 3, 4 o 5 sets.';
@@ -22,6 +37,9 @@ function validateClientSets(sets) {
     }
     if (lp < 0 || vp < 0) {
       return `Los puntos del set ${i + 1} no pueden ser negativos.`;
+    }
+    if (lp > 99 || vp > 99) {
+      return `Los puntos del set ${i + 1} no pueden tener más de 2 cifras.`;
     }
     if (lp === vp) {
       return `El set ${i + 1} no puede empatar.`;
@@ -44,7 +62,8 @@ function validateClientSets(sets) {
 }
 
 export default function ScoreSheetModal({ match, onClose, onSuccess }) {
-  const [sets, setSets] = useState([emptySet(), emptySet(), emptySet()]);
+  const hasSavedSets = Array.isArray(match?.sets_data?.sets) && match.sets_data.sets.length > 0;
+  const [sets, setSets] = useState(() => setsFromMatch(match));
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,11 +79,12 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
 
   const localName = match.local_team_name || 'Local';
   const visitorName = match.visitor_team_name || 'Visitante';
+  const submitLabel = hasSavedSets ? 'Guardar resultado' : 'Publicar resultado';
 
   const updateSet = (index, field, value) => {
     setSets((prev) => {
       const next = [...prev];
-      next[index] = { ...next[index], [field]: value };
+      next[index] = { ...next[index], [field]: digitsOnly(value) };
       return next;
     });
     setError('');
@@ -125,7 +145,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
         <div className={styles.header}>
           <div>
             <h2 id="scoresheet-title" className={styles.title}>
-              Planilla de sets
+              {hasSavedSets ? 'Editar resultado' : 'Planilla de sets'}
             </h2>
             <p className={styles.subtitle}>
               {localName} vs {visitorName}
@@ -154,9 +174,10 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
                 <span className={styles.setLabel}>Set {index + 1}</span>
                 <input
                   className={styles.input}
-                  type="number"
-                  min="0"
+                  type="text"
                   inputMode="numeric"
+                  maxLength={2}
+                  pattern="[0-9]{1,2}"
                   value={set.local_points}
                   onChange={(e) => updateSet(index, 'local_points', e.target.value)}
                   disabled={isSubmitting}
@@ -164,9 +185,10 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
                 />
                 <input
                   className={styles.input}
-                  type="number"
-                  min="0"
+                  type="text"
                   inputMode="numeric"
+                  maxLength={2}
+                  pattern="[0-9]{1,2}"
                   value={set.visitor_points}
                   onChange={(e) => updateSet(index, 'visitor_points', e.target.value)}
                   disabled={isSubmitting}
@@ -184,7 +206,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
               </div>
             ))}
 
-            <p className={styles.hint}>Mejor de 5: el ganador debe llegar a 3 sets.</p>
+            <p className={styles.hint}>Mejor de 5: el ganador debe llegar a 3 sets. Cada puntaje admite hasta 2 cifras.</p>
 
             {error && <div className={styles.error}>{error}</div>}
           </div>
@@ -199,7 +221,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
               + Agregar set
             </button>
             <button type="submit" className={styles.primaryBtn} disabled={isSubmitting}>
-              {isSubmitting ? 'Publicando...' : 'Publicar resultado'}
+              {isSubmitting ? 'Guardando...' : submitLabel}
             </button>
             <button
               type="button"

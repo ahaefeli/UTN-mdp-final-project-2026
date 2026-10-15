@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import styles from './page.module.css';
 import authService from '../services/authService';
 import matchService from '../services/matchService';
@@ -304,17 +303,7 @@ export default function RootDashboardPage() {
               <QuickActions />
 
               <PendingAlerts
-                alerts={[
-                  ...pendingActions.filter((a) => a.type === 'NEW_AFFILIATION' || a.club_name || a.message),
-                  ...matchesNeedingScore.map((m) => ({
-                    id: `match-${m.id}`,
-                    type: 'MATCH_NEEDS_SCORE',
-                    message: `Sin resultado: ${m.local_team_name} vs ${m.visitor_team_name}`,
-                    match: m,
-                    href: m.tournament_stage_id ? `/torneos` : '/torneos',
-                  })),
-                ]}
-                onMatchAction={(match) => setScoreSheetMatch(match)}
+                alerts={pendingActions.filter((a) => a.type === 'NEW_AFFILIATION')}
               />
 
               {!isLoadingNeedsScore && matchesNeedingScore.length > 0 ? (
@@ -339,41 +328,6 @@ export default function RootDashboardPage() {
                   </div>
                 </section>
               ) : null}
-
-              <div className={styles.alertStack}>
-                {metrics?.pending_counts?.clubs > 0 ? (
-                  <Link href="/clubes" className={styles.alertLink}>
-                    <Alert variant="info">
-                      <i className="bi bi-shield-fill-exclamation" aria-hidden="true" />
-                      <span>
-                        Tienes <strong>{metrics.pending_counts.clubs}</strong> solicitud(es) de Clubes pendientes.
-                      </span>
-                    </Alert>
-                  </Link>
-                ) : null}
-
-                {metrics?.pending_counts?.referees > 0 ? (
-                  <Link href="/arbitros" className={styles.alertLink}>
-                    <Alert variant="success">
-                      <i className="bi bi-person-badge-fill" aria-hidden="true" />
-                      <span>
-                        Tienes <strong>{metrics.pending_counts.referees}</strong> solicitud(es) de Árbitros pendientes.
-                      </span>
-                    </Alert>
-                  </Link>
-                ) : null}
-
-                {metrics?.pending_counts?.scorers > 0 ? (
-                  <Link href="/planilleros" className={styles.alertLink}>
-                    <Alert variant="warning">
-                      <i className="bi bi-clipboard-data-fill" aria-hidden="true" />
-                      <span>
-                        Tienes <strong>{metrics.pending_counts.scorers}</strong> solicitud(es) de Planilleros pendientes.
-                      </span>
-                    </Alert>
-                  </Link>
-                ) : null}
-              </div>
 
               {scoreSheetMatch ? (
                 <ScoreSheetModal

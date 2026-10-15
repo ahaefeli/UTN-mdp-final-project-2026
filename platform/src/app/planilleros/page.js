@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../services/apiClient';
+import { copyText } from '../../utils/copyText';
+import buttonStyles from '../../components/ui/Button.module.css';
 import {
   PageHeader,
   Button,
@@ -67,6 +69,7 @@ export default function PlanillerosAdminPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [copyError, setCopyError] = useState('');
 
   // Detail Modal state
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -116,6 +119,8 @@ export default function PlanillerosAdminPage() {
   const handleCloseInviteModal = () => {
     setIsInviteModalOpen(false);
     setGeneratedLink('');
+    setIsCopied(false);
+    setCopyError('');
   };
 
   const handleCloseDetailModal = () => {
@@ -141,6 +146,8 @@ export default function PlanillerosAdminPage() {
       const link = `${window.location.origin}/register?token=${token}`;
 
       setGeneratedLink(link);
+      setIsCopied(false);
+      setCopyError('');
       setIsInviteModalOpen(true);
       setSuccessMsg('Enlace generado exitosamente.');
     } catch (err) {
@@ -151,13 +158,17 @@ export default function PlanillerosAdminPage() {
     }
   };
 
-  // Copy Generated Link to Clipboard
-  const handleCopyLink = () => {
-    if (generatedLink) {
-      navigator.clipboard.writeText(generatedLink);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+  const handleCopyLink = async () => {
+    if (!generatedLink) return;
+    setCopyError('');
+    const ok = await copyText(generatedLink);
+    if (!ok) {
+      setIsCopied(false);
+      setCopyError('No se pudo copiar el enlace. Seleccionalo y copialo manualmente.');
+      return;
     }
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   // Fetch Request Detail (GET)
@@ -373,10 +384,16 @@ export default function PlanillerosAdminPage() {
                 className={dirStyles.input}
                 onClick={(e) => e.target.select()}
               />
-              <Button type="button" onClick={handleCopyLink} size="sm">
-                {isCopied ? '¡Copiado!' : 'Copiar Link'}
+              <Button
+                type="button"
+                onClick={handleCopyLink}
+                size="sm"
+                className={isCopied ? buttonStyles.copied : ''}
+              >
+                {isCopied ? 'Copiado' : 'Copiar Link'}
               </Button>
             </div>
+            {copyError ? <p className={dirStyles.copyError}>{copyError}</p> : null}
           </div>
         </Modal>
 

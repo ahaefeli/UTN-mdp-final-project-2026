@@ -25,6 +25,7 @@ class BRANCH_CHOICES(models.TextChoices):
     FEMALE = 'FEMALE', 'Female'
 
 class STATUS_CHOICES(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
     PREPARATION = 'PREPARATION', 'Preparation'
     CANCELLED = 'CANCELLED', 'Cancelled'
     IN_PROGRESS = 'IN_PROGRESS', 'In Progress'

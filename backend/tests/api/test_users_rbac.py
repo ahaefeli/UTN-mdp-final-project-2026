@@ -7,6 +7,33 @@ from tests.factories import make_user
 
 @pytest.mark.django_db
 class TestUsersRbac:
+    def test_page_size(self, api_client, auth_header, organization):
+        for i in range(12):
+            make_user(
+                organization=organization,
+                role='PLAYER',
+                username=f'paged_player_{i}',
+                email=f'paged_player_{i}@test.com',
+            )
+
+        page_10 = api_client.get('/internal/usuarios/?page=1&page_size=10', **auth_header)
+        assert page_10.status_code == 200
+        body_10 = page_10.json()
+        assert len(body_10['data']) == 10
+        assert body_10['pagination']['page_size'] == 10
+        assert body_10['pagination']['total_items'] >= 12
+
+        page_20 = api_client.get('/internal/usuarios/?page=1&page_size=20', **auth_header)
+        assert page_20.status_code == 200
+        body_20 = page_20.json()
+        assert body_20['pagination']['page_size'] == 20
+        assert len(body_20['data']) >= 12
+
+        invalid = api_client.get('/internal/usuarios/?page=1&page_size=15', **auth_header)
+        assert invalid.status_code == 200
+        assert invalid.json()['pagination']['page_size'] == 10
+        assert len(invalid.json()['data']) == 10
+
     def test_admin_list_excludes_admins(self, api_client, auth_header, admin_user, player_user, coach_user):
         res = api_client.get('/internal/usuarios/', **auth_header)
         assert res.status_code == 200

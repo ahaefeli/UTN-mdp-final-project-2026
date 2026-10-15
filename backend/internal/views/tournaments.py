@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from datetime import datetime
 from django.core.paginator import Paginator
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.db import transaction
 from django.views import View
@@ -49,18 +50,18 @@ class TournamentView(BaseCrudView):
         organization_id = data.get('organization_id')
         category = data.get('category')
         branch = data.get('branch')
-        if Tournament.objects.filter(
+        active_exists = Tournament.objects.filter(
             organization_id=organization_id,
             category=category,
             branch=branch,
             status__in=['PREPARATION', 'IN_PROGRESS']
-        ).exists():
-            return JsonResponse({'error': 'Ya existe un torneo activo (en preparación o en progreso) para esta categoría y rama. Debes finalizarlo antes de crear uno nuevo.'}, status=400)
+        ).exists()
 
         try:
             with transaction.atomic():
                 stages = data.pop('stages', [])
-                data['status'] = 'PREPARATION'
+                data.pop('status', None)
+                data['status'] = 'PENDING' if active_exists else 'PREPARATION'
                 t = self.model.objects.create(**data)
                 for s in stages:
                     TournamentStage.objects.create(tournament=t, name=s['name'], date=s['date'])
@@ -82,6 +83,13 @@ class TournamentView(BaseCrudView):
                 return JsonResponse({'error': 'No se puede reabrir un torneo ya finalizado.'}, status=400)
             if original_status == 'CANCELLED' and o.status != 'CANCELLED':
                 return JsonResponse({'error': 'No se puede reabrir un torneo cancelado.'}, status=400)
+            if o.status in ('PREPARATION', 'IN_PROGRESS') and Tournament.objects.filter(
+                organization=o.organization,
+                category=o.category,
+                branch=o.branch,
+                status__in=['PREPARATION', 'IN_PROGRESS']
+            ).exclude(id=o.id).exists():
+                return JsonResponse({'error': 'Ya existe un torneo vigente (en preparación o en progreso) para esta categoría y rama.'}, status=400)
                 
             if original_status != o.status:
                 if o.status == 'CANCELLED':
@@ -142,8 +150,13 @@ class TournamentStageView(BaseCrudView):
         data = parse_body(request)
         if not all(k in data for k in ['tournament_id', 'date', 'name']): return JsonResponse({'error': 'Missing fields'}, status=400)
         
-        # Parseo explícito para evitar fallas de tipado en memoria
-        data['date'] = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        try:
+            stage_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'Formato de fecha inválido. Debe usar YYYY-MM-DD.'}, status=400)
+        if stage_date < timezone.localdate():
+            return JsonResponse({'error': 'No se puede agregar una fecha que ya pasó.'}, status=400)
+        data['date'] = stage_date
         
         try: return JsonResponse({'data': serialize_stage(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)

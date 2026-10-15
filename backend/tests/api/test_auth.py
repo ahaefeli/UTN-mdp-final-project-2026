@@ -5,7 +5,7 @@ import jwt
 import pytest
 from django.conf import settings
 
-from tests.factories import auth_header_for, make_user
+from tests.factories import auth_header_for, make_club, make_team, make_user
 
 
 @pytest.mark.django_db
@@ -132,6 +132,8 @@ class TestJwtRequired:
 @pytest.mark.django_db
 class TestLoginExtras:
     def test_login_includes_club_id(self, api_client, organization, club):
+        club.logo_url = 'https://cdn.example/club.png'
+        club.save(update_fields=['logo_url'])
         make_user(
             organization=organization,
             role='CLUB_ADMIN',
@@ -145,7 +147,35 @@ class TestLoginExtras:
             content_type='application/json',
         )
         assert res.status_code == 200
-        assert res.json()['user']['club_id'] == str(club.id)
+        body = res.json()['user']
+        assert body['club_id'] == str(club.id)
+        assert body['club_name'] == club.name
+        assert body['club_logo_url'] == 'https://cdn.example/club.png'
+
+    def test_login_resolves_club_logo_from_player_team(self, api_client, organization):
+        club = make_club(organization, name='Club Huracán')
+        club.logo_url = 'https://cdn.example/huracan.png'
+        club.save(update_fields=['logo_url'])
+        player = make_user(
+            organization=organization,
+            role='PLAYER',
+            email='player@test.com',
+            username='player_team',
+            club=None,
+        )
+        team = make_team(club, name='Primera')
+        team.players.add(player)
+
+        res = api_client.post(
+            '/auth/login/',
+            data=json.dumps({'email': 'player@test.com', 'password': 'testpass123'}),
+            content_type='application/json',
+        )
+        assert res.status_code == 200
+        body = res.json()['user']
+        assert body['club_id'] == str(club.id)
+        assert body['club_name'] == 'Club Huracán'
+        assert body['club_logo_url'] == 'https://cdn.example/huracan.png'
 
     def test_login_username_fallback_when_email_missing_as_username(self, api_client, organization):
         # User whose username equals the login email string but email field differs —

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import userService from '../../services/userService';
@@ -46,8 +46,18 @@ export default function UsuariosPage() {
   const [selectedClub, setSelectedClub] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [pagination, setPagination] = useState({
+    total_pages: 1,
+    current_page: 1,
+    total_items: 0,
+    page_size: 10,
+  });
+
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const filterKeyRef = useRef('');
 
   useEffect(() => {
     if (isInitialized) {
@@ -77,17 +87,28 @@ export default function UsuariosPage() {
     }
   }, [isAuthenticated, role]);
 
-  const loadUsers = async () => {
+  const loadUsers = async (requestPage = page) => {
     setIsLoading(true);
     setError('');
     try {
-      const params = {};
+      const params = { page: requestPage, page_size: pageSize };
       if (search.trim()) params.search = search.trim();
       if (selectedClub) params.club_id = selectedClub;
       if (selectedTeam) params.team_id = selectedTeam;
 
       const response = await userService.getUsers(params);
+      const nextPagination = response.pagination || {
+        total_pages: 1,
+        current_page: requestPage,
+        total_items: (response.data || []).length,
+        page_size: pageSize,
+      };
+      const currentPage = Number(nextPagination.current_page);
       setUsersList(response.data || []);
+      setPagination(nextPagination);
+      if (currentPage && currentPage !== requestPage) {
+        setPage(currentPage);
+      }
     } catch (err) {
       console.error('Error al obtener usuarios:', err);
       setError('Error al sincronizar con el listado de usuarios.');
@@ -97,10 +118,19 @@ export default function UsuariosPage() {
   };
 
   useEffect(() => {
-    if (isAuthenticated && role === 'ADMIN') {
-      loadUsers();
+    if (!isAuthenticated || role !== 'ADMIN') return;
+
+    const filterKey = `${search}|${selectedClub}|${selectedTeam}|${pageSize}`;
+    if (filterKeyRef.current !== filterKey) {
+      filterKeyRef.current = filterKey;
+      if (page !== 1) {
+        setPage(1);
+        return;
+      }
     }
-  }, [isAuthenticated, role, search, selectedClub, selectedTeam]);
+
+    loadUsers(page);
+  }, [isAuthenticated, role, search, selectedClub, selectedTeam, page, pageSize]);
 
   if (!isInitialized || !isAuthenticated || role !== 'ADMIN') {
     return <LoadingState full />;
@@ -211,6 +241,44 @@ export default function UsuariosPage() {
             ))}
           </DataTable>
         )}
+
+        {!isLoading || usersList.length > 0 ? (
+          <div className={styles.pagination}>
+            <label className={styles.pageSizeField}>
+              <span className={styles.paginationLabel}>Por página</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className={chrome.select}
+                aria-label="Usuarios por página"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </label>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={isLoading || page <= 1}
+            >
+              Anterior
+            </Button>
+            <span className={styles.paginationLabel}>
+              Página {pagination.current_page || page} de {Math.max(1, pagination.total_pages || 1)}
+              {` · ${pagination.total_items || 0} usuarios`}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPage((current) => current + 1)}
+              disabled={isLoading || page >= Math.max(1, pagination.total_pages || 1)}
+            >
+              Siguiente
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

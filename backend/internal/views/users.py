@@ -4,41 +4,14 @@ from django.forms.models import model_to_dict
 from django.db.models import Q
 from .base import BaseCrudView, parse_body
 from core.models import User
+from core.user_membership import resolve_user_membership
 
 def serialize_user(user):
     data = model_to_dict(user)
     if 'password' in data: del data['password']
-    
-    club_id = str(user.club.id) if user.club else None
-    club_name = user.club.name if user.club else None
-    team_id = None
-    team_info = None  # Nueva variable
-    if user.role == 'COACH':
-        team = user.coached_teams.first()
-        if team:
-            team_id = str(team.id)
-            if not club_id and team.club:
-                club_id = str(team.club.id)
-                club_name = team.club.name
-                
-    elif user.role == 'PLAYER':
-        # Consulta explícita y directa para evitar caché inverso
-        from core.models import Team
-        team = Team.objects.filter(players=user, is_deleted=False).first()
-        
-        if team:
-            team_id = str(team.id)
-            # Empaquetar Info del Equipo
-            team_info = {
-                'id': str(team.id),
-                'name': team.name,
-                'category': team.category,
-                'branch': team.branch
-            }
-            if not club_id and team.club:
-                club_id = str(team.club.id)
-                club_name = team.club.name
-            
+
+    membership = resolve_user_membership(user)
+
     data.update({
         'id': str(user.id),
         'name': f"{user.first_name} {user.last_name}".strip(),
@@ -46,10 +19,11 @@ def serialize_user(user):
         'dni': user.dni,
         'medical_certificate': user.medical_certificate,
         'coach_certificate': user.coach_certificate,
-        'club_id': club_id,
-        'club_name': club_name,
-        'team_id': team_id,
-        'team_info': team_info
+        'club_id': membership['club_id'],
+        'club_name': membership['club_name'],
+        'club_logo_url': membership['club_logo_url'],
+        'team_id': membership['team_id'],
+        'team_info': membership['team_info'],
     })
     return data
 
@@ -100,8 +74,24 @@ class UserView(BaseCrudView):
 
         page = request.GET.get('page')
         if page:
-            paginator = Paginator(qs, 10); p_obj = paginator.get_page(page)
-            return JsonResponse({'data': [serialize_user(u) for u in p_obj], 'pagination': {'total_pages': paginator.num_pages, 'current_page': p_obj.number, 'total_items': paginator.count}}, status=200)
+            allowed_page_sizes = {10, 20, 50}
+            try:
+                page_size = int(request.GET.get('page_size') or 10)
+            except (TypeError, ValueError):
+                page_size = 10
+            if page_size not in allowed_page_sizes:
+                page_size = 10
+            paginator = Paginator(qs, page_size)
+            p_obj = paginator.get_page(page)
+            return JsonResponse({
+                'data': [serialize_user(u) for u in p_obj],
+                'pagination': {
+                    'total_pages': paginator.num_pages,
+                    'current_page': p_obj.number,
+                    'total_items': paginator.count,
+                    'page_size': page_size,
+                },
+            }, status=200)
         return JsonResponse({'data': [serialize_user(u) for u in qs]}, status=200)
 
     def post(self, request, *args, **kwargs):

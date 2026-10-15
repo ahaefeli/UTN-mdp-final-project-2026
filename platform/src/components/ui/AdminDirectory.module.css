@@ -113,6 +113,13 @@
   font-size: 0.875rem;
 }
 
+.copyError {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .formRow,
   .detailGrid {

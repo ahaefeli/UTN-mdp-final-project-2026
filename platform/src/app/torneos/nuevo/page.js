@@ -7,6 +7,7 @@ import teamService from '../../../services/teamService';
 import tournamentService from '../../../services/tournamentService';
 import enrollmentService from '../../../services/enrollmentService';
 import userService from '../../../services/userService';
+import { STATUS_TRANSLATIONS } from '../../../utils/status';
 import {
   PageHeader,
   Button,
@@ -67,6 +68,8 @@ export default function TorneosNuevoPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [errorMessage, setErrorMessage] = useState(null);
+  const [pendingWarning, setPendingWarning] = useState(false);
+  const [createdStatus, setCreatedStatus] = useState(null);
 
   const handleAddStage = () => {
     const nextNum = stages.length + 1;
@@ -89,17 +92,7 @@ export default function TorneosNuevoPage() {
     setStages(newStages);
   };
 
-  const handleNextStep = async (e) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError('Por favor, ingresa el nombre del torneo.');
-      return;
-    }
-    if (!stages[0].date) {
-      setError('La Fecha 1 es obligatoria.');
-      return;
-    }
-    setError('');
+  const advanceToTeams = async () => {
     setIsLoadingTeams(true);
     setStep(2);
     try {
@@ -112,6 +105,37 @@ export default function TorneosNuevoPage() {
       setStep(1);
     } finally {
       setIsLoadingTeams(false);
+    }
+  };
+
+  const handleNextStep = async (e) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError('Por favor, ingresa el nombre del torneo.');
+      return;
+    }
+    if (!stages[0].date) {
+      setError('La Fecha 1 es obligatoria.');
+      return;
+    }
+    setError('');
+    try {
+      const res = await tournamentService.getTournaments();
+      const hasActive = (res.data || []).some(
+        (t) =>
+          t.category === category &&
+          t.branch === branch &&
+          (t.status === 'PREPARATION' || t.status === 'IN_PROGRESS')
+      );
+      if (hasActive && !pendingWarning) {
+        setPendingWarning(true);
+        return;
+      }
+      setPendingWarning(hasActive);
+      await advanceToTeams();
+    } catch (err) {
+      console.error('Error al verificar torneos vigentes:', err);
+      setError('No se pudo verificar si ya hay un torneo vigente. Intente nuevamente.');
     }
   };
 
@@ -140,6 +164,7 @@ export default function TorneosNuevoPage() {
       
       const resTournament = await tournamentService.createTournament(payload);
       const createdTournament = resTournament.data;
+      setCreatedStatus(createdTournament?.status || null);
       
       // Inscripción de los equipos seleccionados
       if (createdTournament && createdTournament.id && selectedTeams.length > 0) {
@@ -175,6 +200,8 @@ export default function TorneosNuevoPage() {
     setSuccess(false);
     setError('');
     setErrorMessage(null);
+    setPendingWarning(false);
+    setCreatedStatus(null);
   };
 
   if (!isInitialized || !isAuthenticated || role !== 'ADMIN') {
@@ -242,6 +269,7 @@ export default function TorneosNuevoPage() {
                     onChange={(e) => {
                       setCategory(e.target.value);
                       setErrorMessage(null);
+                      setPendingWarning(false);
                     }}
                     className={chromeStyles.select}
                   >
@@ -264,6 +292,7 @@ export default function TorneosNuevoPage() {
                     onChange={(e) => {
                       setBranch(e.target.value);
                       setErrorMessage(null);
+                      setPendingWarning(false);
                     }}
                     className={chromeStyles.select}
                   >
@@ -308,9 +337,17 @@ export default function TorneosNuevoPage() {
                 </div>
               </div>
 
+              {pendingWarning && (
+                <Alert variant="warning">
+                  Ya hay un torneo vigente para esta categoría y rama. Este torneo se va a crear como Pendiente.
+                </Alert>
+              )}
+
               <div className={chromeStyles.actionsRow}>
                 <Button type="submit" block>
-                  Continuar a Selección de Equipos
+                  {pendingWarning
+                    ? 'Continuar y crear como pendiente'
+                    : 'Continuar a Selección de Equipos'}
                 </Button>
               </div>
             </form>
@@ -324,6 +361,9 @@ export default function TorneosNuevoPage() {
                 <p className={styles.summaryName}>{name}</p>
                 <p className={styles.summaryMeta}>
                   Categoría: {category} | Rama: {branch} | Fechas: {stages.length}
+                </p>
+                <p className={styles.summaryMeta}>
+                  Estado al crear: {pendingWarning ? 'Pendiente' : 'Preparación'}
                 </p>
               </div>
 
@@ -397,7 +437,9 @@ export default function TorneosNuevoPage() {
               <div>
                 <h2 className={styles.successTitle}>¡Torneo Creado Exitosamente!</h2>
                 <p className={styles.successDesc}>
-                  El torneo ha sido registrado correctamente con su cronograma de fechas e inscripciones.
+                  {createdStatus === 'PENDING'
+                    ? 'El torneo quedó en estado Pendiente porque ya hay otro vigente para esta categoría y rama. Podés pasarlo a preparación cuando ese torneo finalice.'
+                    : `El torneo ha sido registrado en estado ${STATUS_TRANSLATIONS[createdStatus] || 'Preparación'} con su cronograma de fechas e inscripciones.`}
                 </p>
               </div>
               <div className={styles.successActions}>

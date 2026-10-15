@@ -46,9 +46,10 @@ class AdminDashboardView(View):
             organization=org
         )
         # Un club pendiente es aquel cuyo enlace ya fue llenado con el nombre del club
-        pending_clubs = base_pending_reqs.filter(
+        affiliation_reqs = base_pending_reqs.filter(
             role='CLUB_ADMIN'
-        ).exclude(club_name__isnull=True).exclude(club_name__exact='').count()
+        ).exclude(club_name__isnull=True).exclude(club_name__exact='')
+        pending_clubs = affiliation_reqs.count()
         # Un árbitro pendiente es aquel que ya ingresó sus datos de contacto
         pending_referees = base_pending_reqs.filter(
             role='REFEREE'
@@ -58,14 +59,13 @@ class AdminDashboardView(View):
             role='SCORER'
         ).exclude(admin_email__isnull=True).exclude(admin_email__exact='').count()
         
-        pending_reqs = base_pending_reqs
         pending_actions = [
             {
                 "id": str(r.id),
                 "type": "NEW_AFFILIATION",
                 "message": f"Nueva solicitud de afiliación: {r.club_name}"
             }
-            for r in pending_reqs
+            for r in affiliation_reqs
         ]
         
         return JsonResponse({

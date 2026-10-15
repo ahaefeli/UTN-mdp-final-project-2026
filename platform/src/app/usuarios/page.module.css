@@ -33,3 +33,30 @@
   color: var(--primary);
   font-weight: 700;
 }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  user-select: none;
+}
+
+.paginationLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.pageSizeField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pageSizeField select {
+  width: auto;
+  min-width: 4.5rem;
+}

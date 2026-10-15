@@ -6,14 +6,14 @@ import apiClient from './apiClient';
 export const userService = {
   /**
    * Obtiene la lista de usuarios.
-   * @param {object} params - Filtros como { page }.
+   * @param {object} params - Filtros como { page, page_size }.
    * @returns {Promise<object>} Lista de usuarios y paginación si aplica.
    */
   async getUsers(params = {}) {
     try {
-      const { search, club_id, team_id, role, page } = params;
+      const { search, club_id, team_id, role, page, page_size } = params;
       const response = await apiClient.get('internal/usuarios/', {
-        params: { search, club_id, team_id, role, page }
+        params: { search, club_id, team_id, role, page, page_size }
       });
       return response.data;
     } catch (error) {

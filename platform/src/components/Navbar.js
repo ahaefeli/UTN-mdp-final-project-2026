@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import styles from './Navbar.module.css';
 import { useAuth } from '../context/AuthContext';
+import userService from '../services/userService';
+import { clubInitials } from '../utils/clubMark';
 
 export default function Navbar() {
-  const { user, role, isAuthenticated, logout } = useAuth();
+  const { user, role, isAuthenticated, logout, updateSession } = useAuth();
   const pathname = usePathname();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -23,11 +25,36 @@ export default function Navbar() {
     setShowLogoutConfirm(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!isAuthenticated || role === 'ADMIN' || !user?.id) return;
+    if (Object.prototype.hasOwnProperty.call(user, 'club_logo_url')) return;
+
+    let cancelled = false;
+
+    userService.getUserById(user.id)
+      .then((response) => {
+        if (cancelled) return;
+        const profile = response?.data || {};
+        updateSession({
+          club_id: profile.club_id ?? user.club_id ?? null,
+          club_name: profile.club_name ?? null,
+          club_logo_url: profile.club_logo_url ?? null,
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, role, user, updateSession]);
+
   if (!isAuthenticated) {
     return null;
   }
 
   const isActive = (path) => pathname === path;
+  const showClubMark = role !== 'ADMIN' && Boolean(user?.club_name || user?.club_logo_url);
+  const clubAlt = user?.club_name ? `Escudo de ${user.club_name}` : 'Escudo del club';
 
   return (
     <>
@@ -139,6 +166,19 @@ export default function Navbar() {
 
         <div className={styles.profileArea}>
           <div className={styles.profileInfo}>
+            {showClubMark && (
+              user?.club_logo_url ? (
+                <img
+                  src={user.club_logo_url}
+                  alt={clubAlt}
+                  className={styles.clubMark}
+                />
+              ) : (
+                <span className={styles.clubInitials} aria-hidden="true">
+                  {clubInitials(user?.club_name)}
+                </span>
+              )
+            )}
             <span className={styles.profileName}>{user?.name || user?.username}</span>
           </div>
           <button

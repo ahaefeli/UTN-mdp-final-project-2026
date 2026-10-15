@@ -4,7 +4,7 @@ import logging
 from django.http import JsonResponse
 from django.views import View
 from django.utils import timezone
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 from django.conf import settings
@@ -44,6 +44,28 @@ def serialize_club_request(req):
         "created_at": req.created_at.isoformat() if req.created_at else None,
         "expires_at": req.expires_at.isoformat() if req.expires_at else None,
     }
+
+def duplicate_dni_response(dni):
+    normalized = str(dni).strip() if dni else ''
+    if not normalized:
+        return None
+    if User.objects.filter(dni=normalized).exists():
+        return JsonResponse({
+            'error': f'Ya existe un usuario con el DNI {normalized}. No se puede aprobar la solicitud.'
+        }, status=400)
+    return None
+
+
+def friendly_integrity_message(exc):
+    message = str(exc).lower()
+    if 'dni' in message or 'core_user_dni' in message:
+        return 'Ya existe un usuario con ese DNI. No se puede aprobar la solicitud.'
+    if 'username' in message:
+        return 'Ya existe un usuario con ese nombre de usuario. No se puede aprobar la solicitud.'
+    if 'email' in message:
+        return 'Ya existe un usuario con ese email. No se puede aprobar la solicitud.'
+    return 'No se pudo aprobar la solicitud porque ya existe un usuario con esos datos.'
+
 
 def check_admin_permission(request):
     if not hasattr(request, 'user') or request.user.role != 'ADMIN':
@@ -197,6 +219,9 @@ class ReviewClubRequestView(View):
                         username_to_check = req_obj.admin_username or req_obj.admin_email
                         if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=username_to_check).exists():
                             return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' already exists."}, status=400)
+                        dni_error = duplicate_dni_response(req_obj.admin_dni)
+                        if dni_error:
+                            return dni_error
                         user = User(
                             username=username_to_check,
                             email=req_obj.admin_email,
@@ -218,6 +243,9 @@ class ReviewClubRequestView(View):
                         username_to_check = req_obj.admin_username or req_obj.admin_email
                         if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=username_to_check).exists():
                             return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' or '{username_to_check}' already exists."}, status=400)
+                        dni_error = duplicate_dni_response(req_obj.admin_dni)
+                        if dni_error:
+                            return dni_error
     
                         club = Club.objects.create(
                             organization=request.user.organization,
@@ -271,5 +299,7 @@ class ReviewClubRequestView(View):
                     'data': serialize_club_request(req_obj)
                 }, status=200)
 
+        except IntegrityError as e:
+            return JsonResponse({'error': friendly_integrity_message(e)}, status=400)
         except Exception as e:
             return JsonResponse({'error': f"Transaction failed: {str(e)}"}, status=400)

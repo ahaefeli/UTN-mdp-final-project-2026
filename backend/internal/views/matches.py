@@ -275,6 +275,8 @@ def validate_volleyball_sets(score_detail):
             return None, f'Puntos inválidos en el set {i + 1}.'
         if lp < 0 or vp < 0:
             return None, f'Los puntos del set {i + 1} no pueden ser negativos.'
+        if lp > 99 or vp > 99:
+            return None, f'Los puntos del set {i + 1} no pueden tener más de 2 cifras.'
         if lp == vp:
             return None, f'El set {i + 1} no puede empatar.'
         set_number = s.get('set_number', i + 1)
@@ -336,8 +338,6 @@ class MatchFinishView(View):
         except Match.DoesNotExist:
             return JsonResponse({'error': 'Partido no encontrado.'}, status=404)
 
-        if m.status == 'FINISHED':
-            return JsonResponse({'error': 'El partido ya está finalizado.'}, status=400)
         if m.status == 'CANCELLED':
             return JsonResponse({'error': 'No se puede cargar resultado de un partido cancelado.'}, status=400)
 

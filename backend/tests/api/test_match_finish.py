@@ -100,12 +100,16 @@ class TestMatchFinishViewForbidden:
 
 @pytest.mark.django_db
 class TestMatchFinishViewErrors:
-    def test_already_finished(self, api_client, auth_header, match_prep):
-        match_prep.status = 'FINISHED'
-        match_prep.save(update_fields=['status'])
-        res = _finish(api_client, auth_header, match_prep.id, sets_3_0_local())
-        assert res.status_code == 400
-        assert 'finalizado' in res.json()['error']
+    def test_update_finished_match(self, api_client, auth_header, match_prep):
+        first = _finish(api_client, auth_header, match_prep.id, sets_3_0_local())
+        assert first.status_code == 200
+
+        res = _finish(api_client, auth_header, match_prep.id, sets_3_2_local())
+        assert res.status_code == 200
+        match_prep.refresh_from_db()
+        assert match_prep.status == 'FINISHED'
+        assert len(match_prep.sets_data['sets']) == 5
+        assert match_prep.score_summary.endswith('15-12')
 
     def test_cancelled_match(self, api_client, auth_header, match_prep):
         match_prep.status = 'CANCELLED'

@@ -218,6 +218,38 @@ class TestReviewClubRequest:
         )
         assert res.status_code == 403
 
+    def test_approve_duplicate_dni(self, api_client, auth_header, organization):
+        make_user(
+            organization=organization,
+            role='PLAYER',
+            email='existing@test.com',
+            username='existing_dni',
+            dni='44591332',
+        )
+        req = make_registration_request(
+            organization,
+            club_name='Club Duplicado',
+            admin_email='newadmin@test.com',
+            admin_username='newadmin',
+            password_raw='pass123',
+            admin_dni='44591332',
+        )
+        res = api_client.post(
+            f'/admin/club-requests/{req.id}/review/',
+            data=json.dumps({'action': 'APPROVE'}),
+            content_type='application/json',
+            **auth_header,
+        )
+        assert res.status_code == 400
+        error = res.json()['error']
+        assert '44591332' in error
+        assert 'core_user_dni_key' not in error
+        assert 'Transaction failed' not in error
+        req.refresh_from_db()
+        assert req.status == 'PENDING'
+        assert not Club.objects.filter(name='Club Duplicado').exists()
+        assert not User.objects.filter(email='newadmin@test.com').exists()
+
     def test_incomplete_club_approve(self, api_client, auth_header, organization):
         req = make_registration_request(organization, club_name=None, admin_email=None)
         res = api_client.post(

@@ -34,6 +34,7 @@ export default function TorneosDashboardPage() {
   const { role, isAuthenticated, isInitialized } = useAuth();
 
   const [activeTournaments, setActiveTournaments] = useState([]);
+  const [pendingTournaments, setPendingTournaments] = useState([]);
   const [finishedTournaments, setFinishedTournaments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,6 +62,7 @@ export default function TorneosDashboardPage() {
             (t) => t.status === 'PREPARATION' || t.status === 'IN_PROGRESS'
           );
           setActiveTournaments(activeList);
+          setPendingTournaments(list.filter((t) => t.status === 'PENDING'));
 
           const finished = list.filter((t) => t.status === 'FINISHED');
           setFinishedTournaments(finished);
@@ -164,6 +166,64 @@ export default function TorneosDashboardPage() {
                   icon="bi-trophy"
                   title="No hay torneos activos actualmente"
                   description='Para iniciar una nueva temporada, haga clic en el botón "Nuevo Torneo" en la parte superior.'
+                />
+              )}
+            </section>
+
+            <section className={chromeStyles.section}>
+              <h2 className={chromeStyles.sectionTitle}>
+                <i className="bi bi-hourglass-split" aria-hidden="true" />
+                Torneos pendientes
+              </h2>
+
+              {pendingTournaments.length > 0 ? (
+                <div className={styles.cardList}>
+                  {pendingTournaments.map((tournament) => (
+                    <Link
+                      key={tournament.id}
+                      href={`/torneos/${tournament.id}`}
+                      className={styles.tournamentCard}
+                    >
+                      <div className={styles.cardMain}>
+                        <div className={styles.cardHeader}>
+                          <h3 className={styles.cardTitle}>{tournament.name}</h3>
+                          <StatusBadge status={tournament.status}>
+                            {STATUS_TRANSLATIONS[tournament.status]}
+                          </StatusBadge>
+                        </div>
+
+                        <div className={styles.cardMeta}>
+                          <div className={styles.metaItem}>
+                            <i className="bi bi-calendar3" aria-hidden="true" />
+                            <span>Año: {tournament.year}</span>
+                          </div>
+                          <div className={styles.metaItem}>
+                            <i className="bi bi-tag-fill" aria-hidden="true" />
+                            <span>
+                              Categoría:{' '}
+                              {CATEGORY_TRANSLATIONS[tournament.category] || tournament.category}
+                            </span>
+                          </div>
+                          <div className={styles.metaItem}>
+                            <i className="bi bi-gender-ambiguous" aria-hidden="true" />
+                            <span>
+                              Rama: {BRANCH_TRANSLATIONS[tournament.branch] || tournament.branch}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <span className={styles.cardAction} aria-hidden="true">
+                        <i className="bi bi-gear-fill" />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  icon="bi-hourglass"
+                  title="No hay torneos pendientes"
+                  description="Si creás un torneo mientras hay otro vigente de la misma categoría y rama, queda pendiente hasta que lo pases a preparación."
                 />
               )}
             </section>

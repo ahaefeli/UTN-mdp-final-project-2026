@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 const AuthContext = createContext();
@@ -90,6 +90,18 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(true);
   };
 
+  const updateSession = useCallback((partial) => {
+    setUser((current) => {
+      if (!current) return current;
+      const next = { ...current, ...partial };
+      localStorage.setItem('lnv_session', JSON.stringify(next));
+      return next;
+    });
+    if (Object.prototype.hasOwnProperty.call(partial, 'club_id')) {
+      setClubId(partial.club_id || null);
+    }
+  }, []);
+
   const logout = () => {
     localStorage.removeItem('lnv_token');
     localStorage.removeItem('lnv_session');
@@ -104,7 +116,7 @@ export function AuthProvider({ children }) {
 
 
   return (
-    <AuthContext.Provider value={{ user, clubId, role, isAuthenticated, isInitialized, login, logout }}>
+    <AuthContext.Provider value={{ user, clubId, role, isAuthenticated, isInitialized, login, logout, updateSession }}>
       {children}
     </AuthContext.Provider>
   );

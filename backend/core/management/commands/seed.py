@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from core.models import (
@@ -33,7 +34,10 @@ class Command(BaseCommand):
             first_name='Admin',
             last_name='VoleyHub',
             role='ADMIN',
-            organization=org
+            organization=org,
+            phone='2262410001',
+            dni='30100001',
+            gender='M',
         )
         admin.set_password('123456')
         admin.save()
@@ -96,10 +100,10 @@ class Command(BaseCommand):
 
         # 4. Administradores de Clubes (CLUB_ADMIN)
         club_admins_data = [
-            {'username': 'claudio_huracan', 'first_name': 'Claudio', 'last_name': 'Valenzuela', 'email': 'claudio.valenzuela@huracannecochea.com', 'club': club_map['Club Atlético Huracán']},
-            {'username': 'roberto_rivadavia', 'first_name': 'Roberto', 'last_name': 'Martinez', 'email': 'roberto.martinez@rivadavianecochea.com', 'club': club_map['Club Atlético Rivadavia']},
-            {'username': 'carlos_loberia', 'first_name': 'Carlos', 'last_name': 'Perez', 'email': 'carlos.perez@cailoberia.com', 'club': club_map['CAI de Lobería']},
-            {'username': 'esteban_basko', 'first_name': 'Esteban', 'last_name': 'Iriarte', 'email': 'esteban.iriarte@centrobasko.com', 'club': club_map['Centro Basko Euzko Etxea']},
+            {'username': 'claudio_huracan', 'first_name': 'Claudio', 'last_name': 'Valenzuela', 'email': 'claudio.valenzuela@huracannecochea.com', 'club': club_map['Club Atlético Huracán'], 'phone': '2262411001', 'dni': '30110001', 'gender': 'M'},
+            {'username': 'roberto_rivadavia', 'first_name': 'Roberto', 'last_name': 'Martinez', 'email': 'roberto.martinez@rivadavianecochea.com', 'club': club_map['Club Atlético Rivadavia'], 'phone': '2262411002', 'dni': '30110002', 'gender': 'M'},
+            {'username': 'carlos_loberia', 'first_name': 'Carlos', 'last_name': 'Perez', 'email': 'carlos.perez@cailoberia.com', 'club': club_map['CAI de Lobería'], 'phone': '2262411003', 'dni': '30110003', 'gender': 'M'},
+            {'username': 'esteban_basko', 'first_name': 'Esteban', 'last_name': 'Iriarte', 'email': 'esteban.iriarte@centrobasko.com', 'club': club_map['Centro Basko Euzko Etxea'], 'phone': '2262411004', 'dni': '30110004', 'gender': 'M'},
         ]
         
         for ca in club_admins_data:
@@ -110,7 +114,10 @@ class Command(BaseCommand):
                 email=ca['email'],
                 role='CLUB_ADMIN',
                 organization=org,
-                club=ca['club']
+                club=ca['club'],
+                phone=ca['phone'],
+                dni=ca['dni'],
+                gender=ca['gender'],
             )
             user.set_password('123456')
             user.save()
@@ -120,17 +127,17 @@ class Command(BaseCommand):
         # 5. Entrenadores (COACH - 2 por club)
         coaches_data = [
             # Huracán
-            {'username': 'marcos_blanco', 'first_name': 'Marcos', 'last_name': 'Blanco', 'email': 'mblanco@voleyhub.com', 'club': club_map['Club Atlético Huracán']},
-            {'username': 'agustina_silva', 'first_name': 'Agustina', 'last_name': 'Silva', 'email': 'asilva@voleyhub.com', 'club': club_map['Club Atlético Huracán']},
+            {'username': 'marcos_blanco', 'first_name': 'Marcos', 'last_name': 'Blanco', 'email': 'mblanco@voleyhub.com', 'club': club_map['Club Atlético Huracán'], 'phone': '2262412001', 'dni': '30120001', 'gender': 'M'},
+            {'username': 'agustina_silva', 'first_name': 'Agustina', 'last_name': 'Silva', 'email': 'asilva@voleyhub.com', 'club': club_map['Club Atlético Huracán'], 'phone': '2262412002', 'dni': '30120002', 'gender': 'F'},
             # Rivadavia
-            {'username': 'esteban_lopez', 'first_name': 'Esteban', 'last_name': 'Lopez', 'email': 'elopez@voleyhub.com', 'club': club_map['Club Atlético Rivadavia']},
-            {'username': 'sofia_perez', 'first_name': 'Sofia', 'last_name': 'Perez', 'email': 'sperez@voleyhub.com', 'club': club_map['Club Atlético Rivadavia']},
+            {'username': 'esteban_lopez', 'first_name': 'Esteban', 'last_name': 'Lopez', 'email': 'elopez@voleyhub.com', 'club': club_map['Club Atlético Rivadavia'], 'phone': '2262412003', 'dni': '30120003', 'gender': 'M'},
+            {'username': 'sofia_perez', 'first_name': 'Sofia', 'last_name': 'Perez', 'email': 'sperez@voleyhub.com', 'club': club_map['Club Atlético Rivadavia'], 'phone': '2262412004', 'dni': '30120004', 'gender': 'F'},
             # Lobería
-            {'username': 'juan_martin', 'first_name': 'Juan', 'last_name': 'Martin', 'email': 'jmartin@voleyhub.com', 'club': club_map['CAI de Lobería']},
-            {'username': 'mariela_gomez', 'first_name': 'Mariela', 'last_name': 'Gomez', 'email': 'mgomez@voleyhub.com', 'club': club_map['CAI de Lobería']},
+            {'username': 'juan_martin', 'first_name': 'Juan', 'last_name': 'Martin', 'email': 'jmartin@voleyhub.com', 'club': club_map['CAI de Lobería'], 'phone': '2262412005', 'dni': '30120005', 'gender': 'M'},
+            {'username': 'mariela_gomez', 'first_name': 'Mariela', 'last_name': 'Gomez', 'email': 'mgomez@voleyhub.com', 'club': club_map['CAI de Lobería'], 'phone': '2262412006', 'dni': '30120006', 'gender': 'F'},
             # Centro Basko
-            {'username': 'matias_gonzalez', 'first_name': 'Matias', 'last_name': 'Gonzalez', 'email': 'mgonzalez@voleyhub.com', 'club': club_map['Centro Basko Euzko Etxea']},
-            {'username': 'luciana_perez', 'first_name': 'Luciana', 'last_name': 'Perez', 'email': 'lperez@voleyhub.com', 'club': club_map['Centro Basko Euzko Etxea']},
+            {'username': 'matias_gonzalez', 'first_name': 'Matias', 'last_name': 'Gonzalez', 'email': 'mgonzalez@voleyhub.com', 'club': club_map['Centro Basko Euzko Etxea'], 'phone': '2262412007', 'dni': '30120007', 'gender': 'M'},
+            {'username': 'luciana_perez', 'first_name': 'Luciana', 'last_name': 'Perez', 'email': 'lperez@voleyhub.com', 'club': club_map['Centro Basko Euzko Etxea'], 'phone': '2262412008', 'dni': '30120008', 'gender': 'F'},
         ]
         
         coaches = {}
@@ -143,6 +150,9 @@ class Command(BaseCommand):
                 role='COACH',
                 organization=org,
                 club=co['club'],
+                phone=co['phone'],
+                dni=co['dni'],
+                gender=co['gender'],
                 coach_certificate='https://example.com/certs/coach.pdf'
             )
             user.set_password('123456')
@@ -153,10 +163,10 @@ class Command(BaseCommand):
 
         # 6. Árbitros (REFEREE)
         referees_data = [
-            {'username': 'marcelo_lora', 'first_name': 'Marcelo', 'last_name': 'Lora', 'email': 'mlora@voleyhub.com'},
-            {'username': 'sergio_gimenez', 'first_name': 'Sergio', 'last_name': 'Gimenez', 'email': 'sgimenez@voleyhub.com'},
-            {'username': 'laura_rodriguez', 'first_name': 'Laura', 'last_name': 'Rodriguez', 'email': 'lrodriguez@voleyhub.com'},
-            {'username': 'carlos_ruiz', 'first_name': 'Carlos', 'last_name': 'Ruiz', 'email': 'cruiz@voleyhub.com'},
+            {'username': 'marcelo_lora', 'first_name': 'Marcelo', 'last_name': 'Lora', 'email': 'mlora@voleyhub.com', 'phone': '2262413001', 'dni': '30130001', 'gender': 'M'},
+            {'username': 'sergio_gimenez', 'first_name': 'Sergio', 'last_name': 'Gimenez', 'email': 'sgimenez@voleyhub.com', 'phone': '2262413002', 'dni': '30130002', 'gender': 'M'},
+            {'username': 'laura_rodriguez', 'first_name': 'Laura', 'last_name': 'Rodriguez', 'email': 'lrodriguez@voleyhub.com', 'phone': '2262413003', 'dni': '30130003', 'gender': 'F'},
+            {'username': 'carlos_ruiz', 'first_name': 'Carlos', 'last_name': 'Ruiz', 'email': 'cruiz@voleyhub.com', 'phone': '2262413004', 'dni': '30130004', 'gender': 'M'},
         ]
         
         referees = []
@@ -167,7 +177,10 @@ class Command(BaseCommand):
                 last_name=r['last_name'],
                 email=r['email'],
                 role='REFEREE',
-                organization=org
+                organization=org,
+                phone=r['phone'],
+                dni=r['dni'],
+                gender=r['gender'],
             )
             user.set_password('123456')
             user.save()
@@ -177,10 +190,10 @@ class Command(BaseCommand):
 
         # 7. Planilleros (SCORER)
         scorers_data = [
-            {'username': 'martina_sosa', 'first_name': 'Martina', 'last_name': 'Sosa', 'email': 'msosa@voleyhub.com'},
-            {'username': 'lucia_fernandez', 'first_name': 'Lucia', 'last_name': 'Fernandez', 'email': 'lfernandez@voleyhub.com'},
-            {'username': 'camila_gomez', 'first_name': 'Camila', 'last_name': 'Gomez', 'email': 'cgomez@voleyhub.com'},
-            {'username': 'facundo_alvarez', 'first_name': 'Facundo', 'last_name': 'Alvarez', 'email': 'falvarez@voleyhub.com'},
+            {'username': 'martina_sosa', 'first_name': 'Martina', 'last_name': 'Sosa', 'email': 'msosa@voleyhub.com', 'phone': '2262414001', 'dni': '30140001', 'gender': 'F'},
+            {'username': 'lucia_fernandez', 'first_name': 'Lucia', 'last_name': 'Fernandez', 'email': 'lfernandez@voleyhub.com', 'phone': '2262414002', 'dni': '30140002', 'gender': 'F'},
+            {'username': 'camila_gomez', 'first_name': 'Camila', 'last_name': 'Gomez', 'email': 'cgomez@voleyhub.com', 'phone': '2262414003', 'dni': '30140003', 'gender': 'F'},
+            {'username': 'facundo_alvarez', 'first_name': 'Facundo', 'last_name': 'Alvarez', 'email': 'falvarez@voleyhub.com', 'phone': '2262414004', 'dni': '30140004', 'gender': 'M'},
         ]
         
         scorers = []
@@ -191,7 +204,10 @@ class Command(BaseCommand):
                 last_name=s['last_name'],
                 email=s['email'],
                 role='SCORER',
-                organization=org
+                organization=org,
+                phone=s['phone'],
+                dni=s['dni'],
+                gender=s['gender'],
             )
             user.set_password('123456')
             user.save()
@@ -344,23 +360,23 @@ class Command(BaseCommand):
         # Fecha 1 (Terminada)
         stage_m1 = TournamentStage.objects.create(tournament=t_ap_masc, name='Fecha 1', date=timezone.now().date() - timezone.timedelta(days=7))
         
-        sets_3_0 = {
-            "sets": [
-                {"set_number": 1, "local_score": 25, "visitor_score": 20},
-                {"set_number": 2, "local_score": 25, "visitor_score": 23},
-                {"set_number": 3, "local_score": 25, "visitor_score": 15}
-            ]
-        }
-        
-        sets_2_3 = {
-            "sets": [
-                {"set_number": 1, "local_score": 25, "visitor_score": 22},
-                {"set_number": 2, "local_score": 21, "visitor_score": 25},
-                {"set_number": 3, "local_score": 25, "visitor_score": 18},
-                {"set_number": 4, "local_score": 19, "visitor_score": 25},
-                {"set_number": 5, "local_score": 13, "visitor_score": 15}
-            ]
-        }
+        def volleyball_sets(rows):
+            return {
+                "sets": [
+                    {
+                        "set_number": index,
+                        "local_score": local,
+                        "visitor_score": visitor,
+                        "local_points": local,
+                        "visitor_points": visitor,
+                    }
+                    for index, (local, visitor) in enumerate(rows, start=1)
+                ]
+            }
+
+        sets_3_0 = volleyball_sets([(25, 20), (25, 23), (25, 15)])
+        sets_2_3 = volleyball_sets([(25, 22), (21, 25), (25, 18), (19, 25), (13, 15)])
+        sets_1_1 = volleyball_sets([(25, 22), (20, 25)])
 
         # Huracán Masculino vs Rivadavia Masculino
         Match.objects.create(
@@ -414,21 +430,16 @@ class Command(BaseCommand):
             match_datetime=timezone.now(),
             referee=referees[2], # laura_rodriguez
             scorer=scorers[2], # camila_gomez
-            status='IN_PROGRESS'
+            status='IN_PROGRESS',
+            score_summary='1-1',
+            sets_data=sets_1_1
         )
 
         # --- Torneo Apertura Femenino ---
         # Fecha 1 (Terminada)
         stage_f1 = TournamentStage.objects.create(tournament=t_ap_fem, name='Fecha 1', date=timezone.now().date() - timezone.timedelta(days=5))
 
-        sets_1_3 = {
-            "sets": [
-                {"set_number": 1, "local_score": 18, "visitor_score": 25},
-                {"set_number": 2, "local_score": 25, "visitor_score": 22},
-                {"set_number": 3, "local_score": 20, "visitor_score": 25},
-                {"set_number": 4, "local_score": 22, "visitor_score": 25}
-            ]
-        }
+        sets_1_3 = volleyball_sets([(18, 25), (25, 22), (20, 25), (22, 25)])
 
         # Huracán Femenino vs Rivadavia Femenino
         Match.objects.create(
@@ -478,15 +489,18 @@ class Command(BaseCommand):
         # 12. Solicitudes de Registro de Clubes
         ClubRegistrationRequest.objects.create(
             organization=org,
+            role='CLUB_ADMIN',
             club_name='Club Defensores de Belgrano',
             club_address='Calle 6 1020, Necochea',
             club_phone='2262459911',
             club_email='contacto@defensoresbelgrano.com',
+            club_logo_url='https://images.unsplash.com/photo-1461896836934-ffe607ba6851?w=200',
             admin_first_name='Claudio',
             admin_last_name='Valenzuela',
             admin_username='claudio_defensores',
             admin_email='claudio@defensoresbelgrano.com',
             admin_dni='12345678',
+            password=make_password('123456'),
             status='PENDING',
             expires_at=timezone.now() + timezone.timedelta(days=7),
             token='token_defensores_pending_123'
@@ -494,15 +508,18 @@ class Command(BaseCommand):
 
         ClubRegistrationRequest.objects.create(
             organization=org,
+            role='CLUB_ADMIN',
             club_name='Club Sudamérica Vóley',
             club_address='Av. 75 4402, Necochea',
             club_phone='2262498877',
             club_email='info@sudamericavoley.com',
+            club_logo_url='https://images.unsplash.com/photo-1517649763962-0c623066027b?w=200',
             admin_first_name='Roberto',
             admin_last_name='Martinez',
             admin_username='roberto_sudamerica',
             admin_email='roberto@sudamericavoley.com',
             admin_dni='87654321',
+            password=make_password('123456'),
             status='APPROVED',
             expires_at=timezone.now() - timezone.timedelta(days=1),
             token='token_sudamerica_approved_456'

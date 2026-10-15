@@ -13,7 +13,7 @@ from tests.factories import (
 
 @pytest.mark.django_db
 class TestTournamentRules:
-    def test_cannot_create_second_active_same_category_branch(
+    def test_second_tournament_is_pending_when_one_is_active(
         self, api_client, auth_header, organization, tournament
     ):
         assert tournament.status == 'PREPARATION'
@@ -25,12 +25,13 @@ class TestTournamentRules:
                 'category': tournament.category,
                 'branch': tournament.branch,
                 'organization_id': organization.id,
+                'status': 'PREPARATION',
             }),
             content_type='application/json',
             **auth_header,
         )
-        assert res.status_code == 400
-        assert 'torneo activo' in res.json()['error']
+        assert res.status_code == 201
+        assert res.json()['data']['status'] == 'PENDING'
 
     def test_can_create_when_previous_finished(
         self, api_client, auth_header, organization, tournament
@@ -232,7 +233,7 @@ class TestMatchRules:
 
 @pytest.mark.django_db
 class TestTournamentRulesExtras:
-    def test_second_active_in_progress_blocked(self, api_client, auth_header, organization, tournament):
+    def test_second_tournament_pending_when_one_in_progress(self, api_client, auth_header, organization, tournament):
         tournament.status = 'IN_PROGRESS'
         tournament.save(update_fields=['status'])
         res = api_client.post(
@@ -247,7 +248,50 @@ class TestTournamentRulesExtras:
             content_type='application/json',
             **auth_header,
         )
+        assert res.status_code == 201
+        assert res.json()['data']['status'] == 'PENDING'
+
+    def test_cannot_promote_pending_while_another_is_active(
+        self, api_client, auth_header, organization, tournament
+    ):
+        pending = make_tournament(
+            organization,
+            name='Pendiente',
+            category=tournament.category,
+            branch=tournament.branch,
+            status='PENDING',
+        )
+        res = api_client.put(
+            f'/internal/torneos/{pending.id}/',
+            data=json.dumps({'status': 'PREPARATION'}),
+            content_type='application/json',
+            **auth_header,
+        )
         assert res.status_code == 400
+        assert 'vigente' in res.json()['error']
+        pending.refresh_from_db()
+        assert pending.status == 'PENDING'
+
+    def test_can_promote_pending_when_previous_finished(
+        self, api_client, auth_header, organization, tournament
+    ):
+        tournament.status = 'FINISHED'
+        tournament.save(update_fields=['status'])
+        pending = make_tournament(
+            organization,
+            name='Pendiente',
+            category=tournament.category,
+            branch=tournament.branch,
+            status='PENDING',
+        )
+        res = api_client.put(
+            f'/internal/torneos/{pending.id}/',
+            data=json.dumps({'status': 'PREPARATION'}),
+            content_type='application/json',
+            **auth_header,
+        )
+        assert res.status_code == 200
+        assert res.json()['data']['status'] == 'PREPARATION'
 
     def test_different_category_allowed(self, api_client, auth_header, organization, tournament):
         res = api_client.post(

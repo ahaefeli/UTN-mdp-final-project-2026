@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../services/apiClient';
+import { copyText } from '../../utils/copyText';
+import buttonStyles from '../../components/ui/Button.module.css';
 import {
   PageHeader,
   Button,
@@ -75,6 +77,7 @@ export default function ClubesAdminPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [copyError, setCopyError] = useState('');
 
   // Detail Modal state
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -174,6 +177,8 @@ export default function ClubesAdminPage() {
   const handleCloseInviteModal = () => {
     setIsInviteModalOpen(false);
     setGeneratedLink('');
+    setIsCopied(false);
+    setCopyError('');
   };
 
   // Generate Invite Link (POST)
@@ -188,6 +193,8 @@ export default function ClubesAdminPage() {
       const link = `${window.location.origin}/register?token=${token}`;
 
       setGeneratedLink(link);
+      setIsCopied(false);
+      setCopyError('');
       setIsInviteModalOpen(true);
       setSuccessMsg('Enlace generado exitosamente.');
     } catch (err) {
@@ -198,13 +205,17 @@ export default function ClubesAdminPage() {
     }
   };
 
-  // Copy Generated Link to Clipboard
-  const handleCopyLink = () => {
-    if (generatedLink) {
-      navigator.clipboard.writeText(generatedLink);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+  const handleCopyLink = async () => {
+    if (!generatedLink) return;
+    setCopyError('');
+    const ok = await copyText(generatedLink);
+    if (!ok) {
+      setIsCopied(false);
+      setCopyError('No se pudo copiar el enlace. Seleccionalo y copialo manualmente.');
+      return;
     }
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   // Fetch Request Detail (GET)
@@ -474,7 +485,7 @@ export default function ClubesAdminPage() {
               <label className={dirStyles.label} htmlFor="invite-link">
                 Enlace de registro:
               </label>
-              <div className={dirStyles.formRow}>
+              <div className={styles.linkRow}>
                 <input
                   id="invite-link"
                   type="text"
@@ -483,10 +494,15 @@ export default function ClubesAdminPage() {
                   className={dirStyles.input}
                   onClick={(e) => e.target.select()}
                 />
-                <Button type="button" onClick={handleCopyLink}>
-                  {isCopied ? '¡Copiado!' : 'Copiar Link'}
+                <Button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className={isCopied ? buttonStyles.copied : ''}
+                >
+                  {isCopied ? 'Copiado' : 'Copiar Link'}
                 </Button>
               </div>
+              {copyError ? <p className={dirStyles.copyError}>{copyError}</p> : null}
             </div>
           </div>
         </Modal>

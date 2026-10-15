@@ -7,6 +7,7 @@
   justify-content: center;
   z-index: 1000;
   padding: var(--space-4);
+  animation: modalFade 0.18s ease;
 }
 
 .modal {
@@ -18,6 +19,30 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-sm);
+  animation: modalIn 0.22s ease;
+}
+
+@keyframes modalFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .modal {
+    animation: none;
+  }
 }
 
 .sm {

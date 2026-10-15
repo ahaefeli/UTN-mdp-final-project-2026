@@ -5,14 +5,32 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import authService from '../../services/authService';
 import userService from '../../services/userService';
+import { ROLE_TRANSLATIONS } from '../../utils/roles';
+import { clubInitials } from '../../utils/clubMark';
 import {
   PageHeader,
   Button,
   Alert,
   LoadingState,
+  StatusBadge,
 } from '../../components/ui';
 import chrome from '../../components/ui/PageChrome.module.css';
 import styles from './page.module.css';
+
+const ROLE_VARIANTS = {
+  CLUB_ADMIN: 'primary',
+  COACH: 'accent',
+  PLAYER: 'success',
+  REFEREE: 'neutral',
+  SCORER: 'neutral',
+};
+
+function documentFor(profile) {
+  if (!profile) return null;
+  if (profile.role === 'PLAYER') return profile.medical_certificate || null;
+  if (profile.role === 'COACH') return profile.coach_certificate || null;
+  return null;
+}
 
 export default function MisDatosPage() {
   const router = useRouter();
@@ -31,6 +49,7 @@ export default function MisDatosPage() {
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({ firstName: '', lastName: '' });
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -46,8 +65,8 @@ export default function MisDatosPage() {
     }
   }, [router]);
 
-  const loadUserProfile = async () => {
-    setIsLoading(true);
+  const loadUserProfile = async ({ silent = false } = {}) => {
+    if (!silent) setIsLoading(true);
     setErrorMsg('');
     try {
       const currentUser = authService.getCurrentUser();
@@ -61,27 +80,51 @@ export default function MisDatosPage() {
         setPhone(profile.phone || '');
         setDni(profile.dni || '');
         setUsername(profile.username || '');
+        setFile(null);
+        setFieldErrors({ firstName: '', lastName: '' });
       }
     } catch (err) {
       console.error('Error al obtener perfil:', err);
       setErrorMsg('No se pudo cargar la información de tu perfil.');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
+    } else {
+      setFile(null);
     }
   };
+
+  const savedFirstName = user?.first_name || '';
+  const savedLastName = user?.last_name || '';
+  const savedPhone = user?.phone || '';
+  const isDirty =
+    firstName !== savedFirstName ||
+    lastName !== savedLastName ||
+    phone !== savedPhone ||
+    file !== null;
+
+  const needsDocument = user && (user.role === 'PLAYER' || user.role === 'COACH');
+  const documentUrl = documentFor(user);
+  const documentLabel = user?.role === 'PLAYER' ? 'Apto médico' : 'Certificado de entrenador';
+  const displayName = `${firstName} ${lastName}`.trim() || username || 'Tu perfil';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (!firstName.trim() || !lastName.trim()) {
+    const nextErrors = {
+      firstName: firstName.trim() ? '' : 'Ingresá tu nombre para guardar.',
+      lastName: lastName.trim() ? '' : 'Ingresá tu apellido para guardar.',
+    };
+    setFieldErrors(nextErrors);
+
+    if (nextErrors.firstName || nextErrors.lastName) {
       setErrorMsg('El nombre y el apellido son obligatorios.');
       return;
     }
@@ -105,7 +148,7 @@ export default function MisDatosPage() {
       setSuccessMsg('Perfil actualizado con éxito.');
       setFile(null);
 
-      await loadUserProfile();
+      await loadUserProfile({ silent: true });
     } catch (err) {
       console.error('Error al actualizar datos:', err);
       let msg = 'Error al actualizar el perfil de usuario.';
@@ -164,113 +207,179 @@ export default function MisDatosPage() {
           </div>
         )}
 
-        <section className={chrome.card}>
-          <h2 className={chrome.sectionTitle}>Editar Perfil Personal</h2>
+        <section className={chrome.card} aria-labelledby="profile-identity-title">
+          <div className={styles.identity}>
+            {user?.club_logo_url ? (
+              <img
+                src={user.club_logo_url}
+                alt={user.club_name ? `Escudo de ${user.club_name}` : 'Escudo del club'}
+                className={styles.clubMark}
+              />
+            ) : user?.club_name ? (
+              <span className={styles.clubInitials} aria-hidden="true">
+                {clubInitials(user.club_name)}
+              </span>
+            ) : null}
+            <div>
+              <h2 id="profile-identity-title" className={styles.identityName}>
+                {displayName}
+              </h2>
+              <div className={styles.identityMeta}>
+                <StatusBadge variant={ROLE_VARIANTS[user?.role] || 'neutral'}>
+                  {ROLE_TRANSLATIONS[user?.role] || user?.role}
+                </StatusBadge>
+                {user?.club_name ? <span>{user.club_name}</span> : null}
+              </div>
+            </div>
+          </div>
+
+          <dl className={styles.facts}>
+            <div className={styles.fact}>
+              <dt>Usuario</dt>
+              <dd>{username || '—'}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>DNI / Documento</dt>
+              <dd>{dni || '—'}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>Rol</dt>
+              <dd>{ROLE_TRANSLATIONS[user?.role] || user?.role || '—'}</dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>Club</dt>
+              <dd>
+                {user?.club_name ? (
+                  <span className={styles.clubFact}>{user.club_name}</span>
+                ) : (
+                  'Sin club'
+                )}
+              </dd>
+            </div>
+          </dl>
+          <p className={chrome.muted}>Usuario, documento, rol y club los define la liga.</p>
+        </section>
+
+        <section className={chrome.card} aria-labelledby="profile-contact-title">
+          <h2 id="profile-contact-title" className={chrome.sectionTitle}>
+            Datos de contacto
+          </h2>
 
           <form onSubmit={handleSubmit} className={chrome.form}>
-            <div className={chrome.formGroup}>
-              <label className={chrome.label} htmlFor="profile-username">
-                Usuario
-              </label>
-              <input
-                id="profile-username"
-                type="text"
-                className={chrome.input}
-                value={username}
-                disabled
-              />
-            </div>
+            <div className={chrome.formRow}>
+              <div className={chrome.formGroup}>
+                <label className={chrome.label} htmlFor="profile-first-name">
+                  Nombre <span className={styles.required}>Obligatorio</span>
+                </label>
+                <input
+                  id="profile-first-name"
+                  type="text"
+                  className={`${chrome.input} ${fieldErrors.firstName ? styles.inputError : ''}`}
+                  value={firstName}
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
+                    if (fieldErrors.firstName) {
+                      setFieldErrors((current) => ({ ...current, firstName: '' }));
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  aria-required="true"
+                  aria-invalid={fieldErrors.firstName ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.firstName ? 'profile-first-name-error' : undefined}
+                  autoComplete="given-name"
+                />
+                {fieldErrors.firstName ? (
+                  <p id="profile-first-name-error" className={styles.fieldError}>
+                    {fieldErrors.firstName}
+                  </p>
+                ) : null}
+              </div>
 
-            <div className={chrome.formGroup}>
-              <label className={chrome.label} htmlFor="profile-dni">
-                DNI / Documento
-              </label>
-              <input
-                id="profile-dni"
-                type="text"
-                className={chrome.input}
-                value={dni}
-                disabled
-              />
-            </div>
-
-            <div className={chrome.formGroup}>
-              <label className={chrome.label} htmlFor="profile-first-name">
-                Nombre
-              </label>
-              <input
-                id="profile-first-name"
-                type="text"
-                className={chrome.input}
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                disabled={isSubmitting}
-              />
-            </div>
-
-            <div className={chrome.formGroup}>
-              <label className={chrome.label} htmlFor="profile-last-name">
-                Apellido
-              </label>
-              <input
-                id="profile-last-name"
-                type="text"
-                className={chrome.input}
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                disabled={isSubmitting}
-              />
+              <div className={chrome.formGroup}>
+                <label className={chrome.label} htmlFor="profile-last-name">
+                  Apellido <span className={styles.required}>Obligatorio</span>
+                </label>
+                <input
+                  id="profile-last-name"
+                  type="text"
+                  className={`${chrome.input} ${fieldErrors.lastName ? styles.inputError : ''}`}
+                  value={lastName}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                    if (fieldErrors.lastName) {
+                      setFieldErrors((current) => ({ ...current, lastName: '' }));
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  aria-required="true"
+                  aria-invalid={fieldErrors.lastName ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.lastName ? 'profile-last-name-error' : undefined}
+                  autoComplete="family-name"
+                />
+                {fieldErrors.lastName ? (
+                  <p id="profile-last-name-error" className={styles.fieldError}>
+                    {fieldErrors.lastName}
+                  </p>
+                ) : null}
+              </div>
             </div>
 
             <div className={chrome.formGroup}>
               <label className={chrome.label} htmlFor="profile-phone">
-                Teléfono de Contacto
+                Teléfono de contacto
               </label>
               <input
                 id="profile-phone"
-                type="text"
+                type="tel"
                 className={chrome.input}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 disabled={isSubmitting}
+                autoComplete="tel"
               />
             </div>
 
-            {user && user.role === 'PLAYER' && (
-              <div className={chrome.formGroup}>
-                <label className={chrome.label} htmlFor="profile-medical">
-                  Apto Médico (Archivo PDF o Imagen)
-                </label>
-                <input
-                  id="profile-medical"
-                  type="file"
-                  className={styles.fileInput}
-                  accept=".pdf, image/*"
-                  onChange={handleFileChange}
-                  disabled={isSubmitting}
-                />
-              </div>
+            {needsDocument && (
+              <fieldset className={styles.document}>
+                <legend className={chrome.sectionTitle}>{documentLabel}</legend>
+                <p className={styles.docStatus}>
+                  {documentUrl ? (
+                    <a
+                      href={documentUrl}
+                      className={styles.docLink}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Ver archivo cargado
+                    </a>
+                  ) : (
+                    <span>Sin archivo</span>
+                  )}
+                </p>
+                <div className={styles.fileField}>
+                  <input
+                    id="profile-document"
+                    type="file"
+                    className={styles.fileInput}
+                    accept=".pdf,image/*"
+                    onChange={handleFileChange}
+                    disabled={isSubmitting}
+                  />
+                  <label htmlFor="profile-document" className={styles.fileButton}>
+                    Elegir archivo
+                  </label>
+                  <span className={styles.fileName}>
+                    {file ? file.name : 'PDF o imagen'}
+                  </span>
+                </div>
+              </fieldset>
             )}
 
-            {user && user.role === 'COACH' && (
-              <div className={chrome.formGroup}>
-                <label className={chrome.label} htmlFor="profile-certificate">
-                  Certificado de Entrenador (Archivo PDF o Imagen)
-                </label>
-                <input
-                  id="profile-certificate"
-                  type="file"
-                  className={styles.fileInput}
-                  accept=".pdf, image/*"
-                  onChange={handleFileChange}
-                  disabled={isSubmitting}
-                />
-              </div>
-            )}
-
-            <Button type="submit" block disabled={isSubmitting}>
-              {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
-            </Button>
+            <div className={`${chrome.actionsRow} ${chrome.actionsEnd}`}>
+              <Button type="submit" disabled={isSubmitting || !isDirty}>
+                {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
+              </Button>
+            </div>
           </form>
         </section>
       </div>

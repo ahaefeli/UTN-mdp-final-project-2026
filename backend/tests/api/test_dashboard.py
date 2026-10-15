@@ -46,6 +46,33 @@ class TestAdminDashboard:
         assert body['active_tournaments'] >= 1
         assert body['matches_without_referee'] >= 1
         assert body['pending_counts']['clubs'] >= 1
+        assert any(
+            action['message'] == 'Nueva solicitud de afiliación: Pendiente'
+            for action in body['pending_actions']
+        )
+
+    def test_pending_actions_only_completed_club_affiliations(
+        self, api_client, auth_header, organization
+    ):
+        make_registration_request(
+            organization, role='CLUB_ADMIN', club_name='Club Listo', admin_email='listo@t.com'
+        )
+        make_registration_request(
+            organization, role='CLUB_ADMIN', club_name=None, admin_email=None
+        )
+        make_registration_request(
+            organization, role='CLUB_ADMIN', club_name='', admin_email='vacio@t.com'
+        )
+        make_registration_request(
+            organization, role='REFEREE', club_name=None, admin_email='ref@t.com'
+        )
+
+        res = api_client.get('/internal/dashboard/admin/', **auth_header)
+        assert res.status_code == 200
+        actions = res.json()['pending_actions']
+        messages = [action['message'] for action in actions]
+        assert messages == ['Nueva solicitud de afiliación: Club Listo']
+        assert all(action['type'] == 'NEW_AFFILIATION' for action in actions)
 
     def test_user_without_org_forbidden(self, api_client, db):
         orphan = make_user(organization=None, role='ADMIN', email='dash@t.com', username='dash')

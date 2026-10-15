@@ -102,6 +102,15 @@ class TestValidateVolleyballSetsInvalid:
         _, err = validate_volleyball_sets(detail)
         assert 'negativos' in err
 
+    def test_points_over_two_digits(self):
+        detail = [
+            {'local_points': 100, 'visitor_points': 20},
+            {'local_points': 25, 'visitor_points': 18},
+            {'local_points': 25, 'visitor_points': 22},
+        ]
+        _, err = validate_volleyball_sets(detail)
+        assert '2 cifras' in err
+
     def test_invalid_points_type(self):
         detail = [
             {'local_points': 'x', 'visitor_points': 20},

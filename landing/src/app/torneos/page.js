@@ -98,6 +98,9 @@ export default function TorneosPage() {
     if (t.status === "IN_PROGRESS") {
       badgeText = "EN DISPUTA";
       badgeType = "live";
+    } else if (t.status === "PENDING") {
+      badgeText = "PENDIENTE";
+      badgeType = "pending";
     } else if (t.status === "FINISHED") {
       badgeText = "FINALIZADO";
       badgeType = "default";
@@ -379,6 +382,8 @@ export default function TorneosPage() {
                     className={`absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider select-none shadow-sm ${
                       tournament.badgeType === "live"
                         ? "bg-orange-500 text-white"
+                        : tournament.badgeType === "pending"
+                        ? "bg-amber-100 text-amber-900 border border-amber-200"
                         : tournament.badgeType === "upcoming"
                         ? "bg-white text-slate-700 border border-slate-100"
                         : "bg-[#001F54] text-white"

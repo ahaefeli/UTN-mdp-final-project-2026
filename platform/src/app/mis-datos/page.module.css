@@ -1,7 +1,5 @@
-/* Presentation helpers — layout uses PageChrome + ui components */
-
 .page {
-  max-width: min(56rem, 100%);
+  max-width: min(40rem, 100%);
   margin: 0 auto;
 }
 
@@ -27,6 +25,11 @@
   background: color-mix(in srgb, var(--primary) 85%, #000);
 }
 
+.backLink:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  outline-offset: 2px;
+}
+
 .alerts {
   display: flex;
   flex-direction: column;
@@ -41,25 +44,172 @@
   width: 100%;
 }
 
-.fileInput {
-  font-size: 0.875rem;
-  color: var(--text-muted);
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
 }
 
-.fileInput::-webkit-file-upload-button {
-  background: var(--surface);
+.identityName {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.identityMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
   color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.clubMark,
+.clubInitials {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
   border: 1px solid var(--border);
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius);
-  font-weight: 700;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-  margin-right: var(--space-3);
+  flex-shrink: 0;
 }
 
-.fileInput::-webkit-file-upload-button:hover {
-  background: var(--border);
+.clubMark {
+  object-fit: cover;
+  background: var(--surface);
+}
+
+.clubInitials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
   color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4) var(--space-6);
+  margin: 0;
+}
+
+.fact dt {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fact dd {
+  margin: var(--space-1) 0 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.required {
+  margin-left: var(--space-2);
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.fieldError {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.document {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.document legend {
+  padding: 0 var(--space-2);
+  float: none;
+}
+
+.inputError {
+  border-color: var(--danger);
+}
+
+.docStatus {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.docLink {
+  color: var(--primary);
+  font-weight: 700;
+  text-underline-offset: 0.15em;
+}
+
+.docLink:hover {
+  color: var(--accent);
+}
+
+.fileField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fileButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fileField:focus-within .fileButton {
+  outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  outline-offset: 1px;
+  border-color: var(--primary);
+}
+
+.fileName {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .facts {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 
 import pytest
 from django.utils import timezone
@@ -33,6 +34,44 @@ class TestTournamentStages:
         )
         assert res.status_code == 201
         assert res.json()['data']['name'] == 'Fecha Extra'
+
+    def test_reject_past_date(self, api_client, auth_header, tournament):
+        yesterday = (timezone.localdate() - timedelta(days=1)).isoformat()
+        res = api_client.post(
+            '/internal/torneos/fechas/',
+            data=json.dumps({
+                'tournament_id': str(tournament.id),
+                'date': yesterday,
+                'name': 'Fecha Pasada',
+            }),
+            content_type='application/json',
+            **auth_header,
+        )
+        assert res.status_code == 400
+        assert 'pasó' in res.json()['error']
+
+    def test_stages_are_chronological(self, api_client, auth_header, tournament):
+        later = (timezone.localdate() + timedelta(days=10)).isoformat()
+        sooner = (timezone.localdate() + timedelta(days=2)).isoformat()
+        for name, stage_date in (('Tarde', later), ('Temprano', sooner)):
+            created = api_client.post(
+                '/internal/torneos/fechas/',
+                data=json.dumps({
+                    'tournament_id': str(tournament.id),
+                    'date': stage_date,
+                    'name': name,
+                }),
+                content_type='application/json',
+                **auth_header,
+            )
+            assert created.status_code == 201
+
+        res = api_client.get(
+            f'/internal/torneos/fechas/?tournament_id={tournament.id}',
+            **auth_header,
+        )
+        dates = [stage['date'] for stage in res.json()['data']]
+        assert dates == sorted(dates)
 
     def test_create_missing_fields(self, api_client, auth_header):
         res = api_client.post(

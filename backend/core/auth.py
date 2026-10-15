@@ -9,6 +9,7 @@ from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from core.models import User
+from core.user_membership import resolve_user_membership
 
 def jwt_required(view_func):
     """
@@ -77,13 +78,15 @@ class LoginView(View):
         
         if user is None:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
+
+        membership = resolve_user_membership(user)
             
         # Create manually signed JWT token
         payload = {
             'user_id': str(user.id),
             'email': user.email,
             'role': user.role,
-            'club_id': str(user.club_id) if user.club_id else None,
+            'club_id': membership['club_id'],
             'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1),
             'iat': datetime.datetime.utcnow()
         }
@@ -99,7 +102,9 @@ class LoginView(View):
                 'username': user.username,
                 'email': user.email,
                 'role': user.role,
-                'club_id': str(user.club_id) if user.club_id else None,
+                'club_id': membership['club_id'],
+                'club_name': membership['club_name'],
+                'club_logo_url': membership['club_logo_url'],
                 'name': f"{user.first_name} {user.last_name}".strip()
             }
         }, status=200)

@@ -6,9 +6,9 @@ const python = isWindows
   ? path.join(root, 'venv', 'Scripts', 'python.exe')
   : path.join(root, 'venv', 'bin', 'python');
 
-const apiUrl = 'http://localhost:8000';
-const landingUrl = 'http://localhost:3000';
-const platformUrl = 'http://localhost:3001';
+const apiUrl = 'api.voleyhub.com';
+const landingUrl = 'voleyhub.com';
+const platformUrl = 'plataforma.voleyhub.com';
 
 // NEXT_PUBLIC_* se incrustan en el build de Next. Hay que exportarlas
 // antes de `npm run build` en landing y platform; PM2 las vuelve a pasar
@@ -35,7 +35,7 @@ module.exports = {
         DJANGO_SETTINGS_MODULE: 'core.settings',
         DJANGO_SECRET_KEY: 'django-insecure-zkv%*n+)h4p0j*mx*t$3-*8x4jq&ats7x&k3lmmz^=k)b2m5qx',
         DJANGO_DEBUG: 'false',
-        DJANGO_ALLOWED_HOSTS: '192.168.1.8,localhost,127.0.0.1',
+        DJANGO_ALLOWED_HOSTS: 'localhost,127.0.0.1,api.voleyhub.com,plataforma.voleyhub.com',
         DB_NAME: 'voley_lnv_db',
         DB_USER: 'postgres',
         DB_PASSWORD: '0102',
@@ -46,7 +46,7 @@ module.exports = {
         CORS_ALLOWED_ORIGINS: `${landingUrl},${platformUrl}`,
         CSRF_TRUSTED_ORIGINS: `${landingUrl},${platformUrl}`,
         DEFAULT_FROM_EMAIL: 'no-reply@voleyhub.com',
-        BUCKET_NAME: '',
+        BUCKET_NAME: 'club-photo-bucket',
         PYTHONUNBUFFERED: '1',
       },
     },

@@ -94,6 +94,31 @@
   color: var(--text);
 }
 
+.clubMark,
+.clubInitials {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.clubMark {
+  object-fit: cover;
+  background: var(--surface);
+}
+
+.clubInitials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
 .btnLogout {
   background-color: transparent;
   border: 1px solid var(--border);
