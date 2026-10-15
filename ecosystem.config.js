@@ -16,7 +16,7 @@ const platformUrl = 'plataforma.voleyhub.com';
 const publicWebEnv = {
   NODE_ENV: 'production',
   NEXT_PUBLIC_API_URL: apiUrl,
-  NEXT_PUBLIC_PLATFORM_URL: platformUrl,
+  NEXT_PUBLIC_PLATFORM_URL: `https://${platformUrl}`,
 };
 
 module.exports = {
