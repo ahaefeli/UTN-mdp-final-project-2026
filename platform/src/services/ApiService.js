@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { getApiBaseUrl } from './apiClient';
 
 class ApiService {
     constructor() {
-        const base = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/';
+        const base = getApiBaseUrl();
         const cleanBase = base.endsWith('/') ? base : `${base}/`;
         this.client = axios.create({
             baseURL: `${cleanBase}internal/`

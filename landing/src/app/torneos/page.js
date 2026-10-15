@@ -36,7 +36,7 @@ export default function TorneosPage() {
         setIsLoading(true);
         setError(null);
 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/public';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.8:8000/public';
         const url = `${baseUrl}/torneos/`;
 
         const res = await fetch(url);

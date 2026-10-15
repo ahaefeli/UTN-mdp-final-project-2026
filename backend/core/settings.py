@@ -1,19 +1,40 @@
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _env_bool(name, default):
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def _env_list(name, default):
+    raw = os.environ.get(name)
+    if not raw:
+        return default
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-zkv%*n+)h4p0j*mx*t$3-*8x4jq&ats7x&k3lmmz^=k)b2m5qx'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-zkv%*n+)h4p0j*mx*t$3-*8x4jq&ats7x&k3lmmz^=k)b2m5qx',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '192.168.1.13', 'localhost']
+ALLOWED_HOSTS = _env_list(
+    'DJANGO_ALLOWED_HOSTS',
+    ['localhost', '127.0.0.1', 'testserver', '192.168.1.8'],
+)
 
 
 # Application definition
@@ -70,13 +91,13 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'voley_lnv_db',
-        'USER': 'postgres',
-        'PASSWORD': '0102',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'voley_lnv_db'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', '0102'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
         'TEST': {
-            'NAME': 'test_voley_lnv_db',
+            'NAME': os.environ.get('DB_TEST_NAME', 'test_voley_lnv_db'),
         },
     }
 }
@@ -123,5 +144,9 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@voleyhub.com')
+
+CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS', [])
+CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS', CORS_ALLOWED_ORIGINS)
+CORS_ALLOW_ALL_ORIGINS = _env_bool('CORS_ALLOW_ALL_ORIGINS', not CORS_ALLOWED_ORIGINS)
 

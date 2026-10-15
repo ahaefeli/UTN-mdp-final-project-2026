@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { getApiBaseUrl } from '../../services/apiClient';
 import {
   PageHeader,
   Button,
@@ -138,7 +139,7 @@ export default function ResultadosPosicionesPage() {
           setIsLoadingTournaments(true);
           setError('');
           const token = typeof window !== 'undefined' ? localStorage.getItem('lnv_token') : '';
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          const baseUrl = getApiBaseUrl().replace(/\/$/, '');
 
           const response = await fetch(`${baseUrl}/internal/torneos/`, {
             headers: {
@@ -177,7 +178,7 @@ export default function ResultadosPosicionesPage() {
           setIsLoadingData(true);
           setError('');
           const token = typeof window !== 'undefined' ? localStorage.getItem('lnv_token') : '';
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          const baseUrl = getApiBaseUrl().replace(/\/$/, '');
 
           const headers = {
             Authorization: `Bearer ${token}`,

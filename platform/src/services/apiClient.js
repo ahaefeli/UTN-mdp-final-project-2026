@@ -1,11 +1,22 @@
 import axios from 'axios';
 
-// La URL base del API se obtiene de variables de entorno o usa la URL por defecto para desarrollo local.
-// El backend expone rutas en '/internal/' y la autenticación en '/auth/'.
-const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/';
+// En el navegador se usa el mismo host con el que se abrió la página (192.168.1.8 u otro).
+// NEXT_PUBLIC_API_URL solo aplica en el servidor, y se ignora si apunta a localhost.
+export function getApiBaseUrl() {
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    return `http://${window.location.hostname}:8000/`;
+  }
+
+  const fromEnv = process.env.NEXT_PUBLIC_API_URL;
+  if (fromEnv && !/localhost|127\.0\.0\.1/i.test(fromEnv)) {
+    return fromEnv.endsWith('/') ? fromEnv : `${fromEnv}/`;
+  }
+
+  return 'http://192.168.1.8:8000/';
+}
 
 const apiClient = axios.create({
-  baseURL,
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,6 +26,8 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Evita errores durante Server-Side Rendering (SSR) en Next.js
+    config.baseURL = getApiBaseUrl();
+
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('lnv_token');
       if (token) {

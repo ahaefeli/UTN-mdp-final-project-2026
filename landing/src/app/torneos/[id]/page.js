@@ -89,8 +89,8 @@ export default function TorneoDetallePage() {
       try {
         setIsLoading(true);
         const [matchesRes, standingsRes] = await Promise.all([
-          fetch(`http://127.0.0.1:8000/public/partidos/?tournament_id=${id}`),
-          fetch(`http://127.0.0.1:8000/public/torneos/${id}/posiciones/`)
+          fetch(`http://192.168.1.8:8000/public/partidos/?tournament_id=${id}`),
+          fetch(`http://192.168.1.8:8000/public/torneos/${id}/posiciones/`)
         ]);
         if (!matchesRes.ok || !standingsRes.ok) throw new Error("Error fetching");
         

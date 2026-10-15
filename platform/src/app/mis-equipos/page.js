@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { getApiBaseUrl } from '../../services/apiClient';
 import {
   PageHeader,
   Button,
@@ -17,7 +18,7 @@ import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
 
 const getApiUrl = (path) => {
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/';
+  const base = getApiBaseUrl();
   const cleanBase = base.endsWith('/') ? base : `${base}/`;
   return `${cleanBase}${path}`;
 };
