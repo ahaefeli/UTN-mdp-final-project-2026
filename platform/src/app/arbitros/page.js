@@ -19,6 +19,7 @@ import {
 } from '../../components/ui';
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
+import PendingInvites from '../../components/PendingInvites/PendingInvites';
 
 const STATUS_LABELS = {
   PENDING: 'Pendiente',
@@ -78,6 +79,8 @@ export default function ArbitrosAdminPage() {
 
   // Invitation Link state
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [inviteTick, setInviteTick] = useState(0);
+  const [reviewTarget, setReviewTarget] = useState(null);
 
   // Enforce ADMIN role-based access
   useEffect(() => {
@@ -149,6 +152,7 @@ export default function ArbitrosAdminPage() {
       setIsCopied(false);
       setCopyError('');
       setIsInviteModalOpen(true);
+      setInviteTick((value) => value + 1);
       setSuccessMsg('Enlace generado exitosamente.');
     } catch (err) {
       console.error('Error al generar enlace:', err);
@@ -188,10 +192,13 @@ export default function ArbitrosAdminPage() {
   };
 
   // Approve or Reject Proposed Request (POST)
-  const handleReviewRequest = async (requestId, action) => {
-    if (!confirm(`¿Está seguro de que desea ${action === 'APPROVE' ? 'aprobar' : 'rechazar'} esta solicitud?`)) {
-      return;
-    }
+  const handleReviewRequest = (requestId, action) => {
+    setReviewTarget({ requestId, action });
+  };
+
+  const confirmReview = async () => {
+    if (!reviewTarget) return;
+    const { requestId, action } = reviewTarget;
     setIsSubmitting(true);
     setErrorMsg('');
     setSuccessMsg('');
@@ -200,6 +207,8 @@ export default function ArbitrosAdminPage() {
       setSuccessMsg(`Solicitud ${action === 'APPROVE' ? 'aprobada' : 'rechazada'} con éxito.`);
       setIsDetailModalOpen(false);
       setSelectedRequest(null);
+      setReviewTarget(null);
+      setInviteTick((value) => value + 1);
       loadData();
     } catch (err) {
       console.error('Error al procesar solicitud:', err);
@@ -218,7 +227,7 @@ export default function ArbitrosAdminPage() {
       <div className={dirStyles.page}>
         <PageHeader
           title="Gestión de Árbitros"
-          subtitle="Supervise los árbitros oficiales activos y administre las solicitudes de registro."
+          subtitle="El alta es por invitación: generá el enlace, la persona completa sus datos y vos aprobás la solicitud. No se carga el usuario a mano."
           actions={
             <Button
               variant="accent"
@@ -236,6 +245,35 @@ export default function ArbitrosAdminPage() {
             </Button>
           }
         />
+
+        <PendingInvites role="REFEREE" refreshKey={inviteTick} />
+
+        <Modal
+          open={Boolean(reviewTarget)}
+          onClose={() => !isSubmitting && setReviewTarget(null)}
+          title={reviewTarget?.action === 'APPROVE' ? 'Aprobar solicitud' : 'Rechazar solicitud'}
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setReviewTarget(null)} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button
+                variant={reviewTarget?.action === 'REJECT' ? 'danger' : 'primary'}
+                onClick={confirmReview}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Guardando...' : reviewTarget?.action === 'APPROVE' ? 'Aprobar' : 'Rechazar'}
+              </Button>
+            </>
+          }
+        >
+          <p>
+            {reviewTarget?.action === 'APPROVE'
+              ? 'Se crea la cuenta con los datos de la solicitud.'
+              : 'La solicitud queda rechazada y, si era un enlace, deja de servir.'}
+          </p>
+        </Modal>
 
         {(successMsg || errorMsg) && (
           <div className={dirStyles.alerts}>

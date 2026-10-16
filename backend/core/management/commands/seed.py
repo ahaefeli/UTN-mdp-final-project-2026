@@ -1,6 +1,7 @@
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+import datetime
 from core.models import (
     Organization, User, Club, Court, Tournament, Team,
     TournamentEnrollment, TournamentStage, Match, ClubRegistrationRequest
@@ -378,13 +379,17 @@ class Command(BaseCommand):
         sets_2_3 = volleyball_sets([(25, 22), (21, 25), (25, 18), (19, 25), (13, 15)])
         sets_1_1 = volleyball_sets([(25, 22), (20, 25)])
 
+        def kickoff(stage, hour, minute=0):
+            naive = datetime.datetime.combine(stage.date, datetime.time(hour, minute))
+            return timezone.make_aware(naive)
+
         # Huracán Masculino vs Rivadavia Masculino
         Match.objects.create(
             tournament_stage=stage_m1,
             local_team=teams['huracan_m'],
             visitor_team=teams['rivadavia_m'],
             court=courts['Club Atlético Huracán'][0], # Cancha Central Huracán
-            match_datetime=timezone.now() - timezone.timedelta(days=7),
+            match_datetime=kickoff(stage_m1, 18, 0),
             referee=referees[0], # marcelo_lora
             scorer=scorers[0], # martina_sosa
             status='FINISHED',
@@ -398,7 +403,7 @@ class Command(BaseCommand):
             local_team=teams['loberia_m'],
             visitor_team=teams['basko_m'],
             court=courts['CAI de Lobería'][0], # Cancha Central Loberia
-            match_datetime=timezone.now() - timezone.timedelta(days=7),
+            match_datetime=kickoff(stage_m1, 19, 30),
             referee=referees[1], # sergio_gimenez
             scorer=scorers[1], # lucia_fernandez
             status='FINISHED',
@@ -415,7 +420,7 @@ class Command(BaseCommand):
             local_team=teams['huracan_m'],
             visitor_team=teams['loberia_m'],
             court=courts['Club Atlético Huracán'][1], # Cancha Auxiliar
-            match_datetime=timezone.now() + timezone.timedelta(days=2),
+            match_datetime=kickoff(stage_m2, 18, 0),
             referee=referees[0],
             scorer=scorers[0],
             status='PREPARATION'
@@ -427,7 +432,7 @@ class Command(BaseCommand):
             local_team=teams['rivadavia_m'],
             visitor_team=teams['basko_m'],
             court=courts['Club Atlético Rivadavia'][0],
-            match_datetime=timezone.now(),
+            match_datetime=kickoff(stage_m2, 19, 30),
             referee=referees[2], # laura_rodriguez
             scorer=scorers[2], # camila_gomez
             status='IN_PROGRESS',
@@ -447,7 +452,7 @@ class Command(BaseCommand):
             local_team=teams['huracan_f'],
             visitor_team=teams['rivadavia_f'],
             court=courts['Club Atlético Huracán'][0],
-            match_datetime=timezone.now() - timezone.timedelta(days=5),
+            match_datetime=kickoff(stage_f1, 18, 0),
             referee=referees[2],
             scorer=scorers[2],
             status='FINISHED',
@@ -461,7 +466,7 @@ class Command(BaseCommand):
             local_team=teams['loberia_f'],
             visitor_team=teams['basko_f'],
             court=courts['CAI de Lobería'][0],
-            match_datetime=timezone.now() - timezone.timedelta(days=5),
+            match_datetime=kickoff(stage_f1, 19, 30),
             referee=referees[3], # carlos_ruiz
             scorer=scorers[3], # facundo_alvarez
             status='FINISHED',
@@ -478,7 +483,7 @@ class Command(BaseCommand):
             local_team=teams['huracan_f'],
             visitor_team=teams['loberia_f'],
             court=courts['Club Atlético Huracán'][0],
-            match_datetime=timezone.now() + timezone.timedelta(days=3),
+            match_datetime=kickoff(stage_f2, 18, 0),
             referee=referees[1],
             scorer=scorers[1],
             status='PREPARATION'

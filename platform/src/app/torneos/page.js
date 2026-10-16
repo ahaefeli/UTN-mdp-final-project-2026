@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import tournamentService from '../../services/tournamentService';
 import { STATUS_TRANSLATIONS } from '../../utils/status';
+import { formatBranch, formatCategory } from '../../utils/labels';
 import {
   PageHeader,
   Button,
@@ -17,25 +18,55 @@ import {
 import chromeStyles from '../../components/ui/PageChrome.module.css';
 import styles from './page.module.css';
 
-const BRANCH_TRANSLATIONS = {
-  MALE: 'Masculino',
-  FEMALE: 'Femenino',
-};
-
-const CATEGORY_TRANSLATIONS = {
-  PRIMERA: 'Primera División',
-  'SUB-18': 'Sub-18',
-  'SUB-16': 'Sub-16',
-  'SUB-14': 'Sub-14',
-};
+function TournamentCards({ tournaments }) {
+  return (
+    <div className={styles.cardList}>
+      {tournaments.map((tournament) => (
+        <Link
+          key={tournament.id}
+          href={`/torneos/${tournament.id}`}
+          className={styles.tournamentCard}
+        >
+          <div className={styles.cardMain}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>{tournament.name}</h3>
+              <StatusBadge status={tournament.status}>
+                {STATUS_TRANSLATIONS[tournament.status]}
+              </StatusBadge>
+            </div>
+            <div className={styles.cardMeta}>
+              <div className={styles.metaItem}>
+                <i className="bi bi-calendar3" aria-hidden="true" />
+                <span>Año: {tournament.year}</span>
+              </div>
+              <div className={styles.metaItem}>
+                <i className="bi bi-tag-fill" aria-hidden="true" />
+                <span>Categoría: {formatCategory(tournament.category)}</span>
+              </div>
+              <div className={styles.metaItem}>
+                <i className="bi bi-gender-ambiguous" aria-hidden="true" />
+                <span>Rama: {formatBranch(tournament.branch)}</span>
+              </div>
+            </div>
+          </div>
+          <span className={styles.cardAction} aria-hidden="true">
+            <i className="bi bi-gear-fill" />
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function TorneosDashboardPage() {
   const router = useRouter();
   const { role, isAuthenticated, isInitialized } = useAuth();
 
-  const [activeTournaments, setActiveTournaments] = useState([]);
+  const [liveTournaments, setLiveTournaments] = useState([]);
+  const [preparationTournaments, setPreparationTournaments] = useState([]);
   const [pendingTournaments, setPendingTournaments] = useState([]);
   const [finishedTournaments, setFinishedTournaments] = useState([]);
+  const [archivedTournaments, setArchivedTournaments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -55,13 +86,15 @@ export default function TorneosDashboardPage() {
         try {
           setIsLoading(true);
           setError('');
-          const res = await tournamentService.getTournaments();
+          const [res, archivedRes] = await Promise.all([
+            tournamentService.getTournaments(),
+            tournamentService.getTournaments({ archived: '1' }),
+          ]);
           const list = res.data || [];
+          setArchivedTournaments(archivedRes.data || []);
 
-          const activeList = list.filter(
-            (t) => t.status === 'PREPARATION' || t.status === 'IN_PROGRESS'
-          );
-          setActiveTournaments(activeList);
+          setLiveTournaments(list.filter((t) => t.status === 'IN_PROGRESS'));
+          setPreparationTournaments(list.filter((t) => t.status === 'PREPARATION'));
           setPendingTournaments(list.filter((t) => t.status === 'PENDING'));
 
           const finished = list.filter((t) => t.status === 'FINISHED');
@@ -88,7 +121,7 @@ export default function TorneosDashboardPage() {
       <div className={chromeStyles.page}>
         <PageHeader
           title="Panel de Torneos"
-          subtitle="Gestione los torneos de la organización y configure las jornadas correspondientes."
+          subtitle="Puede haber un torneo vigente por categoría y rama. En disputa se está jugando; en preparación todavía se arma."
           actions={
             <Button onClick={() => router.push('/torneos/nuevo')}>
               <i className="bi bi-plus-circle-fill" aria-hidden="true" />
@@ -115,57 +148,33 @@ export default function TorneosDashboardPage() {
             <section className={chromeStyles.section}>
               <h2 className={chromeStyles.sectionTitle}>
                 <i className="bi bi-play-circle-fill" aria-hidden="true" />
-                Torneo Activo
+                En disputa
               </h2>
 
-              {activeTournaments.length > 0 ? (
-                <div className={styles.cardList}>
-                  {activeTournaments.map((tournament) => (
-                    <Link
-                      key={tournament.id}
-                      href={`/torneos/${tournament.id}`}
-                      className={styles.tournamentCard}
-                    >
-                      <div className={styles.cardMain}>
-                        <div className={styles.cardHeader}>
-                          <h3 className={styles.cardTitle}>{tournament.name}</h3>
-                          <StatusBadge status={tournament.status}>
-                            {STATUS_TRANSLATIONS[tournament.status]}
-                          </StatusBadge>
-                        </div>
-
-                        <div className={styles.cardMeta}>
-                          <div className={styles.metaItem}>
-                            <i className="bi bi-calendar3" aria-hidden="true" />
-                            <span>Año: {tournament.year}</span>
-                          </div>
-                          <div className={styles.metaItem}>
-                            <i className="bi bi-tag-fill" aria-hidden="true" />
-                            <span>
-                              Categoría:{' '}
-                              {CATEGORY_TRANSLATIONS[tournament.category] || tournament.category}
-                            </span>
-                          </div>
-                          <div className={styles.metaItem}>
-                            <i className="bi bi-gender-ambiguous" aria-hidden="true" />
-                            <span>
-                              Rama: {BRANCH_TRANSLATIONS[tournament.branch] || tournament.branch}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <span className={styles.cardAction} aria-hidden="true">
-                        <i className="bi bi-gear-fill" />
-                      </span>
-                    </Link>
-                  ))}
-                </div>
+              {liveTournaments.length > 0 ? (
+                <TournamentCards tournaments={liveTournaments} />
               ) : (
                 <EmptyState
                   icon="bi-trophy"
-                  title="No hay torneos activos actualmente"
-                  description='Para iniciar una nueva temporada, haga clic en el botón "Nuevo Torneo" en la parte superior.'
+                  title="No hay torneos en disputa"
+                  description="Cuando un torneo en preparación empieza a jugarse, pasa a en disputa."
+                />
+              )}
+            </section>
+
+            <section className={chromeStyles.section}>
+              <h2 className={chromeStyles.sectionTitle}>
+                <i className="bi bi-pencil-square" aria-hidden="true" />
+                En preparación
+              </h2>
+
+              {preparationTournaments.length > 0 ? (
+                <TournamentCards tournaments={preparationTournaments} />
+              ) : (
+                <EmptyState
+                  icon="bi-calendar-plus"
+                  title="No hay torneos en preparación"
+                  description='Para armar una competencia, usá "Nuevo Torneo".'
                 />
               )}
             </section>
@@ -201,13 +210,13 @@ export default function TorneosDashboardPage() {
                             <i className="bi bi-tag-fill" aria-hidden="true" />
                             <span>
                               Categoría:{' '}
-                              {CATEGORY_TRANSLATIONS[tournament.category] || tournament.category}
+                              {formatCategory(tournament.category)}
                             </span>
                           </div>
                           <div className={styles.metaItem}>
                             <i className="bi bi-gender-ambiguous" aria-hidden="true" />
                             <span>
-                              Rama: {BRANCH_TRANSLATIONS[tournament.branch] || tournament.branch}
+                              Rama: {formatBranch(tournament.branch)}
                             </span>
                           </div>
                         </div>
@@ -251,12 +260,12 @@ export default function TorneosDashboardPage() {
                         <div className={styles.metaItem}>
                           <i className="bi bi-tag-fill" aria-hidden="true" />
                           <span>
-                            Categoría: {CATEGORY_TRANSLATIONS[t.category] || t.category}
+                            Categoría: {formatCategory(t.category)}
                           </span>
                         </div>
                         <div className={styles.metaItem}>
                           <i className="bi bi-gender-ambiguous" aria-hidden="true" />
-                          <span>Rama: {BRANCH_TRANSLATIONS[t.branch] || t.branch}</span>
+                          <span>Rama: {formatBranch(t.branch)}</span>
                         </div>
                       </div>
 
@@ -273,7 +282,23 @@ export default function TorneosDashboardPage() {
                 <EmptyState
                   icon="bi-folder-x"
                   title="No hay torneos finalizados en el historial"
-                  description="Los torneos completados se archivarán y listarán en esta sección."
+                  description="Cuando un torneo se marca como finalizado, queda en esta sección."
+                />
+              )}
+            </section>
+
+            <section className={chromeStyles.section}>
+              <h2 className={chromeStyles.sectionTitle}>
+                <i className="bi bi-archive" aria-hidden="true" />
+                Archivados
+              </h2>
+              {archivedTournaments.length > 0 ? (
+                <TournamentCards tournaments={archivedTournaments} />
+              ) : (
+                <EmptyState
+                  icon="bi-archive"
+                  title="No hay torneos archivados"
+                  description="Archivar oculta el torneo de las listas y del sitio público. Se puede restaurar desde su ficha."
                 />
               )}
             </section>

@@ -12,13 +12,30 @@ function setsFromMatch(match) {
     return [emptySet(), emptySet(), emptySet()];
   }
   return existing.slice(0, 5).map((set) => ({
-    local_points: String(set.local_points ?? set.local_score ?? '').replace(/\D/g, '').slice(0, 2),
-    visitor_points: String(set.visitor_points ?? set.visitor_score ?? '').replace(/\D/g, '').slice(0, 2),
+    local_points: String(set.local_points ?? set.local_score ?? '').replace(/\D/g, ''),
+    visitor_points: String(set.visitor_points ?? set.visitor_score ?? '').replace(/\D/g, ''),
   }));
 }
 
 function digitsOnly(value) {
-  return String(value).replace(/\D/g, '').slice(0, 2);
+  return String(value).replace(/\D/g, '');
+}
+
+function isBlank(value) {
+  return String(value).trim() === '';
+}
+
+function withoutTrailingEmptySets(sets) {
+  const next = sets.map((set) => ({ ...set }));
+  while (next.length > 3) {
+    const last = next[next.length - 1];
+    if (isBlank(last.local_points) && isBlank(last.visitor_points)) {
+      next.pop();
+    } else {
+      break;
+    }
+  }
+  return next;
 }
 
 function validateClientSets(sets) {
@@ -30,9 +47,14 @@ function validateClientSets(sets) {
   let visitorWins = 0;
 
   for (let i = 0; i < sets.length; i++) {
+    const localBlank = isBlank(sets[i].local_points);
+    const visitorBlank = isBlank(sets[i].visitor_points);
+    if (localBlank || visitorBlank) {
+      return `Completá los puntos del set ${i + 1}.`;
+    }
     const lp = Number(sets[i].local_points);
     const vp = Number(sets[i].visitor_points);
-    if (!Number.isFinite(lp) || !Number.isFinite(vp) || sets[i].local_points === '' || sets[i].visitor_points === '') {
+    if (!Number.isFinite(lp) || !Number.isFinite(vp)) {
       return `Completá los puntos del set ${i + 1}.`;
     }
     if (lp < 0 || vp < 0) {
@@ -43,6 +65,12 @@ function validateClientSets(sets) {
     }
     if (lp === vp) {
       return `El set ${i + 1} no puede empatar.`;
+    }
+    const target = i === 4 ? 15 : 25;
+    const winner = Math.max(lp, vp);
+    const loser = Math.min(lp, vp);
+    if (winner < target || winner - loser < 2) {
+      return `El set ${i + 1} se juega a ${target} y debe ganarse por 2 puntos.`;
     }
     if (lp > vp) localWins += 1;
     else visitorWins += 1;
@@ -79,7 +107,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
 
   const localName = match.local_team_name || 'Local';
   const visitorName = match.visitor_team_name || 'Visitante';
-  const submitLabel = hasSavedSets ? 'Guardar resultado' : 'Publicar resultado';
+  const submitLabel = 'Guardar resultado';
 
   const updateSet = (index, field, value) => {
     setSets((prev) => {
@@ -104,13 +132,14 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const clientError = validateClientSets(sets);
+    const setsToSave = withoutTrailingEmptySets(sets);
+    const clientError = validateClientSets(setsToSave);
     if (clientError) {
       setError(clientError);
       return;
     }
 
-    const scores = sets.map((s, i) => ({
+    const scores = setsToSave.map((s, i) => ({
       set_number: i + 1,
       local_points: Number(s.local_points),
       visitor_points: Number(s.visitor_points),
@@ -161,7 +190,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className={styles.body}>
             <div className={styles.columnLabels}>
               <span>Set</span>
@@ -176,23 +205,19 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
                   className={styles.input}
                   type="text"
                   inputMode="numeric"
-                  maxLength={2}
-                  pattern="[0-9]{1,2}"
                   value={set.local_points}
                   onChange={(e) => updateSet(index, 'local_points', e.target.value)}
                   disabled={isSubmitting}
-                  required
+                  aria-label={`Puntos de ${localName} en el set ${index + 1}`}
                 />
                 <input
                   className={styles.input}
                   type="text"
                   inputMode="numeric"
-                  maxLength={2}
-                  pattern="[0-9]{1,2}"
                   value={set.visitor_points}
                   onChange={(e) => updateSet(index, 'visitor_points', e.target.value)}
                   disabled={isSubmitting}
-                  required
+                  aria-label={`Puntos de ${visitorName} en el set ${index + 1}`}
                 />
                 <button
                   type="button"
@@ -206,7 +231,9 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
               </div>
             ))}
 
-            <p className={styles.hint}>Mejor de 5: el ganador debe llegar a 3 sets. Cada puntaje admite hasta 2 cifras.</p>
+            <p className={styles.hint}>
+              Mejor de 5. Los sets 1 a 4 son a 25 y el 5º a 15, siempre con diferencia de 2. Hasta 2 cifras.
+            </p>
 
             {error && <div className={styles.error}>{error}</div>}
           </div>

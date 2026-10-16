@@ -11,7 +11,17 @@ from .base import BaseCrudView, parse_body
 from core.models import Tournament, TournamentEnrollment, TournamentStage, Team, Match
 
 def serialize_tournament(t):
-    return {'id': t.id, 'name': t.name, 'year': t.year, 'start_date': t.start_date.isoformat() if t.start_date else None, 'end_date': t.end_date.isoformat() if t.end_date else None, 'category': t.category, 'branch': t.branch, 'status': t.status}
+    return {
+        'id': t.id,
+        'name': t.name,
+        'year': t.year,
+        'start_date': t.start_date.isoformat() if t.start_date else None,
+        'end_date': t.end_date.isoformat() if t.end_date else None,
+        'category': t.category,
+        'branch': t.branch,
+        'status': t.status,
+        'is_deleted': t.is_deleted,
+    }
 
 def serialize_enrollment(e):
     return {'id': e.id, 'tournament_id': e.tournament_id, 'tournament_name': e.tournament.name, 'team_id': e.team_id, 'team_name': e.team.name, 'category': e.team.category, 'branch': e.team.branch}
@@ -34,6 +44,10 @@ class TournamentView(BaseCrudView):
             except self.model.DoesNotExist:
                 return JsonResponse({'error': 'Torneo no encontrado'}, status=404)
         qs = self.model.objects.filter(organization=request.user.organization).order_by('-year', 'id')
+        if request.GET.get('archived') == '1':
+            qs = qs.filter(is_deleted=True)
+        else:
+            qs = qs.filter(is_deleted=False)
         y, s = request.GET.get('year'), request.GET.get('status')
         if y: qs = qs.filter(year=y)
         if s: qs = qs.filter(status=s)
@@ -54,7 +68,8 @@ class TournamentView(BaseCrudView):
             organization_id=organization_id,
             category=category,
             branch=branch,
-            status__in=['PREPARATION', 'IN_PROGRESS']
+            status__in=['PREPARATION', 'IN_PROGRESS'],
+            is_deleted=False,
         ).exists()
 
         try:
@@ -75,21 +90,31 @@ class TournamentView(BaseCrudView):
         try:
             o = self.model.objects.get(id=tid, organization=request.user.organization)
             original_status = o.status
+            if 'is_deleted' in data:
+                o.is_deleted = bool(data.pop('is_deleted'))
+                if o.is_deleted:
+                    o.deleted_at = timezone.now()
+                    o.deleted_by = request.user
+                else:
+                    o.deleted_at = None
+                    o.deleted_by = None
             
             for k, v in data.items():
-                if hasattr(o, k): setattr(o, k, v)
+                if hasattr(o, k) and k not in ('id', 'organization', 'organization_id', 'deleted_by', 'deleted_at'):
+                    setattr(o, k, v)
                 
             if original_status == 'FINISHED' and o.status != 'FINISHED':
                 return JsonResponse({'error': 'No se puede reabrir un torneo ya finalizado.'}, status=400)
             if original_status == 'CANCELLED' and o.status != 'CANCELLED':
                 return JsonResponse({'error': 'No se puede reabrir un torneo cancelado.'}, status=400)
-            if o.status in ('PREPARATION', 'IN_PROGRESS') and Tournament.objects.filter(
+            if not o.is_deleted and o.status in ('PREPARATION', 'IN_PROGRESS') and Tournament.objects.filter(
                 organization=o.organization,
                 category=o.category,
                 branch=o.branch,
-                status__in=['PREPARATION', 'IN_PROGRESS']
+                status__in=['PREPARATION', 'IN_PROGRESS'],
+                is_deleted=False,
             ).exclude(id=o.id).exists():
-                return JsonResponse({'error': 'Ya existe un torneo vigente (en preparación o en progreso) para esta categoría y rama.'}, status=400)
+                return JsonResponse({'error': 'Ya existe un torneo vigente (en preparación o en disputa) para esta categoría y rama.'}, status=400)
                 
             if original_status != o.status:
                 if o.status == 'CANCELLED':
@@ -104,8 +129,20 @@ class TournamentView(BaseCrudView):
     def delete(self, request, obj_id=None, *args, **kwargs):
         tid = obj_id or request.GET.get('tournament_id')
         if not tid: return JsonResponse({'error': 'Missing tournament_id'}, status=400)
-        try: self.model.objects.get(id=tid, organization=request.user.organization).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
-        except Exception: return JsonResponse({'error': 'Cannot delete tournament with associated data'}, status=400)
+        try:
+            tournament = self.model.objects.get(id=tid, organization=request.user.organization)
+        except self.model.DoesNotExist:
+            return JsonResponse({'error': 'Torneo no encontrado'}, status=404)
+        has_results = Match.objects.filter(
+            tournament_stage__tournament=tournament,
+            status='FINISHED',
+        ).exists()
+        if has_results:
+            return JsonResponse({
+                'error': 'Este torneo tiene resultados. Archivalo para sacarlo de las listas sin perder la tabla.',
+            }, status=400)
+        tournament.delete()
+        return JsonResponse({'message': 'Eliminado'}, status=200)
 
 @method_decorator(jwt_required, name='dispatch')
 class TournamentEnrollmentView(BaseCrudView):
@@ -165,8 +202,11 @@ class TournamentStageView(BaseCrudView):
         sid = obj_id or request.GET.get('id') or request.GET.get('date_id')
         try:
             s = self.model.objects.get(id=sid)
-            if Match.objects.filter(tournament_stage=s).exists(): return JsonResponse({'error': 'Has matches'}, status=400)
-            s.delete(); return JsonResponse({'message': 'Deleted'}, status=200)
+            if s.tournament.organization_id != request.user.organization_id:
+                return JsonResponse({'error': 'No autorizado'}, status=403)
+            Match.objects.filter(tournament_stage=s).delete()
+            s.delete()
+            return JsonResponse({'message': 'Eliminada'}, status=200)
         except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
 
 @method_decorator(jwt_required, name='dispatch')

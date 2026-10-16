@@ -54,22 +54,28 @@ export default function LoginPage() {
 
         <div className={styles.header}>
           <h1 className={styles.title}>Bienvenido de nuevo</h1>
-          <p className={styles.subtitle}>Ingresá tus credenciales para continuar.</p>
+          <p className={styles.subtitle}>
+            Clubes, entrenadores, árbitros, planilleros y administración usan el mismo ingreso.
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className={styles.form}>
           <div className={styles.formGroup}>
             <label className={styles.label} htmlFor="login-dni">
-              Documento / Email
+              Documento, email o usuario
             </label>
             <input
               id="login-dni"
               type="text"
               value={dni}
               onChange={(e) => setDni(e.target.value)}
-              placeholder="Ej: 35.123.456"
+              placeholder="DNI, email o usuario"
               disabled={isLoading}
               className={styles.input}
+              autoComplete="username"
+              required
+              onInvalid={(e) => e.target.setCustomValidity('Ingresá tu documento, email o usuario.')}
+              onInput={(e) => e.target.setCustomValidity('')}
             />
           </div>
 
@@ -85,6 +91,10 @@ export default function LoginPage() {
               placeholder="********"
               disabled={isLoading}
               className={styles.input}
+              autoComplete="current-password"
+              required
+              onInvalid={(e) => e.target.setCustomValidity('Ingresá tu contraseña.')}
+              onInput={(e) => e.target.setCustomValidity('')}
             />
           </div>
 

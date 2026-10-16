@@ -6,29 +6,53 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 
 from core.models import User, ClubRegistrationRequest
+from core.phone import phone_error
 from internal.views.club_requests import serialize_club_request
+
+LINK_ALREADY_USED = 'Este enlace ya fue utilizado.'
+
+
+def _dni_values(dni):
+    raw = str(dni).strip() if dni else ''
+    if not raw:
+        return []
+    digits = ''.join(ch for ch in raw if ch.isdigit())
+    values = [raw]
+    if digits and digits not in values:
+        values.append(digits)
+    return values
+
+
+def _load_registration(token):
+    if not token:
+        return None, JsonResponse({'error': 'Falta el enlace de invitación.'}, status=400)
+    try:
+        return ClubRegistrationRequest.objects.get(token=token), None
+    except ClubRegistrationRequest.DoesNotExist:
+        return None, JsonResponse({'error': 'El enlace no es válido.'}, status=400)
+
+
+def _reject_if_unusable(req_obj):
+    if req_obj.submitted_at is not None:
+        return JsonResponse({'error': LINK_ALREADY_USED}, status=400)
+    if req_obj.expires_at < timezone.now():
+        return JsonResponse({'error': 'El enlace venció.'}, status=400)
+    if req_obj.status != 'PENDING':
+        return JsonResponse({'error': 'Este enlace ya no está disponible.'}, status=400)
+    return None
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PublicClubRegistrationView(View):
     def get(self, request):
-        token = request.GET.get('token')
-        if not token:
-            return JsonResponse({'error': 'Token query parameter is required'}, status=400)
+        req_obj, error = _load_registration(request.GET.get('token'))
+        if error:
+            return error
 
-        # 1. Find request in database by token (which is the request's UUID string)
-        try:
-            req_obj = ClubRegistrationRequest.objects.get(token=token)
-        except ClubRegistrationRequest.DoesNotExist:
-            return JsonResponse({'error': 'The link is invalid or has expired'}, status=400)
+        rejected = _reject_if_unusable(req_obj)
+        if rejected:
+            return rejected
 
-        # 2. Verify request is PENDING and not expired in DB
-        if req_obj.expires_at < timezone.now():
-            return JsonResponse({'error': 'The link has expired'}, status=400)
-
-        if req_obj.status != 'PENDING':
-            return JsonResponse({'error': f'The link is invalid or has expired (Status: {req_obj.status})'}, status=400)
-
-        # 3. Return valid response with stored data
         return JsonResponse({
             'message': 'Token is valid',
             'data': serialize_club_request(req_obj)
@@ -45,24 +69,17 @@ class PublicClubRegistrationView(View):
             try:
                 data = json.loads(request.body)
             except json.JSONDecodeError:
-                return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+                return JsonResponse({'error': 'El pedido no es válido.'}, status=400)
 
-        token = data.get('token')
-        if not token:
-            return JsonResponse({'error': 'Token is required'}, status=400)
+        req_obj, error = _load_registration(data.get('token'))
+        if error:
+            if not data.get('token'):
+                return JsonResponse({'error': 'Falta el enlace de invitación.'}, status=400)
+            return error
 
-        # 1. Find request in database by token
-        try:
-            req_obj = ClubRegistrationRequest.objects.get(token=token)
-        except ClubRegistrationRequest.DoesNotExist:
-            return JsonResponse({'error': 'The link is invalid or has expired'}, status=400)
-
-        # 2. Verify request is PENDING and not expired in DB
-        if req_obj.expires_at < timezone.now():
-            return JsonResponse({'error': 'The link has expired'}, status=400)
-
-        if req_obj.status != 'PENDING':
-            return JsonResponse({'error': f'The link is invalid or has expired (Status: {req_obj.status})'}, status=400)
+        rejected = _reject_if_unusable(req_obj)
+        if rejected:
+            return rejected
 
         # 3. Extract data defensively
         club_name = data.get('club_name') or data.get('name') or data.get('club', {}).get('name')
@@ -78,13 +95,19 @@ class PublicClubRegistrationView(View):
 
         # Validate that the admin email is provided
         if not admin_email:
-            return JsonResponse({'error': 'Admin email is required'}, status=400)
+            return JsonResponse({'error': 'El email es obligatorio.'}, status=400)
+
+        invalid_phone = phone_error(club_phone)
+        if invalid_phone:
+            return JsonResponse({'error': invalid_phone}, status=400)
 
         # 4. Verify admin email/username doesn't exist previously in User table
         if User.objects.filter(email=admin_email).exists() or User.objects.filter(username=admin_email).exists():
-            return JsonResponse({'error': f"A user with email '{admin_email}' already exists in the system"}, status=400)
+            return JsonResponse({'error': 'Ya existe un usuario con ese email.'}, status=400)
         if admin_username and (User.objects.filter(username=admin_username).exists() or User.objects.filter(email=admin_username).exists()):
-            return JsonResponse({'error': f"A user with username '{admin_username}' already exists in the system"}, status=400)
+            return JsonResponse({'error': 'Ya existe un usuario con ese nombre de usuario.'}, status=400)
+        if _dni_values(admin_dni) and User.objects.filter(dni__in=_dni_values(admin_dni)).exists():
+            return JsonResponse({'error': 'Ya existe un usuario con ese DNI.'}, status=400)
 
         # Upload logo to GCS if provided
         club_logo_url = req_obj.club_logo_url
@@ -111,7 +134,8 @@ class PublicClubRegistrationView(View):
         if password_raw:
             from django.contrib.auth.hashers import make_password
             req_obj.password = make_password(password_raw)
-            
+
+        req_obj.submitted_at = timezone.now()
         req_obj.save()
 
         return JsonResponse({

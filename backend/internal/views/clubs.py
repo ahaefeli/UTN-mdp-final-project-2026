@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from .base import BaseCrudView, parse_body
 from core.models import Club
+from core.phone import phone_error
 
 def serialize_club(club):
     return {'id': club.id, 'name': club.name, 'address': club.address, 'phone': club.phone, 'email': club.email, 'organization_id': club.organization_id}
@@ -29,6 +30,9 @@ class ClubView(BaseCrudView):
     def post(self, request, *args, **kwargs):
         data = parse_body(request)
         if 'name' not in data or 'organization_id' not in data: return JsonResponse({'error': 'Missing fields'}, status=400)
+        invalid_phone = phone_error(data.get('phone'))
+        if invalid_phone:
+            return JsonResponse({'error': invalid_phone}, status=400)
         try: return JsonResponse({'data': serialize_club(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
@@ -36,6 +40,9 @@ class ClubView(BaseCrudView):
         cid = obj_id or request.GET.get('club_id')
         if not cid: return JsonResponse({'error': 'Missing club_id'}, status=400)
         data = parse_body(request)
+        invalid_phone = phone_error(data.get('phone')) if 'phone' in data else None
+        if invalid_phone:
+            return JsonResponse({'error': invalid_phone}, status=400)
         try:
             c = self.model.objects.get(id=cid, organization=request.user.organization)
             for k, v in data.items():

@@ -45,3 +45,28 @@
   color: var(--text-muted);
   padding: var(--space-8) var(--space-4) !important;
 }
+
+.dense {
+  table-layout: fixed;
+}
+
+.dense th,
+.dense td {
+  padding: 0.45rem 0.3rem;
+}
+
+.dense th {
+  letter-spacing: 0;
+}
+
+.dense th:not(:nth-child(2)),
+.dense td:not(:nth-child(2)) {
+  text-align: center;
+}
+
+.dense th:nth-child(2),
+.dense td:nth-child(2) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}

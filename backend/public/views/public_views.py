@@ -19,7 +19,7 @@ def serialize_tournament_public(t):
 
 class PublicTournamentView(View):
     def get(self, request, *args, **kwargs):
-        qs = Tournament.objects.select_related('organization').all().order_by('-year', 'id')
+        qs = Tournament.objects.select_related('organization').filter(is_deleted=False).order_by('-year', 'id')
         
         org_id = request.GET.get('organization_id')
         if org_id:
@@ -47,7 +47,7 @@ class PublicTournamentView(View):
                     }
                 }, status=200)
             except Exception as e:
-                return JsonResponse({'error': f'Invalid page number: {str(e)}'}, status=400)
+                return JsonResponse({'error': 'El número de página no es válido.'}, status=400)
                 
         return JsonResponse({
             'data': [serialize_tournament_public(t) for t in qs]

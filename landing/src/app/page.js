@@ -91,7 +91,7 @@ export default function LandingPage() {
             href={getPlatformLoginUrl()}
             className="bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-[11px] md:text-sm py-2 px-3 md:py-2.5 md:px-5 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 whitespace-nowrap hidden sm:flex"
           >
-            Acceso Clubes
+            Ingresar
           </a>
 
           {/* Mobile hamburger menu button */}
@@ -138,7 +138,7 @@ export default function LandingPage() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="w-full bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-center py-3 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 text-sm"
             >
-              Acceso Clubes
+              Ingresar
             </a>
           </div>
         )}
@@ -191,6 +191,56 @@ export default function LandingPage() {
 
       </section>
 
+      <section id="quien-sos" className="py-20 px-6 lg:px-16 max-w-7xl mx-auto w-full flex flex-col gap-10">
+        <div className="flex flex-col items-start gap-2 max-w-2xl">
+          <div className="w-10 h-1 bg-[#FF8A00] rounded-full"></div>
+          <h2 className="text-[#001F54] font-black tracking-tight text-3xl md:text-4xl uppercase">
+            ¿Quién sos?
+          </h2>
+          <p className="text-sm sm:text-base text-slate-500 font-semibold leading-relaxed">
+            El ingreso a la plataforma es uno solo. Después, cada rol ve su panel.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link
+            href="/torneos"
+            className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:border-[#F97316] transition-colors"
+          >
+            <span className="text-[10px] font-black tracking-widest text-[#F97316] uppercase">Público</span>
+            <h3 className="text-2xl font-black text-[#001F54]">Quiero ver la liga</h3>
+            <p className="text-sm text-slate-500 font-semibold leading-relaxed">
+              Fixture, resultados y tablas de posiciones. No hace falta cuenta.
+            </p>
+            <span className="mt-2 text-xs font-black tracking-widest text-[#001F54] uppercase">Ver competencias</span>
+          </Link>
+
+          <a
+            href={getPlatformLoginUrl()}
+            className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:border-[#F97316] transition-colors"
+          >
+            <span className="text-[10px] font-black tracking-widest text-[#F97316] uppercase">Club</span>
+            <h3 className="text-2xl font-black text-[#001F54]">Represento un club</h3>
+            <p className="text-sm text-slate-500 font-semibold leading-relaxed">
+              Administración del club y entrenadores cargan equipos, jugadores y datos del club.
+            </p>
+            <span className="mt-2 text-xs font-black tracking-widest text-[#001F54] uppercase">Ingresar</span>
+          </a>
+
+          <a
+            href={getPlatformLoginUrl()}
+            className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:border-[#F97316] transition-colors"
+          >
+            <span className="text-[10px] font-black tracking-widest text-[#F97316] uppercase">Cancha</span>
+            <h3 className="text-2xl font-black text-[#001F54]">Soy árbitro o planillero</h3>
+            <p className="text-sm text-slate-500 font-semibold leading-relaxed">
+              El mismo ingreso abre los partidos asignados para cargar el resultado.
+            </p>
+            <span className="mt-2 text-xs font-black tracking-widest text-[#001F54] uppercase">Ingresar</span>
+          </a>
+        </div>
+      </section>
+
       {/* 3. NUEVA SECCIÓN: ASOCIACIONES */}
       <section id="asociaciones" className="py-20 px-6 lg:px-16 max-w-7xl mx-auto w-full flex flex-col gap-10">
         
@@ -225,15 +275,15 @@ export default function LandingPage() {
                   {assoc.subtitle}
                 </p>
                 {assoc.isActive ? (
-                  <Link
-                    href={assoc.href}
+                  <a
+                    href={getPlatformLoginUrl()}
                     className="mt-3.5 text-xs font-black text-white group-hover:text-[#FF8A00] transition-colors uppercase tracking-widest flex items-center gap-2 cursor-pointer"
                   >
                     INGRESAR AL PORTAL
                     <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                     </svg>
-                  </Link>
+                  </a>
                 ) : (
                   <div className="mt-3.5 text-xs font-black text-white/50 uppercase tracking-widest flex items-center gap-2 cursor-not-allowed">
                     PRÓXIMAMENTE

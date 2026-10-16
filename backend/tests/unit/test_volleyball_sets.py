@@ -120,6 +120,50 @@ class TestValidateVolleyballSetsInvalid:
         _, err = validate_volleyball_sets(detail)
         assert 'inválidos' in err
 
+    def test_set_must_reach_25_and_win_by_two(self):
+        short = [
+            {'local_points': 10, 'visitor_points': 2},
+            {'local_points': 25, 'visitor_points': 18},
+            {'local_points': 25, 'visitor_points': 22},
+        ]
+        _, err = validate_volleyball_sets(short)
+        assert 'se juega a 25' in err
+
+        no_margin = [
+            {'local_points': 25, 'visitor_points': 24},
+            {'local_points': 25, 'visitor_points': 18},
+            {'local_points': 25, 'visitor_points': 22},
+        ]
+        _, err = validate_volleyball_sets(no_margin)
+        assert 'se juega a 25' in err
+
+    def test_deuce_set_is_valid(self):
+        detail = [
+            {'local_points': 28, 'visitor_points': 26},
+            {'local_points': 25, 'visitor_points': 18},
+            {'local_points': 25, 'visitor_points': 22},
+        ]
+        _, err = validate_volleyball_sets(detail)
+        assert err is None
+
+    def test_fifth_set_is_to_15_win_by_two(self):
+        detail = sets_3_2_local()
+        detail[4] = {'set_number': 5, 'local_points': 14, 'visitor_points': 12}
+        _, err = validate_volleyball_sets(detail)
+        assert 'se juega a 15' in err
+
+        detail[4] = {'set_number': 5, 'local_points': 15, 'visitor_points': 14}
+        _, err = validate_volleyball_sets(detail)
+        assert 'se juega a 15' in err
+
+        detail[4] = {'set_number': 5, 'local_points': 16, 'visitor_points': 14}
+        _, err = validate_volleyball_sets(detail)
+        assert err is None
+
+        detail[4] = {'set_number': 5, 'local_points': 25, 'visitor_points': 23}
+        _, err = validate_volleyball_sets(detail)
+        assert err is None
+
     def test_invalid_set_number_falls_back_to_index(self):
         detail = [
             {'set_number': 'bad', 'local_points': 25, 'visitor_points': 20},

@@ -58,6 +58,41 @@ class TestLoginView:
             content_type='application/json',
         )
         assert res.status_code == 401
+        assert res.json()['error'] == 'Credenciales inválidas'
+
+    def test_login_with_dni(self, api_client, organization):
+        make_user(
+            organization=organization,
+            role='COACH',
+            email='coach-dni@test.com',
+            username='coach_dni',
+            dni='35123456',
+        )
+        res = api_client.post(
+            '/auth/login/',
+            data=json.dumps({'email': '35.123.456', 'password': 'testpass123'}),
+            content_type='application/json',
+        )
+        assert res.status_code == 200
+        assert res.json()['user']['username'] == 'coach_dni'
+
+    def test_login_with_username(self, api_client, admin_user):
+        res = api_client.post(
+            '/auth/login/',
+            data=json.dumps({'email': admin_user.username, 'password': 'testpass123'}),
+            content_type='application/json',
+        )
+        assert res.status_code == 200
+        assert res.json()['user']['email'] == 'admin@test.com'
+
+    def test_missing_fields_message_in_spanish(self, api_client):
+        res = api_client.post(
+            '/auth/login/',
+            data=json.dumps({}),
+            content_type='application/json',
+        )
+        assert res.status_code == 400
+        assert 'obligatorios' in res.json()['error']
 
 
 @pytest.mark.django_db

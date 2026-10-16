@@ -279,6 +279,11 @@ def validate_volleyball_sets(score_detail):
             return None, f'Los puntos del set {i + 1} no pueden tener más de 2 cifras.'
         if lp == vp:
             return None, f'El set {i + 1} no puede empatar.'
+        target = 15 if i == 4 else 25
+        winner = max(lp, vp)
+        loser = min(lp, vp)
+        if winner < target or winner - loser < 2:
+            return None, f'El set {i + 1} se juega a {target} y debe ganarse por 2 puntos.'
         set_number = s.get('set_number', i + 1)
         try:
             set_number = int(set_number)

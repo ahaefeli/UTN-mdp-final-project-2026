@@ -1,5 +1,6 @@
 "use client";
 import { getPlatformLoginUrl } from '../../utils/platformUrl';
+import { formatBranch, formatCategory, formatStatus } from '../../utils/labels';
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -51,7 +52,7 @@ export default function TorneosPage() {
         }
       } catch (err) {
         if (active) {
-          setError(err.message || "Error al conectar con la API.");
+          setError("No pudimos cargar las competencias. Intentá de nuevo.");
         }
       } finally {
         if (active) {
@@ -92,26 +93,14 @@ export default function TorneosPage() {
 
   // Mapeo a la estructura visual esperada
   const tournaments = filteredRawTournaments.map((t) => {
-    let badgeText = "Próximamente";
     let badgeType = "upcoming";
+    if (t.status === "IN_PROGRESS") badgeType = "live";
+    else if (t.status === "PENDING") badgeType = "pending";
+    else if (t.status === "FINISHED" || t.status === "CANCELLED") badgeType = "default";
+    else if (t.status === "PREPARATION") badgeType = "pending";
 
-    if (t.status === "IN_PROGRESS") {
-      badgeText = "EN DISPUTA";
-      badgeType = "live";
-    } else if (t.status === "PENDING") {
-      badgeText = "PENDIENTE";
-      badgeType = "pending";
-    } else if (t.status === "FINISHED") {
-      badgeText = "FINALIZADO";
-      badgeType = "default";
-    } else if (t.status === "CANCELLED") {
-      badgeText = "CANCELADO";
-      badgeType = "default";
-    }
-
-    const ramaFormatted = t.branch === "MALE" ? "Masculino" : t.branch === "FEMALE" ? "Femenino" : t.branch;
-    const catFormatted = t.category ? t.category.replace("_", " ") : "";
-    const categoryText = `${catFormatted.charAt(0).toUpperCase() + catFormatted.slice(1).toLowerCase()} - ${ramaFormatted}`;
+    const badgeText = formatStatus(t.status).toUpperCase();
+    const categoryText = `${formatCategory(t.category)} - ${formatBranch(t.branch)}`;
 
     let dateInfo = "A definir";
     if (t.start_date) {
@@ -189,13 +178,13 @@ export default function TorneosPage() {
           </Link>
         </nav>
 
-        {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
+        {/* Right: Ingresar Button & User Icon & Mobile Hamburger */}
         <div className="flex items-center gap-4">
           <a
             href={getPlatformLoginUrl()}
             className="bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-[11px] md:text-sm py-2 px-3 md:py-2.5 md:px-5 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 whitespace-nowrap hidden sm:flex"
           >
-            Acceso Clubes
+            Ingresar
           </a>
           <a href={getPlatformLoginUrl()} className="hidden sm:block flex-shrink-0">
             <svg className="w-6 h-6 text-[#001F54] cursor-pointer hover:opacity-80 transition-opacity shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -247,7 +236,7 @@ export default function TorneosPage() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="w-full bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-center py-3 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 text-sm"
             >
-              Acceso Clubes
+              Ingresar
             </a>
           </div>
         )}
@@ -356,10 +345,7 @@ export default function TorneosPage() {
             <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <p className="text-red-700 font-bold text-sm">
-              Hubo un error al cargar los torneos.
-            </p>
-            <p className="text-red-500 text-xs">{error}</p>
+            <p className="text-red-700 font-bold text-sm">{error}</p>
           </div>
         ) : tournaments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

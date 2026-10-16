@@ -1,13 +1,22 @@
+from django.core.exceptions import ValidationError
 from django.views import View
 from django.http import JsonResponse
-from core.models import Match
+from core.models import Match, Tournament
 from public.utils.standings_calculator import calculate_standings
+
+def _visible_tournament(tournament_id):
+    try:
+        return Tournament.objects.filter(id=tournament_id, is_deleted=False).exists()
+    except (ValidationError, ValueError):
+        return False
 
 class PublicMatchListView(View):
     def get(self, request, *args, **kwargs):
         tournament_id = request.GET.get('tournament_id')
         if not tournament_id:
-            return JsonResponse({'error': 'Missing tournament_id query parameter'}, status=400)
+            return JsonResponse({'error': 'Falta el torneo para cargar los partidos.'}, status=400)
+        if not _visible_tournament(tournament_id):
+            return JsonResponse({'error': 'No pudimos cargar esta competencia.'}, status=404)
             
         matches = Match.objects.filter(
             tournament_stage__tournament_id=tournament_id
@@ -39,8 +48,10 @@ class PublicMatchListView(View):
 
 class PublicStandingsView(View):
     def get(self, request, tournament_id, *args, **kwargs):
+        if not _visible_tournament(tournament_id):
+            return JsonResponse({'error': 'No pudimos cargar esta competencia.'}, status=404)
         try:
             standings = calculate_standings(tournament_id)
             return JsonResponse(standings, safe=False, status=200)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+        except Exception:
+            return JsonResponse({'error': 'No pudimos cargar la tabla de posiciones.'}, status=400)

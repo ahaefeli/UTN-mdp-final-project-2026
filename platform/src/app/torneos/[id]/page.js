@@ -2,7 +2,7 @@
 
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
 
@@ -77,6 +77,32 @@ function formatStageLabel(stage) {
 }
 
 
+
+function formatPublishedScore(match) {
+  const sets = match?.sets_data?.sets;
+  if (!Array.isArray(sets) || sets.length === 0) {
+    return match?.score_summary || undefined;
+  }
+  let local = 0;
+  let visitor = 0;
+  sets.forEach((set) => {
+    const lp = Number(set.local_points ?? set.local_score);
+    const vp = Number(set.visitor_points ?? set.visitor_score);
+    if (lp > vp) local += 1;
+    else if (vp > lp) visitor += 1;
+  });
+  const detail = sets
+    .map((set) => `${set.local_points ?? set.local_score}-${set.visitor_points ?? set.visitor_score}`)
+    .join(', ');
+  if (!local && !visitor) return match?.score_summary || detail;
+  return `${local}-${visitor} (${detail})`;
+}
+
+function isDatetimeInThePast(dateValue, timeValue) {
+  if (!dateValue || !timeValue) return false;
+  const when = new Date(`${dateValue}T${timeValue}`);
+  return !Number.isNaN(when.getTime()) && when.getTime() < Date.now();
+}
 
 function todayLocalISO() {
 
@@ -159,6 +185,16 @@ export default function TorneoDetailPage() {
   const [isStageModalOpen, setIsStageModalOpen] = useState(false);
 
   const [newStageDate, setNewStageDate] = useState('');
+  const [stageError, setStageError] = useState('');
+  const [isAddingStage, setIsAddingStage] = useState(false);
+  const [pastWarning, setPastWarning] = useState(null);
+  const [matchToDelete, setMatchToDelete] = useState(null);
+  const [pendingStatus, setPendingStatus] = useState('');
+  const [tournamentAction, setTournamentAction] = useState(null);
+  const [stageToDelete, setStageToDelete] = useState(null);
+  const [tournamentHasResults, setTournamentHasResults] = useState(false);
+  const [isMutatingTournament, setIsMutatingTournament] = useState(false);
+  const addingStageRef = useRef(false);
 
 
 
@@ -347,10 +383,11 @@ export default function TorneoDetailPage() {
   const handleAddStage = async (e) => {
 
     if (e && e.preventDefault) e.preventDefault();
+    if (addingStageRef.current) return;
+    setStageError('');
 
     if (!newStageDate) {
-
-      alert('Por favor ingrese una fecha.');
+      setStageError('Por favor ingrese una fecha.');
 
       return;
 
@@ -362,7 +399,7 @@ export default function TorneoDetailPage() {
 
     if (!regex.test(newStageDate)) {
 
-      alert('Formato de fecha inválido. Debe usar YYYY-MM-DD.');
+      setStageError('Formato de fecha inválido. Debe usar YYYY-MM-DD.');
 
       return;
 
@@ -372,13 +409,16 @@ export default function TorneoDetailPage() {
 
     if (newStageDate < todayLocalISO()) {
 
-      alert('No se puede agregar una fecha que ya pasó.');
+      setStageError('No se puede agregar una fecha que ya pasó.');
 
       return;
 
     }
 
 
+
+    addingStageRef.current = true;
+    setIsAddingStage(true);
 
     try {
 
@@ -424,6 +464,9 @@ export default function TorneoDetailPage() {
 
       setIsStageModalOpen(false);
 
+    } finally {
+      addingStageRef.current = false;
+      setIsAddingStage(false);
     }
 
   };
@@ -494,9 +537,13 @@ export default function TorneoDetailPage() {
 
 
 
-  const handleDeleteMatch = async (matchId) => {
+  const handleDeleteMatch = async () => {
 
-    if (!confirm('¿Está seguro de que desea eliminar este partido?')) return;
+    if (!matchToDelete) return;
+
+    const matchId = matchToDelete.id;
+
+    setMatchToDelete(null);
 
     try {
 
@@ -552,9 +599,9 @@ export default function TorneoDetailPage() {
 
 
 
-  const handleCreateMatch = async (e) => {
+  const handleCreateMatch = async (e, options = {}) => {
 
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
 
     setError('');
 
@@ -592,7 +639,10 @@ export default function TorneoDetailPage() {
 
     }
 
-
+    if (!options.confirmedPast && isDatetimeInThePast(selectedStage.date, matchTime)) {
+      setPastWarning('create');
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -638,6 +688,8 @@ export default function TorneoDetailPage() {
 
       setScorerId('');
 
+      await loadMatchesForStage(activeStageId);
+
     } catch (err) {
 
       console.error('Error al guardar el partido:', err);
@@ -668,9 +720,9 @@ export default function TorneoDetailPage() {
 
 
 
-  const handleSaveEdit = async (e) => {
+  const handleSaveEdit = async (e, options = {}) => {
 
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
 
     if (!editDraft) return;
 
@@ -734,7 +786,10 @@ export default function TorneoDetailPage() {
 
     }
 
-
+    if (!options.confirmedPast && isDatetimeInThePast(selectedStage.date, timeValue)) {
+      setPastWarning('edit');
+      return;
+    }
 
     const currentMatch = matches.find((m) => m.id === id);
 
@@ -818,26 +873,88 @@ export default function TorneoDetailPage() {
 
 
 
-  const handleStatusChange = async (newStatus) => {
+  const handleStatusChange = (newStatus) => {
+    if (!newStatus || newStatus === tournament?.status) return;
+    setPendingStatus(newStatus);
+  };
 
-    if (!confirm('¿Estás seguro de cambiar el estado del torneo?')) return;
-
+  const confirmStatusChange = async () => {
+    const newStatus = pendingStatus;
+    setIsMutatingTournament(true);
     try {
-
       await tournamentService.updateTournament(tournamentId, { status: newStatus });
-
       setTournament((prev) => ({ ...prev, status: newStatus }));
-
       setSuccessMsg('Estado del torneo actualizado correctamente.');
-
+      setPendingStatus('');
     } catch (err) {
-
       console.error('Error al actualizar estado:', err);
-
       setError(err?.response?.data?.error || 'No se pudo actualizar el estado del torneo.');
-
+    } finally {
+      setIsMutatingTournament(false);
     }
 
+  };
+
+  const openDeleteTournament = async () => {
+    setTournamentHasResults(false);
+    setTournamentAction('delete');
+    try {
+      const response = await matchService.getMatches({ tournament_id: tournamentId });
+      const list = response.data || [];
+      setTournamentHasResults(list.some((match) => match.status === 'FINISHED'));
+    } catch (err) {
+      console.error('Error al revisar resultados del torneo:', err);
+    }
+  };
+
+  const confirmTournamentAction = async () => {
+    setIsMutatingTournament(true);
+    setError('');
+    try {
+      if (tournamentAction === 'archive') {
+        await tournamentService.archiveTournament(tournamentId);
+        setSuccessMsg('Torneo archivado. Dejó de verse en las listas y se puede restaurar.');
+        setTournament((prev) => ({ ...prev, is_deleted: true }));
+      } else if (tournamentAction === 'restore') {
+        await tournamentService.restoreTournament(tournamentId);
+        setSuccessMsg('Torneo restaurado.');
+        setTournament((prev) => ({ ...prev, is_deleted: false }));
+      } else if (tournamentAction === 'delete') {
+        await tournamentService.deleteTournament(tournamentId);
+        router.push('/torneos');
+        return;
+      }
+      setTournamentAction(null);
+    } catch (err) {
+      setError(err?.response?.data?.error || 'No se pudo completar la acción.');
+      setTournamentAction(null);
+    } finally {
+      setIsMutatingTournament(false);
+    }
+  };
+
+  const confirmDeleteStage = async () => {
+    if (!stageToDelete?.id) return;
+    setIsMutatingTournament(true);
+    setError('');
+    try {
+      await tournamentService.deleteStage(stageToDelete.id);
+      const stagesRes = await tournamentService.getStages(tournamentId);
+      const loadedStages = sortStagesByDate(stagesRes.data || []);
+      setStages(loadedStages);
+      setActiveStageId(loadedStages[0]?.id || null);
+      if (loadedStages[0]?.id) {
+        await loadMatchesForStage(loadedStages[0].id);
+      } else {
+        setMatches([]);
+      }
+      setSuccessMsg('Fecha eliminada. Las posiciones se recalculan sin esos partidos.');
+      setStageToDelete(null);
+    } catch (err) {
+      setError(err?.response?.data?.error || 'No se pudo eliminar la fecha.');
+    } finally {
+      setIsMutatingTournament(false);
+    }
   };
 
 
@@ -873,6 +990,8 @@ export default function TorneoDetailPage() {
     setIsStageModalOpen(false);
 
     setNewStageDate('');
+
+    setStageError('');
 
   };
 
@@ -930,6 +1049,8 @@ export default function TorneoDetailPage() {
 
           actions={
 
+            <div className={styles.headerActions}>
+
             <select
 
               value={tournament?.status || ''}
@@ -940,19 +1061,38 @@ export default function TorneoDetailPage() {
 
               aria-label="Estado del torneo"
 
+              disabled={Boolean(tournament?.is_deleted)}
+
             >
 
               <option value="PENDING">Pendiente</option>
 
-              <option value="PREPARATION">En Preparación</option>
+              <option value="PREPARATION">En preparación</option>
 
-              <option value="IN_PROGRESS">En Progreso</option>
+              <option value="IN_PROGRESS">En disputa</option>
 
               <option value="FINISHED">Finalizado</option>
 
               <option value="CANCELLED">Cancelado</option>
 
             </select>
+
+            {tournament?.is_deleted ? (
+              <Button size="sm" onClick={() => setTournamentAction('restore')} disabled={isMutatingTournament}>
+                Restaurar
+              </Button>
+            ) : (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setTournamentAction('archive')} disabled={isMutatingTournament}>
+                  Archivar
+                </Button>
+                <Button variant="danger" size="sm" onClick={openDeleteTournament} disabled={isMutatingTournament}>
+                  Eliminar
+                </Button>
+              </>
+            )}
+
+            </div>
 
           }
 
@@ -1036,6 +1176,16 @@ export default function TorneoDetailPage() {
 
             <h2 className={chromeStyles.sectionTitle}>Fechas del Torneo</h2>
 
+            {activeStageId ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setStageToDelete(stages.find((stage) => String(stage.id) === String(activeStageId)) || { id: activeStageId })}
+              >
+                Eliminar fecha
+              </Button>
+            ) : null}
+
             <Button variant="secondary" size="sm" onClick={handleOpenStageModal}>
 
               <i className="bi bi-plus-lg" aria-hidden="true" />
@@ -1058,7 +1208,7 @@ export default function TorneoDetailPage() {
 
               title="No hay fechas configuradas"
 
-              description='Haga clic en "Agregar Fecha" para crear la primera jornada.'
+              description='Hacé clic en "Agregar Fecha" para crear la primera fecha.'
 
             />
 
@@ -1164,7 +1314,7 @@ export default function TorneoDetailPage() {
 
                     venue={`Cancha: ${match.court_name || 'Sin asignar'} · Árbitro: ${match.referee_name || 'Sin asignar'} · Planillero: ${match.scorer_name || 'Sin asignar'}`}
 
-                    score={match.score_summary || undefined}
+                    score={formatPublishedScore(match)}
 
                     status={match.status}
 
@@ -1218,7 +1368,7 @@ export default function TorneoDetailPage() {
 
                           size="sm"
 
-                          onClick={() => handleDeleteMatch(match.id)}
+                          onClick={() => setMatchToDelete(match)}
 
                           disabled={isSubmitting}
 
@@ -1256,7 +1406,7 @@ export default function TorneoDetailPage() {
 
           title="Agregar Nueva Fecha"
 
-          subtitle="Seleccione la fecha correspondiente para la nueva jornada."
+          subtitle="Elegí el día de la nueva fecha."
 
           size="sm"
 
@@ -1270,9 +1420,9 @@ export default function TorneoDetailPage() {
 
               </Button>
 
-              <Button type="submit" form="add-stage-form">
+              <Button type="submit" form="add-stage-form" disabled={isAddingStage}>
 
-                Guardar
+                {isAddingStage ? 'Guardando...' : 'Guardar'}
 
               </Button>
 
@@ -1282,13 +1432,15 @@ export default function TorneoDetailPage() {
 
         >
 
-          <form id="add-stage-form" onSubmit={handleAddStage} className={dirStyles.form}>
+          <form id="add-stage-form" onSubmit={handleAddStage} className={dirStyles.form} noValidate>
+
+            {stageError ? <Alert variant="error">{stageError}</Alert> : null}
 
             <div className={dirStyles.formGroup}>
 
               <label className={dirStyles.label} htmlFor="new-stage-date">
 
-                Fecha de Jornada
+                Día de la fecha
 
               </label>
 
@@ -1297,8 +1449,6 @@ export default function TorneoDetailPage() {
                 id="new-stage-date"
 
                 type="date"
-
-                required
 
                 min={todayLocalISO()}
 
@@ -1392,7 +1542,16 @@ export default function TorneoDetailPage() {
 
               {editError && <Alert variant="error">{editError}</Alert>}
 
-
+              <p className={styles.matchHelp}>
+                {(editingMatch?.status === 'PREPARATION' || editingMatch?.status === 'PENDING') &&
+                  'Iniciar pasa el partido a en disputa y no carga el resultado. Cancelar lo anula: no suma puntos y se puede retomar.'}
+                {editingMatch?.status === 'IN_PROGRESS' &&
+                  'Suspender lo vuelve a preparación y conserva el horario y la cancha.'}
+                {editingMatch?.status === 'CANCELLED' &&
+                  'Retomar lo devuelve a preparación.'}
+                {editingMatch?.status === 'FINISHED' &&
+                  'Editar resultado corrige los sets ya cargados y recalcula las posiciones.'}
+              </p>
 
               <div className={chromeStyles.actionsRow}>
 
@@ -1420,7 +1579,7 @@ export default function TorneoDetailPage() {
 
                       <i className="bi bi-clipboard-data-fill" aria-hidden="true" />
 
-                      Cargar resultado
+                      {editingMatch?.score_summary ? 'Editar resultado' : 'Cargar resultado'}
 
                     </Button>
 
@@ -1454,7 +1613,7 @@ export default function TorneoDetailPage() {
 
                       <i className="bi bi-check-circle-fill" aria-hidden="true" />
 
-                      Cargar resultado
+                      {editingMatch?.score_summary ? 'Editar resultado' : 'Cargar resultado'}
 
                     </Button>
 
@@ -1470,7 +1629,7 @@ export default function TorneoDetailPage() {
 
                       <i className="bi bi-pause-circle-fill" aria-hidden="true" />
 
-                      Suspender (Volver a Prep.)
+                      Suspender
 
                     </Button>
 
@@ -1494,7 +1653,7 @@ export default function TorneoDetailPage() {
 
                     <i className="bi bi-arrow-counterclockwise" aria-hidden="true" />
 
-                    Retomar (Volver a Prep.)
+                    Retomar
 
                   </Button>
 
@@ -1523,6 +1682,158 @@ export default function TorneoDetailPage() {
         </Modal>
 
 
+
+        {pastWarning && (
+          <Modal
+            open
+            onClose={() => setPastWarning(null)}
+            title="Horario ya pasado"
+            size="sm"
+            footer={
+              <>
+                <Button variant="secondary" onClick={() => setPastWarning(null)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => {
+                    const kind = pastWarning;
+                    setPastWarning(null);
+                    if (kind === 'create') handleCreateMatch(null, { confirmedPast: true });
+                    if (kind === 'edit') handleSaveEdit(null, { confirmedPast: true });
+                  }}
+                >
+                  Continuar
+                </Button>
+              </>
+            }
+          >
+            <p>El partido queda en un horario que ya pasó. Podés continuar si estás cargando un encuentro que ya se jugó.</p>
+          </Modal>
+        )}
+
+        <Modal
+          open={Boolean(pendingStatus)}
+          onClose={() => !isMutatingTournament && setPendingStatus('')}
+          title="Cambiar estado del torneo"
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setPendingStatus('')} disabled={isMutatingTournament}>
+                Cancelar
+              </Button>
+              <Button onClick={confirmStatusChange} disabled={isMutatingTournament}>
+                {isMutatingTournament ? 'Guardando...' : 'Cambiar estado'}
+              </Button>
+            </>
+          }
+        >
+          <p>
+            El torneo pasa a {STATUS_TRANSLATIONS[pendingStatus] || pendingStatus}. Si lo finalizás o cancelás, los partidos que no terminaron toman el mismo estado.
+          </p>
+        </Modal>
+
+        <Modal
+          open={tournamentAction === 'archive' || tournamentAction === 'restore'}
+          onClose={() => !isMutatingTournament && setTournamentAction(null)}
+          title={tournamentAction === 'restore' ? 'Restaurar torneo' : 'Archivar torneo'}
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setTournamentAction(null)} disabled={isMutatingTournament}>
+                Cancelar
+              </Button>
+              <Button onClick={confirmTournamentAction} disabled={isMutatingTournament}>
+                {isMutatingTournament ? 'Guardando...' : tournamentAction === 'restore' ? 'Restaurar' : 'Archivar'}
+              </Button>
+            </>
+          }
+        >
+          <p>
+            {tournamentAction === 'restore'
+              ? 'El torneo vuelve a las listas. Si ya hay otro vigente de la misma categoría y rama, no se puede restaurar en preparación o en disputa.'
+              : 'Deja de verse en el panel y en el sitio público. Los resultados se conservan y se puede restaurar.'}
+          </p>
+        </Modal>
+
+        <Modal
+          open={tournamentAction === 'delete'}
+          onClose={() => !isMutatingTournament && setTournamentAction(null)}
+          title={tournamentHasResults ? 'Este torneo tiene resultados' : 'Eliminar torneo'}
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setTournamentAction(null)} disabled={isMutatingTournament}>
+                Cancelar
+              </Button>
+              {tournamentHasResults ? (
+                <Button
+                  onClick={() => {
+                    setTournamentAction('archive');
+                  }}
+                  disabled={isMutatingTournament}
+                >
+                  Archivar
+                </Button>
+              ) : (
+                <Button variant="danger" onClick={confirmTournamentAction} disabled={isMutatingTournament}>
+                  {isMutatingTournament ? 'Eliminando...' : 'Eliminar'}
+                </Button>
+              )}
+            </>
+          }
+        >
+          <p>
+            {tournamentHasResults
+              ? 'Borrarlo perdería la tabla. Archivalo para ocultarlo y conservar fechas, partidos y posiciones.'
+              : 'Se pierden las fechas, las inscripciones y los partidos de este torneo. Esta acción no se puede deshacer.'}
+          </p>
+        </Modal>
+
+        <Modal
+          open={Boolean(stageToDelete)}
+          onClose={() => !isMutatingTournament && setStageToDelete(null)}
+          title="Eliminar fecha"
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setStageToDelete(null)} disabled={isMutatingTournament}>
+                Cancelar
+              </Button>
+              <Button variant="danger" onClick={confirmDeleteStage} disabled={isMutatingTournament}>
+                {isMutatingTournament ? 'Eliminando...' : 'Eliminar fecha'}
+              </Button>
+            </>
+          }
+        >
+          <p>
+            {matches.length > 0
+              ? `Se borran los ${matches.length} partidos de esta fecha y la tabla de posiciones se recalcula sin esos puntos.`
+              : 'Esta fecha no tiene partidos. Se elimina del cronograma.'}
+          </p>
+        </Modal>
+
+        <Modal
+          open={Boolean(matchToDelete)}
+          onClose={() => setMatchToDelete(null)}
+          title="Eliminar partido"
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setMatchToDelete(null)}>
+                Cancelar
+              </Button>
+              <Button variant="danger" onClick={handleDeleteMatch}>
+                Eliminar
+              </Button>
+            </>
+          }
+        >
+          <p>
+            {matchToDelete?.status === 'FINISHED'
+              ? 'Este partido ya tiene resultado. Si lo eliminás, la tabla de posiciones se recalcula sin esos puntos.'
+              : '¿Está seguro de que desea eliminar este partido?'}
+          </p>
+        </Modal>
 
         {scoreSheetMatch && (
 

@@ -193,6 +193,7 @@ class ClubRegistrationRequest(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
+    submitted_at = models.DateTimeField(null=True, blank=True)
     password = models.CharField(max_length=128, null=True, blank=True)
     admin_username = models.CharField(max_length=150, null=True, blank=True)
     admin_dni = models.CharField(max_length=20, null=True, blank=True)

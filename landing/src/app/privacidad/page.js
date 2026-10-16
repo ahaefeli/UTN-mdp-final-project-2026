@@ -54,13 +54,13 @@ export default function PrivacidadPage() {
           </Link>
         </nav>
 
-        {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
+        {/* Right: Ingresar Button & User Icon & Mobile Hamburger */}
         <div className="flex items-center gap-4">
           <a
             href={getPlatformLoginUrl()}
             className="bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-[11px] md:text-sm py-2 px-3 md:py-2.5 md:px-5 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 whitespace-nowrap hidden sm:flex"
           >
-            Acceso Clubes
+            Ingresar
           </a>
           <a href={getPlatformLoginUrl()} className="hidden sm:block flex-shrink-0">
             <svg className="w-6 h-6 text-[#001F54] cursor-pointer hover:opacity-80 transition-opacity shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -112,7 +112,7 @@ export default function PrivacidadPage() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="w-full bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-center py-3 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 text-sm"
             >
-              Acceso Clubes
+              Ingresar
             </a>
           </div>
         )}

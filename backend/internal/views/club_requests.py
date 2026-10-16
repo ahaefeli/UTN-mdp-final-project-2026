@@ -43,28 +43,41 @@ def serialize_club_request(req):
         "status": req.status,
         "created_at": req.created_at.isoformat() if req.created_at else None,
         "expires_at": req.expires_at.isoformat() if req.expires_at else None,
+        "submitted_at": req.submitted_at.isoformat() if req.submitted_at else None,
     }
 
 def duplicate_dni_response(dni):
     normalized = str(dni).strip() if dni else ''
     if not normalized:
         return None
-    if User.objects.filter(dni=normalized).exists():
+    digits = ''.join(ch for ch in normalized if ch.isdigit())
+    candidates = {normalized}
+    if digits:
+        candidates.add(digits)
+    if User.objects.filter(dni__in=candidates).exists():
         return JsonResponse({
             'error': f'Ya existe un usuario con el DNI {normalized}. No se puede aprobar la solicitud.'
         }, status=400)
     return None
 
 
-def friendly_integrity_message(exc):
+def friendly_integrity_message(exc, *, for_approval=True):
     message = str(exc).lower()
+    if for_approval:
+        if 'dni' in message or 'core_user_dni' in message:
+            return 'Ya existe un usuario con ese DNI. No se puede aprobar la solicitud.'
+        if 'username' in message:
+            return 'Ya existe un usuario con ese nombre de usuario. No se puede aprobar la solicitud.'
+        if 'email' in message:
+            return 'Ya existe un usuario con ese email. No se puede aprobar la solicitud.'
+        return 'No se pudo aprobar la solicitud porque ya existe un usuario con esos datos.'
     if 'dni' in message or 'core_user_dni' in message:
-        return 'Ya existe un usuario con ese DNI. No se puede aprobar la solicitud.'
+        return 'Ya existe un usuario con ese DNI.'
     if 'username' in message:
-        return 'Ya existe un usuario con ese nombre de usuario. No se puede aprobar la solicitud.'
+        return 'Ya existe un usuario con ese nombre de usuario.'
     if 'email' in message:
-        return 'Ya existe un usuario con ese email. No se puede aprobar la solicitud.'
-    return 'No se pudo aprobar la solicitud porque ya existe un usuario con esos datos.'
+        return 'Ya existe un usuario con ese email.'
+    return 'No se pudo guardar porque ya existe un usuario con esos datos.'
 
 
 def check_admin_permission(request):
@@ -123,23 +136,31 @@ class ClubRequestListView(View):
         if permission_error:
             return permission_error
 
-        qs = ClubRegistrationRequest.objects.filter(
-            organization=request.user.organization,
-            status='PENDING'
-        ).order_by('-created_at')
         role_filter = request.GET.get('role')
-        if role_filter:
-            qs = qs.filter(role=role_filter)
+        if request.GET.get('unused') == '1':
+            qs = ClubRegistrationRequest.objects.filter(
+                organization=request.user.organization,
+                status='PENDING',
+                submitted_at__isnull=True,
+            ).order_by('-created_at')
+            if role_filter:
+                qs = qs.filter(role=role_filter)
         else:
-            # Retrocompatibilidad para /clubes
-            qs = qs.exclude(club_name__isnull=True).exclude(club_name='')
+            qs = ClubRegistrationRequest.objects.filter(
+                organization=request.user.organization,
+                status='PENDING'
+            ).order_by('-created_at')
+            if role_filter:
+                qs = qs.filter(role=role_filter)
+            else:
+                qs = qs.exclude(club_name__isnull=True).exclude(club_name='')
 
         page = request.GET.get('page', 1)
         paginator = Paginator(qs, 10)
         try:
             page_obj = paginator.get_page(page)
         except Exception:
-            return JsonResponse({'error': 'Invalid page number'}, status=400)
+            return JsonResponse({'error': 'El número de página no es válido.'}, status=400)
 
         return JsonResponse({
             'data': [serialize_club_request(r) for r in page_obj],
@@ -162,19 +183,7 @@ class ClubRequestDetailView(View):
         except ClubRegistrationRequest.DoesNotExist:
             return JsonResponse({'error': 'Club registration request not found'}, status=404)
 
-        return JsonResponse({
-            'club_name': req_obj.club_name,
-            'club_address': req_obj.club_address,
-            'club_phone': req_obj.club_phone,
-            'club_email': req_obj.club_email,
-            'admin_first_name': req_obj.admin_first_name,
-            'admin_last_name': req_obj.admin_last_name,
-            'admin_email': req_obj.admin_email,
-            'club_logo_url': req_obj.club_logo_url,
-            'status': req_obj.status,
-            'created_at': req_obj.created_at.isoformat() if req_obj.created_at else None,
-            'expires_at': req_obj.expires_at.isoformat() if req_obj.expires_at else None,
-        }, status=200)
+        return JsonResponse({'data': serialize_club_request(req_obj)}, status=200)
 
 @method_decorator(jwt_required, name='dispatch')
 class ReviewClubRequestView(View):

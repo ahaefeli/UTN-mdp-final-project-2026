@@ -7,6 +7,7 @@ import authService from '../../services/authService';
 import userService from '../../services/userService';
 import { ROLE_TRANSLATIONS } from '../../utils/roles';
 import { clubInitials } from '../../utils/clubMark';
+import { phoneError } from '../../utils/phone';
 import {
   PageHeader,
   Button,
@@ -126,6 +127,12 @@ export default function MisDatosPage() {
 
     if (nextErrors.firstName || nextErrors.lastName) {
       setErrorMsg('El nombre y el apellido son obligatorios.');
+      return;
+    }
+
+    const invalidPhone = phoneError(phone);
+    if (invalidPhone) {
+      setErrorMsg(invalidPhone);
       return;
     }
 

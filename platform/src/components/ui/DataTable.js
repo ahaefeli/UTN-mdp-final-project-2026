@@ -6,12 +6,12 @@ function hasRenderableRows(children) {
   return list.some((child) => child != null && child !== false);
 }
 
-export default function DataTable({ columns = [], children, emptyMessage = 'No hay datos.' }) {
+export default function DataTable({ columns = [], children, emptyMessage = 'No hay datos.', dense = false }) {
   const hasRows = hasRenderableRows(children);
 
   return (
     <div className={styles.wrap}>
-      <table className={styles.table}>
+      <table className={`${styles.table} ${dense ? styles.dense : ''}`.trim()}>
         <thead>
           <tr>
             {columns.map((col) => (

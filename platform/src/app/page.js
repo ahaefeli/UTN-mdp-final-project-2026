@@ -9,6 +9,7 @@ import userService from '../services/userService';
 import apiClient from '../services/apiClient';
 import { ROLE_TRANSLATIONS } from '../utils/roles';
 import { STATUS_TRANSLATIONS } from '../utils/status';
+import { formatBranch as labelBranch, formatCategory } from '../utils/labels';
 
 import InfoCard from '../components/InfoCard/InfoCard';
 import QuickActions from '../components/QuickActions/QuickActions';
@@ -30,13 +31,11 @@ function joinMeta(...parts) {
 }
 
 function formatBranch(branch) {
-  if (branch === 'MALE') return 'Masculino';
-  if (branch === 'FEMALE') return 'Femenino';
-  return branch ? branch : 'Rama a confirmar';
+  return labelBranch(branch) || 'Rama a confirmar';
 }
 
 function formatCategoryMeta(match) {
-  const category = match.category ? `Categoría: ${match.category}` : 'Categoría a confirmar';
+  const category = match.category ? `Categoría: ${formatCategory(match.category)}` : 'Categoría a confirmar';
   return joinMeta(category, formatBranch(match.branch));
 }
 
@@ -52,7 +51,82 @@ function formatMatchDate(matchDatetime) {
 
 function formatCategoryBranchShort(match) {
   if (!match.category) return '';
-  return `${match.category} - ${formatBranch(match.branch)}`;
+  return `${formatCategory(match.category)} - ${formatBranch(match.branch)}`;
+}
+
+function SetupChecklist({ setup, onNavigate }) {
+  const focusId = setup?.focus_tournament_id;
+  const tournamentHref = focusId ? `/torneos/${focusId}` : '/torneos';
+  const steps = [
+    {
+      key: 'tournament',
+      title: 'Crear torneo',
+      detail: 'Definí categoría, rama y el nombre de la competencia.',
+      done: Boolean(setup?.has_tournament),
+      href: setup?.has_tournament ? tournamentHref : '/torneos/nuevo',
+    },
+    {
+      key: 'teams',
+      title: 'Inscribir equipos',
+      detail: setup?.has_teams
+        ? 'Sumá los equipos del torneo vigente.'
+        : 'Todavía no hay equipos. El club se da de alta con una invitación y después crea sus equipos.',
+      done: Boolean(setup?.has_enrollment),
+      href: setup?.has_teams ? tournamentHref : '/clubes',
+    },
+    {
+      key: 'stages',
+      title: 'Agregar fechas',
+      detail: 'Cada fecha agrupa los partidos de una ronda.',
+      done: Boolean(setup?.has_stage),
+      href: tournamentHref,
+    },
+    {
+      key: 'matches',
+      title: 'Programar partidos',
+      detail: 'Asigná equipos, cancha, horario, árbitro y planillero.',
+      done: Boolean(setup?.has_match),
+      href: tournamentHref,
+    },
+    {
+      key: 'results',
+      title: 'Cargar resultados',
+      detail: 'El marcador de sets actualiza la tabla de posiciones.',
+      done: Boolean(setup?.has_result),
+      href: tournamentHref,
+    },
+  ];
+  const firstPending = steps.findIndex((step) => !step.done);
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>Cómo armar la competencia</h3>
+      <ol className={styles.checklist}>
+        {steps.map((step, index) => {
+          const isCurrent = index === firstPending;
+          return (
+            <li
+              key={step.key}
+              className={`${styles.checkItem} ${step.done ? styles.checkDone : ''} ${isCurrent ? styles.checkCurrent : ''}`}
+            >
+              <span className={styles.checkMark} aria-hidden="true">
+                {step.done ? '✓' : index + 1}
+              </span>
+              <div className={styles.checkBody}>
+                <span className={styles.checkTitle}>{step.title}</span>
+                <span className={styles.checkDetail}>{step.detail}</span>
+              </div>
+              {isCurrent ? (
+                <Button size="sm" onClick={() => onNavigate(step.href)}>
+                  Continuar
+                </Button>
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
 }
 
 function formatCourtLabel(match, prefix = 'Cancha: ') {
@@ -88,6 +162,7 @@ export default function RootDashboardPage() {
   const [scoreSheetMatch, setScoreSheetMatch] = useState(null);
   const [matchesNeedingScore, setMatchesNeedingScore] = useState([]);
   const [isLoadingNeedsScore, setIsLoadingNeedsScore] = useState(false);
+  const [setup, setSetup] = useState(null);
 
   const loadAdminDashboard = async () => {
     setIsLoadingAdmin(true);
@@ -105,6 +180,7 @@ export default function RootDashboardPage() {
       });
 
       setPendingActions(data.pending_actions || []);
+      setSetup(data.setup || null);
     } catch (err) {
       console.error('Error al cargar datos del dashboard de administrador:', err);
       setError('Error al sincronizar con el backend de administración.');
@@ -300,6 +376,8 @@ export default function RootDashboardPage() {
                 />
               </div>
 
+              <SetupChecklist setup={setup} onNavigate={(href) => router.push(href)} />
+
               <QuickActions />
 
               <PendingAlerts
@@ -443,9 +521,9 @@ export default function RootDashboardPage() {
         iconTone: styles.iconBlue,
       },
       {
-        label: 'Mis Equipos',
+        label: 'Mis Jugadores',
         path: '/mis-jugadores',
-        description: 'Visualizá la lista de jugadores de tus equipos.',
+        description: 'Visualizá la lista de jugadores de tu club.',
         iconClass: 'bi bi-people-fill',
         iconTone: styles.iconOrange,
       }

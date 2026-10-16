@@ -11,6 +11,27 @@ from django.views.decorators.csrf import csrf_exempt
 from core.models import User
 from core.user_membership import resolve_user_membership
 
+def find_login_user(identifier):
+    """Busca un usuario activo por email, DNI o nombre de usuario."""
+    identifier = (identifier or '').strip()
+    if not identifier:
+        return None
+
+    by_email = User.objects.filter(email__iexact=identifier, is_deleted=False).first()
+    if by_email:
+        return by_email
+
+    dni_candidates = {identifier}
+    digits = ''.join(ch for ch in identifier if ch.isdigit())
+    if digits:
+        dni_candidates.add(digits)
+    by_dni = User.objects.filter(dni__in=dni_candidates, is_deleted=False).first()
+    if by_dni:
+        return by_dni
+
+    return User.objects.filter(username__iexact=identifier, is_deleted=False).first()
+
+
 def jwt_required(view_func):
     """
     Decorator to protect views with JWT authentication.
@@ -58,26 +79,22 @@ class LoginView(View):
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+            return JsonResponse({'error': 'El pedido no es válido.'}, status=400)
         
-        email = data.get('email')
+        identifier = (data.get('email') or '').strip()
         password = data.get('password')
         
-        if not email or not password:
-            return JsonResponse({'error': 'Email and password are required'}, status=400)
+        if not identifier or not password:
+            return JsonResponse({
+                'error': 'El documento, email o usuario y la contraseña son obligatorios.',
+            }, status=400)
         
-        # Django's default authenticate() expects 'username' and 'password'.
-        # Since we accept email, we first find the corresponding user's username.
-        try:
-            user_obj = User.objects.get(email=email, is_deleted=False)
-            username = user_obj.username
-        except User.DoesNotExist:
-            username = email  # fallback to email as username directly
-            
+        user_obj = find_login_user(identifier)
+        username = user_obj.username if user_obj else identifier
         user = authenticate(request, username=username, password=password)
         
-        if user is None:
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+        if user is None or getattr(user, 'is_deleted', False):
+            return JsonResponse({'error': 'Credenciales inválidas'}, status=401)
 
         membership = resolve_user_membership(user)
             

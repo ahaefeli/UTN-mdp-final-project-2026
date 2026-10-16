@@ -220,9 +220,19 @@
   font-weight: 700;
   color: var(--primary);
   font-size: 0.8125rem;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.pointsLegend {
+  margin: var(--space-3) 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.teamCell {
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .posCell {

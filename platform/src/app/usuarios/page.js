@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import userService from '../../services/userService';
 import apiClient from '../../services/apiClient';
 import { ROLE_TRANSLATIONS } from '../../utils/roles';
+import { formatCategory } from '../../utils/labels';
 import {
   PageHeader,
   Button,
@@ -192,7 +193,7 @@ export default function UsuariosPage() {
                 <option value="">Todos los Equipos</option>
                 {teamsList.map((team) => (
                   <option key={team.id} value={team.id}>
-                    {team.name} ({team.category})
+                    {team.name} ({formatCategory(team.category)})
                   </option>
                 ))}
               </select>

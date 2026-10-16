@@ -101,5 +101,6 @@ class TestTournamentStages:
     ):
         make_match(stage, team_a, team_b, court=court)
         res = api_client.delete(f'/internal/torneos/fechas/{stage.id}/', **auth_header)
-        assert res.status_code == 400
-        assert 'Has matches' in res.json()['error']
+        assert res.status_code == 200
+        from core.models import Match
+        assert not Match.objects.filter(tournament_stage=stage).exists()

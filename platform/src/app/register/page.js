@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import apiClient from '../../services/apiClient';
+import { phoneError } from '../../utils/phone';
 import { Button, Alert, LoadingState } from '../../components/ui';
 import styles from './page.module.css';
 
@@ -94,6 +95,11 @@ function PublicRegisterForm() {
       setErrorMessage('El email del club es obligatorio.');
       return;
     }
+    const invalidPhone = phoneError(phone);
+    if (invalidPhone) {
+      setErrorMessage(invalidPhone);
+      return;
+    }
     setErrorMessage(null);
     setStep(2);
   };
@@ -182,7 +188,9 @@ function PublicRegisterForm() {
         <div className={styles.errorIcon}>
           <i className="bi bi-x-circle-fill" aria-hidden="true" />
         </div>
-        <h2 className={styles.errorTitle}>Invitación Inválida</h2>
+        <h2 className={styles.errorTitle}>
+          {errorMsg && errorMsg.includes('utilizado') ? 'Enlace ya utilizado' : 'Invitación Inválida'}
+        </h2>
         <p className={styles.statusDesc}>
           {errorMsg || 'El enlace es inválido o ha expirado. Contacta al administrador.'}
         </p>

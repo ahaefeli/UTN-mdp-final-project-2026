@@ -1,9 +1,12 @@
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.forms.models import model_to_dict
+from django.db import IntegrityError
 from django.db.models import Q
 from .base import BaseCrudView, parse_body
+from .club_requests import friendly_integrity_message
 from core.models import User
+from core.phone import phone_error
 from core.user_membership import resolve_user_membership
 
 def serialize_user(user):
@@ -110,6 +113,9 @@ class UserView(BaseCrudView):
                 
         for f in ['role', 'user', 'password', 'organization_id', 'dni']:
             if f not in data: return JsonResponse({'error': f'Missing: {f}'}, status=400)
+        invalid_phone = phone_error(data.get('phone'))
+        if invalid_phone:
+            return JsonResponse({'error': invalid_phone}, status=400)
         try:
             user_val, pwd, name = data.pop('user'), data.pop('password'), data.pop('name', '')
             f_name = name.split(' ')[0] if name else ''
@@ -117,6 +123,8 @@ class UserView(BaseCrudView):
             user = User.objects.create(username=user_val, first_name=f_name, last_name=l_name, **data)
             user.set_password(pwd); user.save()
             return JsonResponse({'data': serialize_user(user)}, status=201)
+        except IntegrityError as e:
+            return JsonResponse({'error': friendly_integrity_message(e, for_approval=False)}, status=400)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def put(self, request, obj_id=None, *args, **kwargs):
@@ -152,6 +160,10 @@ class UserView(BaseCrudView):
                 n = data.pop('name'); u.first_name = n.split(' ')[0]; u.last_name = ' '.join(n.split(' ')[1:]) if ' ' in n else ''
             if 'password' in data: u.set_password(data.pop('password'))
             if 'user' in data: u.username = data.pop('user')
+
+            invalid_phone = phone_error(data.get('phone')) if 'phone' in data else None
+            if invalid_phone:
+                return JsonResponse({'error': invalid_phone}, status=400)
             
             for k, v in data.items():
                 if hasattr(u, k): setattr(u, k, v)
@@ -166,6 +178,8 @@ class UserView(BaseCrudView):
                 
             u.save(); return JsonResponse({'data': serialize_user(u)}, status=200)
         except User.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        except IntegrityError as e:
+            return JsonResponse({'error': friendly_integrity_message(e, for_approval=False)}, status=400)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def delete(self, request, obj_id=None, *args, **kwargs):

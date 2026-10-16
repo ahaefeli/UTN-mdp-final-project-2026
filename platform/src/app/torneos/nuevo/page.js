@@ -8,6 +8,7 @@ import tournamentService from '../../../services/tournamentService';
 import enrollmentService from '../../../services/enrollmentService';
 import userService from '../../../services/userService';
 import { STATUS_TRANSLATIONS } from '../../../utils/status';
+import { formatBranch, formatCategory } from '../../../utils/labels';
 import {
   PageHeader,
   Button,
@@ -62,6 +63,7 @@ export default function TorneosNuevoPage() {
   
   // Equipos del Paso 2
   const [teams, setTeams] = useState([]);
+  const [teamsFilter, setTeamsFilter] = useState('');
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [isLoadingTeams, setIsLoadingTeams] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,12 +95,15 @@ export default function TorneosNuevoPage() {
   };
 
   const advanceToTeams = async () => {
+    const filterKey = `${category}|${branch}`;
+    const keepSelection = teamsFilter === filterKey;
     setIsLoadingTeams(true);
     setStep(2);
     try {
       const response = await teamService.getTeamsByCategoryAndBranch(category, branch);
       setTeams(response.data || []);
-      setSelectedTeams([]);
+      if (!keepSelection) setSelectedTeams([]);
+      setTeamsFilter(filterKey);
     } catch (err) {
       console.error('Error al cargar equipos:', err);
       setError('Error al obtener equipos de la categoría y rama elegidas.');
@@ -175,8 +180,11 @@ export default function TorneosNuevoPage() {
         );
       }
       
-      setSuccess(true);
-      setStep(3); // Success Screen
+      if (!createdTournament?.id) {
+        throw new Error('El torneo se creó sin un identificador.');
+      }
+      router.push(`/torneos/${createdTournament.id}`);
+      return;
     } catch (err) {
       console.error('Error al crear el torneo:', err);
       if (err?.response?.status === 400) {
@@ -242,7 +250,7 @@ export default function TorneosNuevoPage() {
         <div className={chromeStyles.card}>
           {/* Paso 1: Configuración de Torneo */}
           {step === 1 && (
-            <form onSubmit={handleNextStep} className={chromeStyles.form}>
+            <form onSubmit={handleNextStep} className={chromeStyles.form} noValidate>
               <div className={chromeStyles.formGroup}>
                 <label className={chromeStyles.label} htmlFor="tournament-name">
                   Nombre del Torneo
@@ -250,7 +258,6 @@ export default function TorneosNuevoPage() {
                 <input
                   id="tournament-name"
                   type="text"
-                  required
                   placeholder="Ej: Apertura Sub-18 Femenino 2026"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -316,7 +323,6 @@ export default function TorneosNuevoPage() {
                       <span className={styles.stageLabel}>{stage.name}</span>
                       <input
                         type="date"
-                        required={index === 0}
                         value={stage.date}
                         onChange={(e) => handleStageDateChange(index, e.target.value)}
                         className={chromeStyles.input}
@@ -360,22 +366,25 @@ export default function TorneosNuevoPage() {
                 <p className={styles.summaryTitle}>Resumen del Torneo:</p>
                 <p className={styles.summaryName}>{name}</p>
                 <p className={styles.summaryMeta}>
-                  Categoría: {category} | Rama: {branch} | Fechas: {stages.length}
+                  Categoría: {formatCategory(category)} | Rama: {formatBranch(branch)} | Fechas: {stages.length}
                 </p>
                 <p className={styles.summaryMeta}>
-                  Estado al crear: {pendingWarning ? 'Pendiente' : 'Preparación'}
+                  Estado al crear: {pendingWarning ? 'Pendiente' : 'En preparación'}
                 </p>
               </div>
 
               <div className={chromeStyles.section}>
                 <h3 className={chromeStyles.sectionTitle}>
-                  Equipos Disponibles ({category} - {branch})
+                  Equipos Disponibles ({formatCategory(category)} - {formatBranch(branch)})
                 </h3>
 
                 {isLoadingTeams ? (
                   <LoadingState label="Cargando equipos..." />
                 ) : teams.length === 0 ? (
-                  <EmptyState title="No se encontraron equipos registrados para esta categoría y rama." />
+                  <EmptyState
+                    title="No hay equipos para esta categoría y rama."
+                    description="El club se da de alta con una invitación en Clubes. Después, el club crea sus equipos en Mis Equipos y recién ahí se pueden inscribir."
+                  />
                 ) : (
                   <div className={styles.teamGrid}>
                     {teams.map((team) => {

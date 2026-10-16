@@ -19,6 +19,7 @@ import {
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import chrome from '../../components/ui/PageChrome.module.css';
 import styles from './page.module.css';
+import { formatBranch, formatCategory } from '../../utils/labels';
 
 const PLAYERS_PER_PAGE = 10;
 
@@ -39,12 +40,6 @@ const TEAM_PLAYER_COLUMNS = [
   { key: 'medical', label: 'Apto Físico' },
   { key: 'status', label: 'Estado' },
 ];
-
-function formatBranch(branch) {
-  if (branch === 'MALE') return 'Masculino';
-  if (branch === 'FEMALE') return 'Femenino';
-  return branch;
-}
 
 function formatGender(gender) {
   if (gender === 'M') return 'Masculino';
@@ -88,6 +83,7 @@ export default function MisJugadoresPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [playerToRemove, setPlayerToRemove] = useState(null);
 
   // Estados de paginado (máximo 10 por página)
   const [playersPage, setPlayersPage] = useState(1);
@@ -111,8 +107,11 @@ export default function MisJugadoresPage() {
 
   // Validación de la sesión en el cliente
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
+    const session = authService.getCurrentUser();
+    if (!authService.isAuthenticated() || !session) {
       router.push('/login');
+    } else if (session.role !== 'COACH' && session.role !== 'CLUB_ADMIN') {
+      router.push('/');
     } else {
       setIsAuthenticated(true);
       loadAllData();
@@ -146,7 +145,10 @@ export default function MisJugadoresPage() {
   const loadTeams = async () => {
     try {
       const response = await teamService.getTeams();
-      setTeams(response.data || []);
+      const session = authService.getCurrentUser();
+      const clubId = session?.club_id;
+      const list = response.data || [];
+      setTeams(clubId ? list.filter((team) => String(team.club_id) === String(clubId)) : list);
     } catch (err) {
       console.error('Error al cargar equipos:', err);
     }
@@ -208,7 +210,7 @@ export default function MisJugadoresPage() {
   };
 
   const handleUnassignPlayer = async (playerId, teamId) => {
-    if (!confirm('¿Seguro que deseas remover a este jugador del equipo?')) return;
+    setPlayerToRemove(null);
     setErrorMsg('');
     setSuccessMsg('');
     setIsSubmitting(true);
@@ -253,7 +255,7 @@ export default function MisJugadoresPage() {
       return (
         <div className={styles.assignmentDisplay}>
           <span className={styles.assignmentLabel}>
-            {player.team_info.category} - {formatBranch(player.team_info.branch)}
+            {formatCategory(player.team_info.category)} - {formatBranch(player.team_info.branch)}
           </span>
           <div className={styles.assignmentActions}>
             <button
@@ -266,7 +268,7 @@ export default function MisJugadoresPage() {
             <button
               type="button"
               className={`${styles.linkAction} ${styles.linkDanger}`}
-              onClick={() => handleUnassignPlayer(player.id, player.team_info.id)}
+              onClick={() => setPlayerToRemove({ playerId: player.id, teamId: player.team_info.id, name: getPlayerName(player) })}
               disabled={isSubmitting}
             >
               Desasignar
@@ -286,7 +288,7 @@ export default function MisJugadoresPage() {
           <option value="">Seleccione equipo...</option>
           {teams.map((team) => (
             <option key={team.id} value={team.id}>
-              {team.category} - {formatBranch(team.branch)}
+              {formatCategory(team.category)} - {formatBranch(team.branch)}
             </option>
           ))}
         </select>
@@ -362,7 +364,7 @@ export default function MisJugadoresPage() {
         ) : (
           <div className={chrome.page}>
             <section className={chrome.section}>
-              <h2 className={chrome.sectionTitle}>Padrón General de Jugadores</h2>
+              <h2 className={chrome.sectionTitle}>Jugadores del club</h2>
 
               {players.length === 0 ? (
                 <EmptyState title="No se encontraron jugadores registrados en el club." />
@@ -417,7 +419,7 @@ export default function MisJugadoresPage() {
                         <div className={styles.teamCardHeader}>
                           <h3 className={styles.teamCardTitle}>{team.name}</h3>
                           <span className={styles.teamCardMeta}>
-                            {team.category} • {formatBranch(team.branch)}
+                            {formatCategory(team.category)} • {formatBranch(team.branch)}
                           </span>
                         </div>
 
@@ -586,6 +588,33 @@ export default function MisJugadoresPage() {
               />
             </div>
           </form>
+        </Modal>
+
+        <Modal
+          open={Boolean(playerToRemove)}
+          onClose={() => !isSubmitting && setPlayerToRemove(null)}
+          title="Sacar jugador del equipo"
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setPlayerToRemove(null)} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                disabled={isSubmitting}
+                onClick={() => handleUnassignPlayer(playerToRemove.playerId, playerToRemove.teamId)}
+              >
+                {isSubmitting ? 'Guardando...' : 'Sacar del equipo'}
+              </Button>
+            </>
+          }
+        >
+          <p>
+            {playerToRemove?.name
+              ? `${playerToRemove.name} deja de figurar en ese equipo. El jugador sigue dado de alta en el club.`
+              : 'El jugador deja de figurar en ese equipo y sigue dado de alta en el club.'}
+          </p>
         </Modal>
       </div>
     </div>

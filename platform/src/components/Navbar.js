@@ -48,7 +48,7 @@ export default function Navbar() {
     };
   }, [isAuthenticated, role, user, updateSession]);
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || pathname === '/login' || pathname === '/register') {
     return null;
   }
 

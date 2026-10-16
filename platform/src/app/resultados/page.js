@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { getApiBaseUrl } from '../../services/apiClient';
 import {
@@ -15,6 +16,8 @@ import {
 import chromeStyles from '../../components/ui/PageChrome.module.css';
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
+import { formatBranch, formatCategory } from '../../utils/labels';
+import { formatStatus } from '../../utils/status';
 
 const adaptMatchesForUI = (apiMatches) => {
   return apiMatches.map((match) => {
@@ -43,12 +46,7 @@ const adaptMatchesForUI = (apiMatches) => {
       category: match.category || match.tournament_stage_name || 'Fase Regular',
       location: match.court_name || match.location || 'Sede a confirmar',
       status: match.status === 'IN_PROGRESS' ? 'live' : match.status?.toLowerCase(),
-      statusText:
-        match.status === 'IN_PROGRESS'
-          ? 'EN VIVO'
-          : match.status === 'FINISHED'
-            ? 'Finalizado'
-            : 'Próximamente',
+      statusText: formatStatus(match.status),
       team1: {
         name: match.local_team_name,
         logo: match.local_club_logo_url || null,
@@ -80,30 +78,13 @@ const adaptStandingsForUI = (apiStandings) => {
   }));
 };
 
-const BRANCH_TRANSLATIONS = {
-  MALE: 'Masculino',
-  FEMALE: 'Femenino',
-};
-
-const CATEGORY_TRANSLATIONS = {
-  PRIMERA: 'Primera División',
-  'SUB-18': 'Sub-18',
-  'SUB-16': 'Sub-16',
-  'SUB-14': 'Sub-14',
-  SUB_14: 'Sub-14',
-  SUB_16: 'Sub-16',
-  SUB_18: 'Sub-18',
-  SUB_21: 'Sub-21',
-  MAXI: 'Maxi',
-};
-
 const STANDINGS_COLUMNS = [
-  { key: 'pos', label: 'POS', width: '2.5rem' },
+  { key: 'pos', label: 'POS', width: '2.4rem' },
   { key: 'team', label: 'EQUIPO' },
-  { key: 'pts', label: 'PTS', width: '2.5rem' },
-  { key: 'pj', label: 'PJ', width: '2rem' },
-  { key: 'pg', label: 'PG', width: '2rem' },
-  { key: 'pp', label: 'PP', width: '2rem' },
+  { key: 'pts', label: 'PTS', width: '2.4rem' },
+  { key: 'pj', label: 'PJ', width: '2.4rem' },
+  { key: 'pg', label: 'PG', width: '2.4rem' },
+  { key: 'pp', label: 'PP', width: '2.4rem' },
 ];
 
 function TeamAvatar({ logo, initials, variant = 'neutral', small = false }) {
@@ -121,6 +102,7 @@ function TeamAvatar({ logo, initials, variant = 'neutral', small = false }) {
 }
 
 export default function ResultadosPosicionesPage() {
+  const router = useRouter();
   const { isAuthenticated, isInitialized } = useAuth();
 
   const [tournaments, setTournaments] = useState([]);
@@ -131,6 +113,12 @@ export default function ResultadosPosicionesPage() {
   const [isLoadingTournaments, setIsLoadingTournaments] = useState(true);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isInitialized, isAuthenticated, router]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -244,9 +232,7 @@ export default function ResultadosPosicionesPage() {
                 >
                   {tournaments.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.name} - Categoría:{' '}
-                      {CATEGORY_TRANSLATIONS[t.category] || t.category} - Rama:{' '}
-                      {BRANCH_TRANSLATIONS[t.branch] || t.branch}
+                      {t.name} - Categoría: {formatCategory(t.category)} - Rama: {formatBranch(t.branch)}
                     </option>
                   ))}
                 </select>
@@ -392,11 +378,11 @@ export default function ResultadosPosicionesPage() {
                 <h2 className={chromeStyles.sectionTitle}>Tabla de Posiciones</h2>
 
                 {standings.length > 0 ? (
-                  <DataTable columns={STANDINGS_COLUMNS}>
+                  <DataTable columns={STANDINGS_COLUMNS} dense>
                     {standings.map((team) => (
                       <tr key={team.pos}>
                         <td className={styles.posCell}>{team.pos}</td>
-                        <td>
+                        <td className={styles.teamCell}>
                           <div className={styles.standingsTeam}>
                             <TeamAvatar
                               logo={team.logo}
@@ -417,6 +403,10 @@ export default function ResultadosPosicionesPage() {
                 ) : (
                   <EmptyState title="No hay posiciones registradas." />
                 )}
+                <p className={styles.pointsLegend}>
+                  3-0 o 3-1: el ganador suma 3 y el perdedor 0. 3-2: el ganador suma 2 y el perdedor 1.
+                  Si empatan en puntos, se mira partidos ganados y después la diferencia de sets.
+                </p>
               </div>
             </aside>
           </div>

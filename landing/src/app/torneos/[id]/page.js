@@ -1,5 +1,6 @@
 "use client";
 import { getPlatformLoginUrl } from '../../../utils/platformUrl';
+import { formatStatus } from '../../../utils/labels';
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -33,7 +34,7 @@ const adaptMatchesForUI = (apiMatches) => {
       category: match.tournament_stage_name || "Fase Regular",
       location: "Sede a confirmar",
       status: match.status === "IN_PROGRESS" ? "live" : match.status.toLowerCase(),
-      statusText: match.status === "IN_PROGRESS" ? "EN VIVO" : match.status === "FINISHED" ? "Finalizado" : "Próximamente",
+      statusText: formatStatus(match.status),
       team1: {
         name: match.local_team_name,
         logo: match.local_club_logo_url,
@@ -77,6 +78,7 @@ export default function TorneoDetallePage() {
   const [standings, setStandings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   // Estados de Filtros
   const [selectedCategory, setSelectedCategory] = useState("Primera División");
@@ -88,9 +90,11 @@ export default function TorneoDetallePage() {
     const fetchTournamentData = async () => {
       try {
         setIsLoading(true);
+        setLoadError("");
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.8:8000/public";
         const [matchesRes, standingsRes] = await Promise.all([
-          fetch(`http://192.168.1.8:8000/public/partidos/?tournament_id=${id}`),
-          fetch(`http://192.168.1.8:8000/public/torneos/${id}/posiciones/`)
+          fetch(`${baseUrl}/partidos/?tournament_id=${id}`),
+          fetch(`${baseUrl}/torneos/${id}/posiciones/`)
         ]);
         if (!matchesRes.ok || !standingsRes.ok) throw new Error("Error fetching");
         
@@ -104,6 +108,7 @@ export default function TorneoDetallePage() {
         setStandings(adaptStandingsForUI(standingsArray));
       } catch (error) {
         console.error("Error Fetching Data:", error);
+        setLoadError("No pudimos cargar las competencias. Intentá de nuevo.");
       } finally {
         setIsLoading(false);
       }
@@ -166,13 +171,13 @@ export default function TorneoDetallePage() {
           </Link>
         </nav>
 
-        {/* Right: Acceso Clubes Button & User Icon & Mobile Hamburger */}
+        {/* Right: Ingresar Button & User Icon & Mobile Hamburger */}
         <div className="flex items-center gap-4">
           <a
             href={getPlatformLoginUrl()}
             className="bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-[11px] md:text-sm py-2 px-3 md:py-2.5 md:px-5 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 whitespace-nowrap hidden sm:flex"
           >
-            Acceso Clubes
+            Ingresar
           </a>
           <a href={getPlatformLoginUrl()} className="hidden sm:block flex-shrink-0">
             <svg className="w-6 h-6 text-[#001F54] cursor-pointer hover:opacity-80 transition-opacity shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -224,7 +229,7 @@ export default function TorneoDetallePage() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="w-full bg-[#001F54] hover:bg-blue-950 text-white font-semibold text-center py-3 rounded-lg transition-all duration-200 cursor-pointer shadow-sm shadow-blue-950/10 text-sm"
             >
-              Acceso Clubes
+              Ingresar
             </a>
           </div>
         )}
@@ -286,10 +291,9 @@ export default function TorneoDetallePage() {
               </div>
             </div>
 
-            {/* Jornada Filter */}
             <div className="flex flex-col">
               <label className="text-[11px] font-black text-slate-500 tracking-wider mb-2 uppercase">
-                Jornada
+                Fecha
               </label>
               <div className="relative">
                 <select
@@ -311,6 +315,14 @@ export default function TorneoDetallePage() {
 
           </div>
         </section>
+
+        {loadError ? (
+          <div className="max-w-3xl mx-auto px-6 py-10">
+            <p className="bg-red-50 border border-red-200 text-red-700 font-bold text-sm rounded-3xl p-6 text-center">
+              {loadError}
+            </p>
+          </div>
+        ) : null}
 
         {/* 4. GRILLA PRINCIPAL */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -559,7 +571,7 @@ export default function TorneoDetallePage() {
                                   {team.initials}
                                 </div>
                               )}
-                              <span className="font-bold text-[#001F54] text-xs sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px] sm:max-w-none">
+                              <span className="font-bold text-[#001F54] text-xs sm:text-sm whitespace-normal break-words min-w-0">
                                 {team.name}
                               </span>
                             </div>
@@ -590,6 +602,10 @@ export default function TorneoDetallePage() {
                   </tbody>
                 </table>
               </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                3-0 o 3-1: el ganador suma 3 y el perdedor 0. 3-2: el ganador suma 2 y el perdedor 1.
+                Si empatan en puntos, se mira partidos ganados y después la diferencia de sets.
+              </p>
 
             </div>
 

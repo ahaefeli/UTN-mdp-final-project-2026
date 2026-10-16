@@ -5,9 +5,9 @@ export const tournamentService = {
    * Obtiene la lista de todos los torneos.
    * @returns {Promise<object>} Lista de torneos.
    */
-  async getTournaments() {
+  async getTournaments(params) {
     try {
-      const response = await apiClient.get('internal/torneos/');
+      const response = await apiClient.get('internal/torneos/', { params });
       return response.data; // Retorna { data: [...] }
     } catch (error) {
       console.error('Error al obtener los torneos:', error);
@@ -109,6 +109,21 @@ export const tournamentService = {
    * @param {string|number} stageId - ID de la fecha.
    * @returns {Promise<object>} Respuesta del servidor.
    */
+  async archiveTournament(tournamentId) {
+    const response = await apiClient.put(`internal/torneos/${tournamentId}/`, { is_deleted: true });
+    return response.data;
+  },
+
+  async restoreTournament(tournamentId) {
+    const response = await apiClient.put(`internal/torneos/${tournamentId}/`, { is_deleted: false });
+    return response.data;
+  },
+
+  async deleteTournament(tournamentId) {
+    const response = await apiClient.delete(`internal/torneos/${tournamentId}/`);
+    return response.data;
+  },
+
   async deleteStage(stageId) {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('lnv_token') : '';

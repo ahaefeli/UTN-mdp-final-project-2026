@@ -1,7 +1,7 @@
 export const ROLE_TRANSLATIONS = {
   PLAYER: 'Jugador',
   COACH: 'Entrenador',
-  ADMIN: 'League Admin',
+  ADMIN: 'Administración de la liga',
   REFEREE: 'Árbitro',
   SCORER: 'Planillero',
   CLUB_ADMIN: 'Admin'

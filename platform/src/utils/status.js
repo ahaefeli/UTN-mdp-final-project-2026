@@ -1,7 +1,12 @@
 export const STATUS_TRANSLATIONS = {
-  'PREPARATION': 'Preparación',
-  'PENDING': 'Pendiente',
-  'IN_PROGRESS': 'En Progreso',
-  'CANCELLED': 'Cancelado',
-  'FINISHED': 'Finalizado'
+  PREPARATION: 'En preparación',
+  PENDING: 'Pendiente',
+  IN_PROGRESS: 'En disputa',
+  CANCELLED: 'Cancelado',
+  FINISHED: 'Finalizado',
 };
+
+export function formatStatus(status) {
+  if (!status) return '';
+  return STATUS_TRANSLATIONS[status] || status;
+}

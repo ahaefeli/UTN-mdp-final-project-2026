@@ -16,25 +16,12 @@ import {
 } from '../../components/ui';
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
+import { formatBranch, formatCategory } from '../../utils/labels';
 
 const getApiUrl = (path) => {
   const base = getApiBaseUrl();
   const cleanBase = base.endsWith('/') ? base : `${base}/`;
   return `${cleanBase}${path}`;
-};
-
-const BRANCH_LABELS = {
-  MALE: 'Masculino',
-  FEMALE: 'Femenino',
-};
-
-const CATEGORY_LABELS = {
-  SUB_14: 'Sub 14',
-  SUB_16: 'Sub 16',
-  SUB_18: 'Sub 18',
-  SUB_21: 'Sub 21',
-  PRIMERA: 'Primera',
-  MAXI: 'Maxi',
 };
 
 const TEAM_COLUMNS = [
@@ -350,9 +337,9 @@ export default function MisEquiposPage() {
           className={dirStyles.select}
           disabled={isSubmitting}
         >
-          {Object.entries(CATEGORY_LABELS).map(([key, value]) => (
+          {['SUB_14', 'SUB_16', 'SUB_18', 'SUB_21', 'PRIMERA', 'MAXI'].map((key) => (
             <option key={key} value={key}>
-              {value}
+              {formatCategory(key)}
             </option>
           ))}
         </select>
@@ -369,9 +356,9 @@ export default function MisEquiposPage() {
           className={dirStyles.select}
           disabled={isSubmitting}
         >
-          {Object.entries(BRANCH_LABELS).map(([key, value]) => (
+          {['MALE', 'FEMALE'].map((key) => (
             <option key={key} value={key}>
-              {value}
+              {formatBranch(key)}
             </option>
           ))}
         </select>
@@ -450,10 +437,10 @@ export default function MisEquiposPage() {
                     )}
                   </div>
                 </td>
-                <td>{CATEGORY_LABELS[team.category] || team.category}</td>
+                <td>{formatCategory(team.category)}</td>
                 <td>
                   <StatusBadge variant={BRANCH_VARIANTS[team.branch] || 'neutral'}>
-                    {BRANCH_LABELS[team.branch] || team.branch}
+                    {formatBranch(team.branch)}
                   </StatusBadge>
                 </td>
                 <td className={styles.cellActions}>

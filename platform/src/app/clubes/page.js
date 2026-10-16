@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../services/apiClient';
 import { copyText } from '../../utils/copyText';
+import { phoneError } from '../../utils/phone';
 import buttonStyles from '../../components/ui/Button.module.css';
 import {
   PageHeader,
@@ -19,6 +20,7 @@ import {
 } from '../../components/ui';
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
+import PendingInvites from '../../components/PendingInvites/PendingInvites';
 
 const STATUS_LABELS = {
   PENDING: 'Pendiente',
@@ -92,6 +94,8 @@ export default function ClubesAdminPage() {
 
   // Invitation Link state
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [inviteTick, setInviteTick] = useState(0);
+  const [reviewTarget, setReviewTarget] = useState(null);
 
   // Enforce ADMIN role-based access
   useEffect(() => {
@@ -153,6 +157,11 @@ export default function ClubesAdminPage() {
       setErrorMsg('El nombre del club es obligatorio.');
       return;
     }
+    const invalidPhone = phoneError(editPhone);
+    if (invalidPhone) {
+      setErrorMsg(invalidPhone);
+      return;
+    }
     setIsSubmitting(true);
     setErrorMsg('');
     try {
@@ -196,6 +205,7 @@ export default function ClubesAdminPage() {
       setIsCopied(false);
       setCopyError('');
       setIsInviteModalOpen(true);
+      setInviteTick((value) => value + 1);
       setSuccessMsg('Enlace generado exitosamente.');
     } catch (err) {
       console.error('Error al generar enlace:', err);
@@ -235,10 +245,13 @@ export default function ClubesAdminPage() {
   };
 
   // Approve or Reject Proposed Club Request (POST)
-  const handleReviewRequest = async (requestId, action) => {
-    if (!confirm(`¿Está seguro de que desea ${action === 'APPROVE' ? 'aprobar' : 'rechazar'} esta solicitud?`)) {
-      return;
-    }
+  const handleReviewRequest = (requestId, action) => {
+    setReviewTarget({ requestId, action });
+  };
+
+  const confirmReview = async () => {
+    if (!reviewTarget) return;
+    const { requestId, action } = reviewTarget;
     setIsSubmitting(true);
     setErrorMsg('');
     setSuccessMsg('');
@@ -247,6 +260,8 @@ export default function ClubesAdminPage() {
       setSuccessMsg(`Solicitud ${action === 'APPROVE' ? 'aprobada' : 'rechazada'} con éxito.`);
       setIsDetailModalOpen(false);
       setSelectedRequest(null);
+      setReviewTarget(null);
+      setInviteTick((value) => value + 1);
       loadData();
     } catch (err) {
       console.error('Error al procesar solicitud:', err);
@@ -276,7 +291,7 @@ export default function ClubesAdminPage() {
       <div className={dirStyles.page}>
         <PageHeader
           title="Gestión de Clubes"
-          subtitle="Supervise los clubes federados activos y administre las solicitudes de registro."
+          subtitle="El alta es por invitación: generá el enlace, el club completa sus datos y vos aprobás la solicitud. No se carga el usuario a mano."
           actions={
             <Button onClick={() => handleGenerateLink('CLUB_ADMIN')} disabled={isGeneratingLink}>
               <i className="bi bi-building" aria-hidden="true" />
@@ -284,6 +299,35 @@ export default function ClubesAdminPage() {
             </Button>
           }
         />
+
+        <PendingInvites role="CLUB_ADMIN" refreshKey={inviteTick} />
+
+        <Modal
+          open={Boolean(reviewTarget)}
+          onClose={() => !isSubmitting && setReviewTarget(null)}
+          title={reviewTarget?.action === 'APPROVE' ? 'Aprobar solicitud' : 'Rechazar solicitud'}
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setReviewTarget(null)} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button
+                variant={reviewTarget?.action === 'REJECT' ? 'danger' : 'primary'}
+                onClick={confirmReview}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Guardando...' : reviewTarget?.action === 'APPROVE' ? 'Aprobar' : 'Rechazar'}
+              </Button>
+            </>
+          }
+        >
+          <p>
+            {reviewTarget?.action === 'APPROVE'
+              ? 'Se crea el usuario con los datos de la solicitud.'
+              : 'La solicitud queda rechazada y, si era un enlace, deja de servir.'}
+          </p>
+        </Modal>
 
         {(successMsg || errorMsg) && (
           <div className={dirStyles.alerts}>

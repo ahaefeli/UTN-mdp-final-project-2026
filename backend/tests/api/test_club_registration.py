@@ -75,7 +75,7 @@ class TestPublicRegistration:
         )
         res = api_client.get(f'/public/club-registration/?token={req.token}')
         assert res.status_code == 400
-        assert 'expired' in res.json()['error'].lower()
+        assert 'venció' in res.json()['error']
 
     def test_get_non_pending(self, api_client, organization):
         req = make_registration_request(organization, status='APPROVED')
@@ -101,7 +101,27 @@ class TestPublicRegistration:
         req.refresh_from_db()
         assert req.club_name == 'Nuevo Club'
         assert req.admin_email == 'newadmin@test.com'
+        assert req.submitted_at is not None
+        assert req.status == 'PENDING'
         assert check_password('secret123', req.password)
+
+        again = api_client.get(f'/public/club-registration/?token={req.token}')
+        assert again.status_code == 400
+        assert 'utilizado' in again.json()['error']
+
+        replay = api_client.post(
+            '/public/club-registration/',
+            data=json.dumps({
+                'token': req.token,
+                'club_name': 'Otro nombre',
+                'admin_email': 'other@test.com',
+                'password': 'secret123',
+            }),
+            content_type='application/json',
+        )
+        assert replay.status_code == 400
+        req.refresh_from_db()
+        assert req.club_name == 'Nuevo Club'
 
     def test_post_duplicate_email(self, api_client, organization, admin_user):
         req = make_registration_request(organization)
@@ -115,7 +135,7 @@ class TestPublicRegistration:
             content_type='application/json',
         )
         assert res.status_code == 400
-        assert 'already exists' in res.json()['error']
+        assert 'Ya existe' in res.json()['error']
 
     def test_post_missing_admin_email(self, api_client, organization):
         req = make_registration_request(organization)
@@ -259,3 +279,56 @@ class TestReviewClubRequest:
             **auth_header,
         )
         assert res.status_code == 400
+
+
+@pytest.mark.django_db
+class TestInviteRevokeAndDuplicateDni:
+    def test_unused_link_can_be_revoked(self, api_client, auth_header):
+        created = api_client.post(
+            '/admin/club-requests/generate-link/',
+            data=json.dumps({'role': 'REFEREE'}),
+            content_type='application/json',
+            **auth_header,
+        )
+        assert created.status_code == 201
+        token = created.json()['token']
+        req_id = created.json()['data']['id']
+        listed = api_client.get(
+            '/admin/club-requests/?unused=1&role=REFEREE',
+            **auth_header,
+        )
+        assert any(item['token'] == token for item in listed.json()['data'])
+
+        revoked = api_client.post(
+            f'/admin/club-requests/{req_id}/review/',
+            data=json.dumps({'action': 'REJECT'}),
+            content_type='application/json',
+            **auth_header,
+        )
+        assert revoked.status_code == 200
+        again = api_client.get(f'/public/club-registration/?token={token}')
+        assert again.status_code == 400
+        assert 'disponible' in again.json()['error']
+
+    def test_public_form_rejects_duplicate_dni(self, api_client, organization):
+        make_user(
+            organization=organization,
+            role='PLAYER',
+            email='dni-owner@test.com',
+            username='dni_owner',
+            dni='35123456',
+        )
+        req = make_registration_request(organization)
+        res = api_client.post(
+            '/public/club-registration/',
+            data=json.dumps({
+                'token': req.token,
+                'club_name': 'Otro',
+                'admin_email': 'fresh-dni@test.com',
+                'admin_username': 'fresh_dni',
+                'admin_dni': '35.123.456',
+            }),
+            content_type='application/json',
+        )
+        assert res.status_code == 400
+        assert 'DNI' in res.json()['error']

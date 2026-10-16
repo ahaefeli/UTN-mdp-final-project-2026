@@ -53,7 +53,10 @@ class TeamView(BaseCrudView):
         if request.user.role == 'CLUB_ADMIN':
             qs = qs.filter(club=request.user.club)
         elif request.user.role == 'COACH':
-            qs = qs.filter(coach=request.user)
+            if request.user.club_id:
+                qs = qs.filter(club_id=request.user.club_id)
+            else:
+                qs = qs.filter(coach=request.user)
         else:
             cid = request.GET.get('club_id')
             if cid: qs = qs.filter(club_id=cid)

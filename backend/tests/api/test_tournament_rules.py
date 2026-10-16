@@ -371,3 +371,36 @@ class TestTournamentRulesExtras:
         assert res.status_code == 200
         from core.models import Tournament
         assert not Tournament.objects.filter(id=tournament.id).exists()
+
+    def test_archive_hides_tournament_until_restored(self, api_client, auth_header, tournament):
+        archived = api_client.put(
+            f'/internal/torneos/{tournament.id}/',
+            data=json.dumps({'is_deleted': True}),
+            content_type='application/json',
+            **auth_header,
+        )
+        assert archived.status_code == 200
+        listed = api_client.get('/internal/torneos/', **auth_header)
+        assert str(tournament.id) not in {str(item['id']) for item in listed.json()['data']}
+        only_archived = api_client.get('/internal/torneos/?archived=1', **auth_header)
+        assert str(tournament.id) in {str(item['id']) for item in only_archived.json()['data']}
+        public = api_client.get('/public/torneos/')
+        assert str(tournament.id) not in {str(item['id']) for item in public.json()['data']}
+
+        restored = api_client.put(
+            f'/internal/torneos/{tournament.id}/',
+            data=json.dumps({'is_deleted': False}),
+            content_type='application/json',
+            **auth_header,
+        )
+        assert restored.status_code == 200
+        listed_again = api_client.get('/internal/torneos/', **auth_header)
+        assert str(tournament.id) in {str(item['id']) for item in listed_again.json()['data']}
+
+    def test_delete_blocked_when_match_is_finished(
+        self, api_client, auth_header, tournament, stage, team_a, team_b, court
+    ):
+        make_match(stage, team_a, team_b, court=court, status='FINISHED', score_summary='3-0')
+        res = api_client.delete(f'/internal/torneos/{tournament.id}/', **auth_header)
+        assert res.status_code == 400
+        assert 'Archiv' in res.json()['error']
