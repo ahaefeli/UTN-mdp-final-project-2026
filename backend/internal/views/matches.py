@@ -51,11 +51,16 @@ def serialize_match_detail(m):
     evaluate_and_update_match_status(m)
     m.refresh_from_db()
     d = {'id': m.id, 'tournament_stage_id': m.tournament_stage_id, 'local_team_id': m.local_team_id, 'local_team_name': m.local_team.name, 'visitor_team_id': m.visitor_team_id, 'visitor_team_name': m.visitor_team.name, 'court_id': m.court_id, 'court_name': m.court.name if m.court else None, 'match_datetime': m.match_datetime.isoformat() if m.match_datetime else None, 'referee_id': m.referee_id, 'referee_name': f"{m.referee.first_name} {m.referee.last_name}".strip() if m.referee else None, 'scorer_id': m.scorer_id, 'scorer_name': f"{m.scorer.first_name} {m.scorer.last_name}".strip() if m.scorer else None, 'status': m.status, 'score_summary': m.score_summary, 'sets_data': m.sets_data if m.sets_data else {'sets': []}}
-    d['tournament_name'] = m.tournament_stage.tournament.name if m.tournament_stage and m.tournament_stage.tournament else None
-    d['category'] = m.tournament_stage.tournament.category if m.tournament_stage and m.tournament_stage.tournament else None
-    d['branch'] = m.tournament_stage.tournament.branch if m.tournament_stage and m.tournament_stage.tournament else None
+    t = m.tournament_stage.tournament if (m.tournament_stage and hasattr(m.tournament_stage, 'tournament')) else None
+    best_of = getattr(t, 'best_of', 5) if t else 5
+    sets_to_win = (best_of // 2) + 1
+    d['best_of'] = best_of
+    d['sets_to_win'] = sets_to_win
+    d['tournament_name'] = t.name if t else None
+    d['category'] = t.category if t else None
+    d['branch'] = t.branch if t else None
     d['matchday_name'] = m.tournament_stage.name if m.tournament_stage else None
-    d['tournament_status'] = m.tournament_stage.tournament.status if m.tournament_stage and m.tournament_stage.tournament else None
+    d['tournament_status'] = t.status if t else None
     return d
 
 @method_decorator(jwt_required, name='dispatch')
@@ -265,12 +270,15 @@ class MatchRescheduleView(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
-def validate_volleyball_sets(score_detail):
-    """Valida planilla mejor de 5 (3-0, 3-1 o 3-2). Devuelve (sets_normalized, error_msg)."""
+def validate_volleyball_sets(score_detail, best_of=5):
+    """Valida planilla al mejor de best_of (3 o 5). Devuelve (sets_normalized, error_msg)."""
     if not score_detail or not isinstance(score_detail, list):
         return None, 'Se requiere al menos un set con puntuación.'
-    if len(score_detail) < 3 or len(score_detail) > 5:
-        return None, 'Un partido de vóley se cierra con 3, 4 o 5 sets.'
+    sets_to_win = (best_of // 2) + 1
+    if len(score_detail) < sets_to_win or len(score_detail) > best_of:
+        if best_of == 5:
+            return None, f'Un partido al mejor de 5 se cierra con 3, 4 o 5 sets (entre {sets_to_win} y {best_of} sets).'
+        return None, f'Un partido al mejor de {best_of} se cierra con entre {sets_to_win} y {best_of} sets.'
 
     sets_normalized = []
     local_sets = 0
@@ -286,7 +294,7 @@ def validate_volleyball_sets(score_detail):
             return None, f'Los puntos del set {i + 1} no pueden ser negativos.'
         if lp == vp:
             return None, f'El set {i + 1} no puede empatar.'
-        target = 15 if i == 4 else 25
+        target = 15 if i == (best_of - 1) else 25
         winner = max(lp, vp)
         loser = min(lp, vp)
         legal_overtime = winner > target and winner - loser == 2 and loser >= target - 1
@@ -312,16 +320,16 @@ def validate_volleyball_sets(score_detail):
         else:
             visitor_sets += 1
 
-        # No continuar jugando sets después de que alguien ya llegó a 3
-        if (local_sets >= 3 or visitor_sets >= 3) and i < len(score_detail) - 1:
+        # No continuar jugando sets después de que alguien ya llegó a sets_to_win
+        if (local_sets >= sets_to_win or visitor_sets >= sets_to_win) and i < len(score_detail) - 1:
             return None, 'Hay sets de más: el partido ya tenía un ganador.'
 
     if local_sets == visitor_sets:
-        return None, 'El partido no puede terminar empatado (máximo 2-2 sin set decisivo).'
-    if max(local_sets, visitor_sets) != 3:
-        return None, 'El ganador debe ganar exactamente 3 sets (mejor de 5).'
-    if min(local_sets, visitor_sets) > 2:
-        return None, 'Resultado inválido: un equipo no puede perder más de 2 sets.'
+        return None, 'El partido no puede terminar empatado.'
+    if max(local_sets, visitor_sets) != sets_to_win:
+        return None, f'El ganador debe ganar exactamente {sets_to_win} sets (mejor de {best_of}).'
+    if min(local_sets, visitor_sets) >= sets_to_win:
+        return None, f'Resultado inválido: un equipo no puede perder {sets_to_win} o más sets.'
 
     return sets_normalized, None
 
@@ -345,10 +353,6 @@ class MatchFinishView(View):
         if not mid:
             return JsonResponse({'error': 'Falta match_id.'}, status=400)
 
-        sets_normalized, validation_error = validate_volleyball_sets(score_detail)
-        if validation_error:
-            return JsonResponse({'error': validation_error}, status=400)
-
         try:
             m = Match.objects.select_related(
                 'tournament_stage__tournament', 'local_team', 'visitor_team', 'court', 'referee', 'scorer'
@@ -367,6 +371,11 @@ class MatchFinishView(View):
             return JsonResponse({'error': 'Solo el árbitro asignado puede finalizar este partido.'}, status=403)
         if role == 'SCORER' and m.scorer_id and m.scorer_id != request.user.id:
             return JsonResponse({'error': 'Solo el planillero asignado puede finalizar este partido.'}, status=403)
+
+        best_of = m.tournament_stage.tournament.best_of if (m.tournament_stage and m.tournament_stage.tournament) else 5
+        sets_normalized, validation_error = validate_volleyball_sets(score_detail, best_of=best_of)
+        if validation_error:
+            return JsonResponse({'error': validation_error}, status=400)
 
         parts = [f"{s['local_points']}-{s['visitor_points']}" for s in sets_normalized]
         m.sets_data = {'sets': sets_normalized}

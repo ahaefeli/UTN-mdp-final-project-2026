@@ -1,6 +1,10 @@
-from core.models import Match, TournamentEnrollment, Team
+from core.models import Match, TournamentEnrollment, Team, Tournament
 
 def calculate_standings(tournament_id):
+    tournament = Tournament.objects.filter(id=tournament_id).first()
+    best_of = getattr(tournament, 'best_of', 5) or 5
+    sets_to_win = (best_of // 2) + 1
+
     # Initialize all enrolled teams
     enrollments = TournamentEnrollment.objects.filter(tournament_id=tournament_id).select_related('team__club')
     teams_dict = {}
@@ -80,11 +84,11 @@ def calculate_standings(tournament_id):
                 except ValueError:
                     pass
 
-        # Solo contar resultados decisivos de vóley (3-0, 3-1 o 3-2).
+        # Solo contar resultados decisivos de vóley
         # Partidos FINISHED sin planilla válida (0-0 / summary inválido) se omiten.
         decisive = (
             sets_won_home != sets_won_visitor
-            and max(sets_won_home, sets_won_visitor) == 3
+            and max(sets_won_home, sets_won_visitor) == sets_to_win
         )
         if not decisive:
             continue
@@ -100,30 +104,20 @@ def calculate_standings(tournament_id):
         visitor_stats['sets_ganados'] += sets_won_visitor
         visitor_stats['sets_perdidos'] += sets_won_home
 
+        is_tiebreak = (min(sets_won_home, sets_won_visitor) == sets_to_win - 1)
+        pts_winner = 2 if is_tiebreak else 3
+        pts_loser = 1 if is_tiebreak else 0
+
         if sets_won_home > sets_won_visitor:
-            # Home wins
             home_stats['pg'] += 1
             visitor_stats['pp'] += 1
-            if sets_won_home == 3 and sets_won_visitor == 2:
-                # 3-2 win
-                home_stats['puntos'] += 2
-                visitor_stats['puntos'] += 1
-            else:
-                # 3-0 or 3-1 win
-                home_stats['puntos'] += 3
-                visitor_stats['puntos'] += 0
+            home_stats['puntos'] += pts_winner
+            visitor_stats['puntos'] += pts_loser
         else:
-            # Visitor wins
             visitor_stats['pg'] += 1
             home_stats['pp'] += 1
-            if sets_won_visitor == 3 and sets_won_home == 2:
-                # 3-2 win
-                visitor_stats['puntos'] += 2
-                home_stats['puntos'] += 1
-            else:
-                # 3-0 or 3-1 win
-                visitor_stats['puntos'] += 3
-                home_stats['puntos'] += 0
+            visitor_stats['puntos'] += pts_winner
+            home_stats['puntos'] += pts_loser
 
     # Convert to list and sort
     standings_list = list(teams_dict.values())
