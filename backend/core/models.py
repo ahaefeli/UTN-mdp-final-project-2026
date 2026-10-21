@@ -101,6 +101,10 @@ class Tournament(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     branch = models.CharField(max_length=10, choices=BRANCH_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PREPARATION')
+    best_of = models.PositiveSmallIntegerField(
+        default=5,
+        choices=[(3, 'Mejor de 3 sets'), (5, 'Mejor de 5 sets')]
+    )
     
     is_deleted = models.BooleanField(default=False)
     deleted_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='deleted_tournaments')

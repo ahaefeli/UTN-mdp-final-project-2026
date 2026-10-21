@@ -7,11 +7,13 @@ import styles from './ScoreSheetModal.module.css';
 const emptySet = () => ({ local_points: '', visitor_points: '' });
 
 function setsFromMatch(match) {
+  const bestOf = match?.best_of || 5;
+  const setsToWin = Math.floor(bestOf / 2) + 1;
   const existing = match?.sets_data?.sets;
-  if (!Array.isArray(existing) || existing.length < 3) {
-    return [emptySet(), emptySet(), emptySet()];
+  if (!Array.isArray(existing) || existing.length < setsToWin) {
+    return Array.from({ length: setsToWin }, () => emptySet());
   }
-  return existing.slice(0, 5).map((set) => ({
+  return existing.slice(0, bestOf).map((set) => ({
     local_points: String(set.local_points ?? set.local_score ?? '').replace(/\D/g, ''),
     visitor_points: String(set.visitor_points ?? set.visitor_score ?? '').replace(/\D/g, ''),
   }));
@@ -25,9 +27,9 @@ function isBlank(value) {
   return String(value).trim() === '';
 }
 
-function withoutTrailingEmptySets(sets) {
+function withoutTrailingEmptySets(sets, minSets = 3) {
   const next = sets.map((set) => ({ ...set }));
-  while (next.length > 3) {
+  while (next.length > minSets) {
     const last = next[next.length - 1];
     if (isBlank(last.local_points) && isBlank(last.visitor_points)) {
       next.pop();
@@ -38,9 +40,10 @@ function withoutTrailingEmptySets(sets) {
   return next;
 }
 
-function validateClientSets(sets) {
-  if (sets.length < 3 || sets.length > 5) {
-    return 'Un partido se cierra con 3, 4 o 5 sets.';
+function validateClientSets(sets, bestOf = 5) {
+  const setsToWin = Math.floor(bestOf / 2) + 1;
+  if (sets.length < setsToWin || sets.length > bestOf) {
+    return `Un partido al mejor de ${bestOf} se cierra con entre ${setsToWin} y ${bestOf} sets.`;
   }
 
   let localWins = 0;
@@ -63,7 +66,7 @@ function validateClientSets(sets) {
     if (lp === vp) {
       return `El set ${i + 1} no puede empatar.`;
     }
-    const target = i === 4 ? 15 : 25;
+    const target = (i === bestOf - 1) ? 15 : 25;
     const winner = Math.max(lp, vp);
     const loser = Math.min(lp, vp);
     const legalOvertime = winner > target && winner - loser === 2 && loser >= target - 1;
@@ -76,7 +79,7 @@ function validateClientSets(sets) {
     if (lp > vp) localWins += 1;
     else visitorWins += 1;
 
-    if ((localWins >= 3 || visitorWins >= 3) && i < sets.length - 1) {
+    if ((localWins >= setsToWin || visitorWins >= setsToWin) && i < sets.length - 1) {
       return 'Hay sets de más: el partido ya tenía un ganador.';
     }
   }
@@ -84,13 +87,15 @@ function validateClientSets(sets) {
   if (localWins === visitorWins) {
     return 'El partido no puede terminar empatado.';
   }
-  if (Math.max(localWins, visitorWins) !== 3) {
-    return 'El ganador debe ganar exactamente 3 sets (mejor de 5).';
+  if (Math.max(localWins, visitorWins) !== setsToWin) {
+    return `El ganador debe ganar exactamente ${setsToWin} sets (mejor de ${bestOf}).`;
   }
   return null;
 }
 
 export default function ScoreSheetModal({ match, onClose, onSuccess }) {
+  const bestOf = match?.best_of || 5;
+  const setsToWin = Math.floor(bestOf / 2) + 1;
   const hasSavedSets = Array.isArray(match?.sets_data?.sets) && match.sets_data.sets.length > 0;
   const [sets, setSets] = useState(() => setsFromMatch(match));
   const [error, setError] = useState('');
@@ -120,21 +125,21 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
   };
 
   const addSet = () => {
-    if (sets.length >= 5) return;
+    if (sets.length >= bestOf) return;
     setSets((prev) => [...prev, emptySet()]);
     setError('');
   };
 
   const removeSet = (index) => {
-    if (sets.length <= 3) return;
+    if (sets.length <= setsToWin) return;
     setSets((prev) => prev.filter((_, i) => i !== index));
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const setsToSave = withoutTrailingEmptySets(sets);
-    const clientError = validateClientSets(setsToSave);
+    const setsToSave = withoutTrailingEmptySets(sets, setsToWin);
+    const clientError = validateClientSets(setsToSave, bestOf);
     if (clientError) {
       setError(clientError);
       return;
@@ -224,7 +229,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
                   type="button"
                   className={styles.removeBtn}
                   onClick={() => removeSet(index)}
-                  disabled={isSubmitting || sets.length <= 3}
+                  disabled={isSubmitting || sets.length <= setsToWin}
                   aria-label={`Quitar set ${index + 1}`}
                 >
                   ×
@@ -233,7 +238,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
             ))}
 
             <p className={styles.hint}>
-              Mejor de 5. Los sets 1 a 4 son a 25 y el 5º a 15, siempre con diferencia de 2.
+              Mejor de {bestOf}. Los sets 1 a {bestOf - 1} son a 25 y el {bestOf}º a 15, siempre con diferencia de 2.
             </p>
 
             {error && <div className={styles.error}>{error}</div>}
@@ -244,7 +249,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
               type="button"
               className={styles.addSetBtn}
               onClick={addSet}
-              disabled={isSubmitting || sets.length >= 5}
+              disabled={isSubmitting || sets.length >= bestOf}
             >
               + Agregar set
             </button>

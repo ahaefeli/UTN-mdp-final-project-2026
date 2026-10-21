@@ -57,6 +57,7 @@ export default function TorneosNuevoPage() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('PRIMERA');
   const [branch, setBranch] = useState('FEMALE');
+  const [bestOf, setBestOf] = useState(5);
   
   // Stages (Fechas)
   const [stages, setStages] = useState([{ name: 'Fecha 1', date: '' }]);
@@ -178,6 +179,7 @@ export default function TorneosNuevoPage() {
         year,
         category,
         branch,
+        best_of: Number(bestOf),
         organization_id: userOrgId || user?.organization_id || user?.organization,
         stages: stages.filter(s => s.date)
       };
@@ -216,6 +218,7 @@ export default function TorneosNuevoPage() {
     setName('');
     setCategory('PRIMERA');
     setBranch('FEMALE');
+    setBestOf(5);
     setStages([{ name: 'Fecha 1', date: '' }]);
     setTeams([]);
     setSelectedTeams([]);
@@ -324,6 +327,22 @@ export default function TorneosNuevoPage() {
                 </div>
               </div>
 
+              <div className={`${chromeStyles.formGroup} ${styles.formGroup || ''}`}>
+                <label className={chromeStyles.label} htmlFor="bestOfSelect">
+                  Formato de partidos
+                </label>
+                <select
+                  id="bestOfSelect"
+                  value={bestOf}
+                  onChange={(e) => setBestOf(Number(e.target.value))}
+                  disabled={isSubmitting}
+                  className={chromeStyles.select}
+                >
+                  <option value={5}>Mejor de 5 sets (gana 3)</option>
+                  <option value={3}>Mejor de 3 sets (gana 2)</option>
+                </select>
+              </div>
+
               <div className={chromeStyles.section}>
                 <div className={styles.stagesHeader}>
                   <h3 className={chromeStyles.sectionTitle}>Cronograma de Fechas</h3>
@@ -398,7 +417,7 @@ export default function TorneosNuevoPage() {
                 <p className={styles.summaryTitle}>Resumen del Torneo:</p>
                 <p className={styles.summaryName}>{name}</p>
                 <p className={styles.summaryMeta}>
-                  Categoría: {formatCategory(category)} | Rama: {formatBranch(branch)} | Fechas: {stages.length}
+                  Categoría: {formatCategory(category)} | Rama: {formatBranch(branch)} | Formato: Mejor de {bestOf} | Fechas: {stages.length}
                 </p>
                 <p className={styles.summaryMeta}>
                   Estado al crear: {pendingWarning ? 'Pendiente' : 'En preparación'}

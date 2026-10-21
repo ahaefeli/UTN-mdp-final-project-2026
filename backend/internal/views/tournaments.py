@@ -36,6 +36,7 @@ def serialize_tournament(t):
         'category': t.category,
         'branch': t.branch,
         'status': t.status,
+        'best_of': getattr(t, 'best_of', 5),
         'is_deleted': t.is_deleted,
     }
 
@@ -78,6 +79,17 @@ class TournamentView(BaseCrudView):
         data = parse_body(request)
         if not all(k in data for k in ['name', 'year', 'category', 'branch', 'organization_id']): return JsonResponse({'error': 'Faltan datos del torneo.'}, status=400)
         
+        if 'best_of' in data and data['best_of'] not in (None, ''):
+            try:
+                best_of = int(data['best_of'])
+            except (TypeError, ValueError):
+                return JsonResponse({'error': 'El formato de sets (best_of) debe ser 3 o 5.'}, status=400)
+            if best_of not in (3, 5):
+                return JsonResponse({'error': 'El formato de sets (best_of) debe ser 3 o 5.'}, status=400)
+            data['best_of'] = best_of
+        else:
+            data['best_of'] = 5
+
         organization_id = data.get('organization_id')
         category = data.get('category')
         branch = data.get('branch')
@@ -121,6 +133,17 @@ class TournamentView(BaseCrudView):
         try:
             o = self.model.objects.get(id=tid, organization=request.user.organization)
             original_status = o.status
+            if 'best_of' in data:
+                if original_status != 'PREPARATION':
+                    return JsonResponse({'error': 'Solo se puede modificar el formato de sets de un torneo en preparación.'}, status=400)
+                try:
+                    bo = int(data['best_of'])
+                except (TypeError, ValueError):
+                    return JsonResponse({'error': 'El formato de sets (best_of) debe ser 3 o 5.'}, status=400)
+                if bo not in (3, 5):
+                    return JsonResponse({'error': 'El formato de sets (best_of) debe ser 3 o 5.'}, status=400)
+                data['best_of'] = bo
+
             if 'is_deleted' in data:
                 o.is_deleted = bool(data.pop('is_deleted'))
                 if o.is_deleted:
