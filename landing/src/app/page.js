@@ -13,7 +13,7 @@ const associations = [
     title: "Liga Necochense de Vóley",
     subtitle: "Competencias oficiales y resultados en vivo",
     statusTag: "ACTIVA",
-    bgImage: "/images/inicio/festejo_masculino.avif"
+    bgImage: "/landing3.jpeg"
   }
 ];
 
@@ -150,7 +150,7 @@ export default function LandingPage() {
         {/* Background Image of Volleyball Blocking spiked scene with smooth fade overlay */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/inicio/img_bloqueo.png"
+            src="/landing2.jpeg"
             alt="Juego de vóley"
             className="w-full h-full object-cover object-center brightness-[0.55]"
           />

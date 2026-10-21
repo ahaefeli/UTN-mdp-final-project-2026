@@ -271,7 +271,7 @@ export default function TorneosPage() {
         {/* Columna Derecha: Imagen con Corte Diagonal y Alineación object-left-top */}
         <div className="relative w-full h-[280px] md:h-full overflow-hidden">
           <img
-            src="/images/inicio/bloqueo_chicas_voley.webp"
+            src="/landing1.jpeg"
             alt="Jugadoras festejando"
             className="w-full h-full object-cover object-left-top" // object-left-top para encuadre ideal sin cortes
             style={{ clipPath: "polygon(15% 0, 100% 0, 100% 100%, 0% 100%)" }}
