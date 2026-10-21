@@ -145,7 +145,8 @@ export default function ResultadosPosicionesPage() {
           setTournaments(list);
 
           if (list.length > 0) {
-            setSelectedTournamentId(list[0].id);
+            const inProgress = list.find((item) => item.status === 'IN_PROGRESS');
+            setSelectedTournamentId((inProgress || list[0]).id);
           }
         } catch (err) {
           console.error(err);
@@ -252,7 +253,7 @@ export default function ResultadosPosicionesPage() {
           </Alert>
         )}
 
-        {isLoadingData ? (
+        {isLoadingTournaments || isLoadingData ? (
           <LoadingState label="Cargando información del torneo..." />
         ) : (
           <div className={styles.layout}>

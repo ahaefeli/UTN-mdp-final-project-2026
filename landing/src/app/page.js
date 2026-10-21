@@ -61,6 +61,12 @@ export default function LandingPage() {
             Torneos
           </Link>
           <Link 
+            href="/resultados" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
+            Resultados
+          </Link>
+          <Link 
             href="/equipos" 
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/equipos' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
           >
@@ -81,7 +87,7 @@ export default function LandingPage() {
                 : 'text-slate-600 border-transparent hover:text-[#001F54]'
             }`}
           >
-            Conocenos
+            La Plataforma
           </Link>
         </nav>
 
@@ -118,6 +124,9 @@ export default function LandingPage() {
             <Link href="/torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Torneos
             </Link>
+            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+              Resultados
+            </Link>
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
@@ -130,7 +139,7 @@ export default function LandingPage() {
               onClick={() => setIsMobileMenuOpen(false)} 
               className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
             >
-              Conocenos
+              La Plataforma
             </Link>
             <hr />
             <a
@@ -202,7 +211,7 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <Link
             href="/torneos"
             className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:border-[#F97316] transition-colors"
@@ -235,6 +244,18 @@ export default function LandingPage() {
             <h3 className="text-2xl font-black text-[#001F54]">Soy árbitro o planillero</h3>
             <p className="text-sm text-slate-500 font-semibold leading-relaxed">
               El mismo ingreso abre los partidos asignados para cargar el resultado.
+            </p>
+            <span className="mt-2 text-xs font-black tracking-widest text-[#001F54] uppercase">Ingresar</span>
+          </a>
+
+          <a
+            href={getPlatformLoginUrl()}
+            className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:border-[#F97316] transition-colors"
+          >
+            <span className="text-[10px] font-black tracking-widest text-[#F97316] uppercase">Jugador</span>
+            <h3 className="text-2xl font-black text-[#001F54]">Juego en un equipo</h3>
+            <p className="text-sm text-slate-500 font-semibold leading-relaxed">
+              El mismo ingreso abre tu equipo y los próximos partidos.
             </p>
             <span className="mt-2 text-xs font-black tracking-widest text-[#001F54] uppercase">Ingresar</span>
           </a>
@@ -307,7 +328,7 @@ export default function LandingPage() {
               EMPRESAS QUE APOYAN AL VOLEY
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 font-bold">
-              Gracias a su compromiso, impulsamos el deporte en todas la regións.
+              Gracias a su compromiso, impulsamos el deporte en todas las regiones.
             </p>
           </div>
 
@@ -341,21 +362,17 @@ export default function LandingPage() {
         
         <div className="relative z-10 max-w-4xl mx-auto w-full text-center flex flex-col items-center gap-6">
           <h2 className="text-3xl md:text-4xl font-black tracking-tight leading-tight uppercase">
-            ¿Representas a una liga o asociación?
+            ¿Representás a un club?
           </h2>
           <p className="text-xs sm:text-sm lg:text-base text-blue-200/80 leading-relaxed font-semibold max-w-2xl">
-            Forma parte de la red de VoleyHub. Accede a torneos oficiales y gestión centralizada para tus deportistas. Inicia el proceso de vinculación oficial.
+            El alta de clubes, árbitros y planilleros es por invitación de la liga. Escribinos y te indicamos cómo pedir el enlace.
           </p>
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              alert("Solicitando proceso de afiliación oficial");
-            }}
+          <Link
+            href="/contacto"
             className="mt-2 bg-white hover:bg-slate-50 text-[#001F54] font-black text-xs uppercase tracking-wider py-4.5 px-8 rounded-xl transition-all duration-200 shadow-xl shadow-slate-950/20 active:scale-[0.99] border-2 border-transparent"
           >
-            SOLICITAR AFILIACIÓN
-          </a>
+            Escribinos
+          </Link>
         </div>
 
       </section>
@@ -387,6 +404,7 @@ export default function LandingPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
+                <li><Link href="/resultados" className="text-xs hover:text-white transition-colors duration-200">RESULTADOS</Link></li>
                 <li><Link href="/sitemap" className="text-xs hover:text-white transition-colors duration-200">SITEMAP</Link></li>
                 <li><Link href="/privacidad" className="text-xs hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
                 <li><Link href="/contacto" className="text-xs hover:text-white transition-colors duration-200">CONTACTO</Link></li>

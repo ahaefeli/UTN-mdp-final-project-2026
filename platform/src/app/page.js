@@ -10,6 +10,7 @@ import apiClient from '../services/apiClient';
 import { ROLE_TRANSLATIONS } from '../utils/roles';
 import { STATUS_TRANSLATIONS } from '../utils/status';
 import { formatBranch as labelBranch, formatCategory } from '../utils/labels';
+import { canRecordResult } from '../utils/matchPlay';
 
 import InfoCard from '../components/InfoCard/InfoCard';
 import QuickActions from '../components/QuickActions/QuickActions';
@@ -222,6 +223,8 @@ export default function RootDashboardPage() {
           loadUpcomingMatches();
         } else if (details.role === 'REFEREE' || details.role === 'SCORER') {
           loadOperationalMatches();
+        } else if (details.role === 'PLAYER') {
+          loadUpcomingMatches();
         } else if (details.team_id) {
           loadUpcomingMatches(details.team_id);
         }
@@ -638,7 +641,8 @@ export default function RootDashboardPage() {
                     status={match.status}
                     statusLabel={matchStatusLabel(match.status)}
                     actions={
-                      match.status === 'IN_PROGRESS' || match.status === 'PREPARATION'
+                      (match.status === 'IN_PROGRESS' || match.status === 'PREPARATION') &&
+                      canRecordResult(match)
                         ? renderScoreAction(match)
                         : null
                     }
@@ -655,6 +659,54 @@ export default function RootDashboardPage() {
               onSuccess={handleScoreSheetSuccess}
             />
           ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  if (role === 'PLAYER') {
+    const teamName = userDetails?.team_info?.name;
+    return (
+      <div className="appShell">
+        <div className={`${styles.page} ${styles.narrow}`}>
+          <PageHeader
+            title="Mi equipo"
+            subtitle={
+              teamName
+                ? `${teamName}${userDetails?.club_name ? ` · ${userDetails.club_name}` : ''}`
+                : 'Cuando te asignen a un equipo, vas a ver los partidos acá.'
+            }
+          />
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>Próximos partidos</h3>
+            {isLoadingUpcoming ? (
+              <LoadingState label="Cargando partidos…" />
+            ) : upcomingMatches.length === 0 ? (
+              <EmptyState
+                icon="bi-calendar-event"
+                title="Sin partidos próximos"
+                description="Cuando haya fecha, el partido de tu equipo aparece acá."
+              />
+            ) : (
+              <div className={styles.matchStack}>
+                {upcomingMatches.map((match) => (
+                  <MatchRow
+                    key={match.id}
+                    date={match.match_datetime}
+                    homeTeam={match.local_team_name}
+                    awayTeam={match.visitor_team_name}
+                    venue={joinMeta(
+                      match.tournament_name || 'Torneo',
+                      formatCategoryBranchShort(match),
+                      formatMatchDateTime(match.match_datetime, 'A confirmar')
+                    )}
+                    status={match.status}
+                    statusLabel={STATUS_TRANSLATIONS[match.status] || match.status}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </div>
     );

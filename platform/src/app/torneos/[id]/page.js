@@ -49,13 +49,21 @@ import chromeStyles from '../../../components/ui/PageChrome.module.css';
 import styles from './page.module.css';
 
 import MatchScheduleFields from './MatchScheduleFields';
+import { canRecordResult, resultBlockReason } from '../../../utils/matchPlay';
 
 
+
+function stageNumber(stage) {
+  const match = String(stage?.name || '').match(/(\d+)/);
+  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+}
 
 function sortStagesByDate(list) {
-
-  return [...(list || [])].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-
+  return [...(list || [])].sort((a, b) => {
+    const byNumber = stageNumber(a) - stageNumber(b);
+    if (byNumber !== 0) return byNumber;
+    return String(a.date).localeCompare(String(b.date));
+  });
 }
 
 
@@ -190,6 +198,7 @@ export default function TorneoDetailPage() {
   const [pastWarning, setPastWarning] = useState(null);
   const [matchToDelete, setMatchToDelete] = useState(null);
   const [pendingStatus, setPendingStatus] = useState('');
+  const [statusError, setStatusError] = useState('');
   const [tournamentAction, setTournamentAction] = useState(null);
   const [stageToDelete, setStageToDelete] = useState(null);
   const [tournamentHasResults, setTournamentHasResults] = useState(false);
@@ -410,6 +419,14 @@ export default function TorneoDetailPage() {
     if (newStageDate < todayLocalISO()) {
 
       setStageError('No se puede agregar una fecha que ya pasó.');
+
+      return;
+
+    }
+
+    if (stages.some((stage) => stage.date === newStageDate)) {
+
+      setStageError('Ya hay una fecha en ese día.');
 
       return;
 
@@ -875,6 +892,7 @@ export default function TorneoDetailPage() {
 
   const handleStatusChange = (newStatus) => {
     if (!newStatus || newStatus === tournament?.status) return;
+    setStatusError('');
     setPendingStatus(newStatus);
   };
 
@@ -888,7 +906,7 @@ export default function TorneoDetailPage() {
       setPendingStatus('');
     } catch (err) {
       console.error('Error al actualizar estado:', err);
-      setError(err?.response?.data?.error || 'No se pudo actualizar el estado del torneo.');
+      setStatusError(err?.response?.data?.error || 'No se pudo actualizar el estado del torneo.');
     } finally {
       setIsMutatingTournament(false);
     }
@@ -1045,7 +1063,7 @@ export default function TorneoDetailPage() {
 
           title={tournament?.name}
 
-          subtitle="Fase de Planificación: Gestioná las fechas y programá los partidos en las canchas de juego."
+          subtitle={`${STATUS_TRANSLATIONS[tournament?.status] || 'Torneo'}: gestioná las fechas y programá los partidos.`}
 
           actions={
 
@@ -1351,6 +1369,7 @@ export default function TorneoDetailPage() {
                             size="sm"
 
                             onClick={() => setScoreSheetMatch(match)}
+                            disabled={!canRecordResult(match)}
 
                             disabled={isSubmitting}
 
@@ -1448,13 +1467,19 @@ export default function TorneoDetailPage() {
 
                 id="new-stage-date"
 
-                type="date"
+                type="text"
 
-                min={todayLocalISO()}
+                inputMode="numeric"
 
-                value={newStageDate}
+                placeholder="dd/mm/aaaa"
 
-                onChange={(e) => setNewStageDate(e.target.value)}
+                value={/^\d{4}-\d{2}-\d{2}$/.test(newStageDate || '') ? `${newStageDate.slice(8, 10)}/${newStageDate.slice(5, 7)}/${newStageDate.slice(0, 4)}` : (newStageDate || '')}
+
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw);
+                  setNewStageDate(match ? `${match[3]}-${match[2]}-${match[1]}` : raw);
+                }}
 
                 className={dirStyles.input}
 
@@ -1551,6 +1576,7 @@ export default function TorneoDetailPage() {
                   'Retomar lo devuelve a preparación.'}
                 {editingMatch?.status === 'FINISHED' &&
                   'Editar resultado corrige los sets ya cargados y recalcula las posiciones.'}
+                {resultBlockReason(editingMatch) ? ` ${resultBlockReason(editingMatch)}` : ''}
               </p>
 
               <div className={chromeStyles.actionsRow}>
@@ -1566,6 +1592,7 @@ export default function TorneoDetailPage() {
                       variant="accent"
 
                       onClick={() => handleUpdateMatchStatus(editDraft.id, 'IN_PROGRESS')}
+                      disabled={!canRecordResult(editingMatch)}
 
                     >
 
@@ -1575,7 +1602,8 @@ export default function TorneoDetailPage() {
 
                     </Button>
 
-                    <Button type="button" variant="primary" onClick={() => setScoreSheetMatch(editingMatch)}>
+                    <Button type="button" variant="primary" onClick={() => setScoreSheetMatch(editingMatch)}
+                      disabled={!canRecordResult(editingMatch)}>
 
                       <i className="bi bi-clipboard-data-fill" aria-hidden="true" />
 
@@ -1609,7 +1637,8 @@ export default function TorneoDetailPage() {
 
                   <>
 
-                    <Button type="button" variant="primary" onClick={() => setScoreSheetMatch(editingMatch)}>
+                    <Button type="button" variant="primary" onClick={() => setScoreSheetMatch(editingMatch)}
+                      disabled={!canRecordResult(editingMatch)}>
 
                       <i className="bi bi-check-circle-fill" aria-hidden="true" />
 
@@ -1663,7 +1692,8 @@ export default function TorneoDetailPage() {
 
                 {editingMatch?.status === 'FINISHED' && (
 
-                  <Button type="button" variant="primary" onClick={() => setScoreSheetMatch(editingMatch)}>
+                  <Button type="button" variant="primary" onClick={() => setScoreSheetMatch(editingMatch)}
+                      disabled={!canRecordResult(editingMatch)}>
 
                     <i className="bi bi-clipboard-data-fill" aria-hidden="true" />
 
@@ -1713,12 +1743,16 @@ export default function TorneoDetailPage() {
 
         <Modal
           open={Boolean(pendingStatus)}
-          onClose={() => !isMutatingTournament && setPendingStatus('')}
+          onClose={() => {
+            if (isMutatingTournament) return;
+            setPendingStatus('');
+            setStatusError('');
+          }}
           title="Cambiar estado del torneo"
           size="sm"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setPendingStatus('')} disabled={isMutatingTournament}>
+              <Button variant="secondary" onClick={() => { setPendingStatus(''); setStatusError(''); }} disabled={isMutatingTournament}>
                 Cancelar
               </Button>
               <Button onClick={confirmStatusChange} disabled={isMutatingTournament}>
@@ -1730,6 +1764,7 @@ export default function TorneoDetailPage() {
           <p>
             El torneo pasa a {STATUS_TRANSLATIONS[pendingStatus] || pendingStatus}. Si lo finalizás o cancelás, los partidos que no terminaron toman el mismo estado.
           </p>
+          {statusError && <Alert variant="error">{statusError}</Alert>}
         </Modal>
 
         <Modal
@@ -1847,7 +1882,7 @@ export default function TorneoDetailPage() {
 
             onSuccess={async () => {
 
-              setSuccessMsg('Resultado publicado correctamente.');
+              setSuccessMsg('Resultado guardado.');
 
               const finishedId = scoreSheetMatch.id;
 
@@ -1857,7 +1892,7 @@ export default function TorneoDetailPage() {
 
                 handleCancelEdit();
 
-                setSuccessMsg('Resultado publicado correctamente.');
+                setSuccessMsg('Resultado guardado.');
 
               }
 

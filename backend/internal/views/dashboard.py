@@ -19,7 +19,7 @@ class AdminDashboardView(View):
     def get(self, request, *args, **kwargs):
         org = request.user.organization
         if not org:
-            return JsonResponse({'error': 'Forbidden: User has no organization'}, status=403)
+            return JsonResponse({'error': 'Tu usuario no tiene una liga asignada.'}, status=403)
         
         # Total de Clubes: Conteo de Club filtrado por organization=org.
         total_clubs = Club.objects.filter(organization=org).count()
@@ -38,7 +38,7 @@ class AdminDashboardView(View):
         
         # Torneos en Curso: Conteo de Tournament con status__in=['PREPARATION', 'IN_PROGRESS'] y organization=org.
         active_tournaments = Tournament.objects.filter(
-            status__in=['PREPARATION', 'IN_PROGRESS'],
+            status='IN_PROGRESS',
             organization=org,
             is_deleted=False,
         ).count()
@@ -60,14 +60,15 @@ class AdminDashboardView(View):
             role='CLUB_ADMIN'
         ).exclude(club_name__isnull=True).exclude(club_name__exact='')
         pending_clubs = affiliation_reqs.count()
-        # Un árbitro pendiente es aquel que ya ingresó sus datos de contacto
-        pending_referees = base_pending_reqs.filter(
+        # Un árbitro o planillero pendiente ya envió el formulario (tiene email y fecha de envío).
+        referee_reqs = base_pending_reqs.filter(
             role='REFEREE'
-        ).exclude(admin_email__isnull=True).exclude(admin_email__exact='').count()
-        # Un planillero pendiente es aquel que ya ingresó sus datos de contacto
-        pending_scorers = base_pending_reqs.filter(
+        ).exclude(admin_email__isnull=True).exclude(admin_email__exact='').exclude(submitted_at__isnull=True)
+        scorer_reqs = base_pending_reqs.filter(
             role='SCORER'
-        ).exclude(admin_email__isnull=True).exclude(admin_email__exact='').count()
+        ).exclude(admin_email__isnull=True).exclude(admin_email__exact='').exclude(submitted_at__isnull=True)
+        pending_referees = referee_reqs.count()
+        pending_scorers = scorer_reqs.count()
         
         pending_actions = [
             {
@@ -77,6 +78,22 @@ class AdminDashboardView(View):
             }
             for r in affiliation_reqs
         ]
+        pending_actions.extend(
+            {
+                "id": str(r.id),
+                "type": "NEW_REFEREE",
+                "message": f"Nueva solicitud de árbitro: {r.admin_email}"
+            }
+            for r in referee_reqs
+        )
+        pending_actions.extend(
+            {
+                "id": str(r.id),
+                "type": "NEW_SCORER",
+                "message": f"Nueva solicitud de planillero: {r.admin_email}"
+            }
+            for r in scorer_reqs
+        )
 
         visible_tournaments = Tournament.objects.filter(organization=org, is_deleted=False)
         focus = (

@@ -1,4 +1,5 @@
 import pytest
+from django.utils import timezone
 
 from tests.factories import (
     auth_header_for,
@@ -27,6 +28,8 @@ class TestAdminDashboard:
         make_user(
             organization=organization, role='PLAYER', email='f@t.com', username='fem_p', gender='F', club=club
         )
+        tournament.status = 'IN_PROGRESS'
+        tournament.save(update_fields=['status'])
         make_match(stage, team_a, team_b, court=court, referee=None, status='PREPARATION')
         make_registration_request(
             organization, role='CLUB_ADMIN', club_name='Pendiente', admin_email='p@t.com'
@@ -66,13 +69,21 @@ class TestAdminDashboard:
         make_registration_request(
             organization, role='REFEREE', club_name=None, admin_email='ref@t.com'
         )
+        make_registration_request(
+            organization,
+            role='REFEREE',
+            club_name=None,
+            admin_email='listo-ref@t.com',
+            submitted_at=timezone.now(),
+        )
 
         res = api_client.get('/internal/dashboard/admin/', **auth_header)
         assert res.status_code == 200
         actions = res.json()['pending_actions']
         messages = [action['message'] for action in actions]
-        assert messages == ['Nueva solicitud de afiliación: Club Listo']
-        assert all(action['type'] == 'NEW_AFFILIATION' for action in actions)
+        assert 'Nueva solicitud de afiliación: Club Listo' in messages
+        assert 'Nueva solicitud de árbitro: listo-ref@t.com' in messages
+        assert 'Nueva solicitud de árbitro: ref@t.com' not in messages
 
     def test_user_without_org_forbidden(self, api_client, db):
         orphan = make_user(organization=None, role='ADMIN', email='dash@t.com', username='dash')

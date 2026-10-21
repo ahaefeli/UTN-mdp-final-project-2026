@@ -94,8 +94,11 @@ export default function ClubesAdminPage() {
 
   // Invitation Link state
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [inviteLabel, setInviteLabel] = useState('');
   const [inviteTick, setInviteTick] = useState(0);
   const [reviewTarget, setReviewTarget] = useState(null);
+  const [reviewError, setReviewError] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Enforce ADMIN role-based access
   useEffect(() => {
@@ -186,8 +189,16 @@ export default function ClubesAdminPage() {
   const handleCloseInviteModal = () => {
     setIsInviteModalOpen(false);
     setGeneratedLink('');
+    setInviteLabel('');
     setIsCopied(false);
     setCopyError('');
+  };
+
+  const openInviteModal = () => {
+    setGeneratedLink('');
+    setInviteLabel('');
+    setCopyError('');
+    setIsInviteModalOpen(true);
   };
 
   // Generate Invite Link (POST)
@@ -196,7 +207,10 @@ export default function ClubesAdminPage() {
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const res = await apiClient.post('admin/club-requests/generate-link/', { role: targetRole });
+      const res = await apiClient.post('admin/club-requests/generate-link/', {
+        role: targetRole,
+        recipient_label: inviteLabel.trim(),
+      });
 
       const token = res.data?.token || '';
       const link = `${window.location.origin}/register?token=${token}`;
@@ -246,26 +260,36 @@ export default function ClubesAdminPage() {
 
   // Approve or Reject Proposed Club Request (POST)
   const handleReviewRequest = (requestId, action) => {
+    setReviewError('');
+    setRejectionReason('');
     setReviewTarget({ requestId, action });
   };
 
   const confirmReview = async () => {
     if (!reviewTarget) return;
     const { requestId, action } = reviewTarget;
+    if (action === 'REJECT' && !rejectionReason.trim()) {
+      setReviewError('El rechazo necesita un motivo.');
+      return;
+    }
     setIsSubmitting(true);
-    setErrorMsg('');
+    setReviewError('');
     setSuccessMsg('');
     try {
-      await apiClient.post(`admin/club-requests/${requestId}/review/`, { action });
+      await apiClient.post(`admin/club-requests/${requestId}/review/`, {
+        action,
+        rejection_reason: rejectionReason.trim(),
+      });
       setSuccessMsg(`Solicitud ${action === 'APPROVE' ? 'aprobada' : 'rechazada'} con éxito.`);
       setIsDetailModalOpen(false);
       setSelectedRequest(null);
       setReviewTarget(null);
+      setRejectionReason('');
       setInviteTick((value) => value + 1);
       loadData();
     } catch (err) {
       console.error('Error al procesar solicitud:', err);
-      setErrorMsg(err.response?.data?.error || 'No se pudo procesar la solicitud.');
+      setReviewError(err.response?.data?.error || 'No se pudo procesar la solicitud.');
     } finally {
       setIsSubmitting(false);
     }
@@ -293,7 +317,7 @@ export default function ClubesAdminPage() {
           title="Gestión de Clubes"
           subtitle="El alta es por invitación: generá el enlace, el club completa sus datos y vos aprobás la solicitud. No se carga el usuario a mano."
           actions={
-            <Button onClick={() => handleGenerateLink('CLUB_ADMIN')} disabled={isGeneratingLink}>
+            <Button onClick={openInviteModal} disabled={isGeneratingLink}>
               <i className="bi bi-building" aria-hidden="true" />
               {isGeneratingLink ? 'Generando...' : 'Invitar Club'}
             </Button>
@@ -304,12 +328,18 @@ export default function ClubesAdminPage() {
 
         <Modal
           open={Boolean(reviewTarget)}
-          onClose={() => !isSubmitting && setReviewTarget(null)}
+          stacked
+          onClose={() => {
+            if (isSubmitting) return;
+            setReviewTarget(null);
+            setReviewError('');
+            setRejectionReason('');
+          }}
           title={reviewTarget?.action === 'APPROVE' ? 'Aprobar solicitud' : 'Rechazar solicitud'}
           size="sm"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setReviewTarget(null)} disabled={isSubmitting}>
+              <Button variant="secondary" onClick={() => { setReviewTarget(null); setReviewError(''); setRejectionReason(''); }} disabled={isSubmitting}>
                 Cancelar
               </Button>
               <Button
@@ -327,6 +357,19 @@ export default function ClubesAdminPage() {
               ? 'Se crea el usuario con los datos de la solicitud.'
               : 'La solicitud queda rechazada y, si era un enlace, deja de servir.'}
           </p>
+          {reviewTarget?.action === 'REJECT' && (
+            <label className={dirStyles.label} htmlFor="club-rejection-reason">
+              Motivo
+              <textarea
+                id="club-rejection-reason"
+                className={dirStyles.textarea}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={3}
+              />
+            </label>
+          )}
+          {reviewError && <Alert variant="error">{reviewError}</Alert>}
         </Modal>
 
         {(successMsg || errorMsg) && (
@@ -513,18 +556,39 @@ export default function ClubesAdminPage() {
         <Modal
           open={isInviteModalOpen}
           onClose={handleCloseInviteModal}
-          title="Invitación Generada"
+          title={generatedLink ? 'Invitación generada' : 'Nueva invitación'}
           size="sm"
           footer={
-            <Button variant="secondary" onClick={handleCloseInviteModal}>
-              Cerrar
-            </Button>
+            generatedLink ? (
+              <Button variant="secondary" onClick={handleCloseInviteModal}>
+                Cerrar
+              </Button>
+            ) : (
+              <Button onClick={() => handleGenerateLink('CLUB_ADMIN')} disabled={isGeneratingLink}>
+                {isGeneratingLink ? 'Generando...' : 'Generar enlace'}
+              </Button>
+            )
           }
         >
           <div className={dirStyles.form}>
+            {!generatedLink ? (
+              <label className={dirStyles.label} htmlFor="invite-recipient">
+                Destinatario (opcional)
+                <input
+                  id="invite-recipient"
+                  className={dirStyles.input}
+                  value={inviteLabel}
+                  onChange={(e) => setInviteLabel(e.target.value)}
+                  placeholder="Ej: DT de Huracán"
+                />
+              </label>
+            ) : null}
             <p className={dirStyles.muted}>
-              Enlace generado con éxito. Compártelo con el administrador del club.
+              {generatedLink
+                ? 'Enlace generado. Compartilo con la persona indicada.'
+                : 'El enlace sirve una sola vez y vence a las 48 horas.'}
             </p>
+            {generatedLink ? (
             <div className={dirStyles.formGroup}>
               <label className={dirStyles.label} htmlFor="invite-link">
                 Enlace de registro:
@@ -548,6 +612,7 @@ export default function ClubesAdminPage() {
               </div>
               {copyError ? <p className={dirStyles.copyError}>{copyError}</p> : null}
             </div>
+            ) : null}
           </div>
         </Modal>
 

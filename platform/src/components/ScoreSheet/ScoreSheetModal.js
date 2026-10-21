@@ -60,17 +60,18 @@ function validateClientSets(sets) {
     if (lp < 0 || vp < 0) {
       return `Los puntos del set ${i + 1} no pueden ser negativos.`;
     }
-    if (lp > 99 || vp > 99) {
-      return `Los puntos del set ${i + 1} no pueden tener más de 2 cifras.`;
-    }
     if (lp === vp) {
       return `El set ${i + 1} no puede empatar.`;
     }
     const target = i === 4 ? 15 : 25;
     const winner = Math.max(lp, vp);
     const loser = Math.min(lp, vp);
+    const legalOvertime = winner > target && winner - loser === 2 && loser >= target - 1;
     if (winner < target || winner - loser < 2) {
       return `El set ${i + 1} se juega a ${target} y debe ganarse por 2 puntos.`;
+    }
+    if (winner > target && !legalOvertime) {
+      return `El set ${i + 1} ya habría terminado antes de ese marcador. Si se pasa de ${target}, tiene que ser por diferencia de 2.`;
     }
     if (lp > vp) localWins += 1;
     else visitorWins += 1;
@@ -174,7 +175,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
         <div className={styles.header}>
           <div>
             <h2 id="scoresheet-title" className={styles.title}>
-              {hasSavedSets ? 'Editar resultado' : 'Planilla de sets'}
+              {hasSavedSets ? 'Editar resultado' : 'Cargar resultado'}
             </h2>
             <p className={styles.subtitle}>
               {localName} vs {visitorName}
@@ -232,7 +233,7 @@ export default function ScoreSheetModal({ match, onClose, onSuccess }) {
             ))}
 
             <p className={styles.hint}>
-              Mejor de 5. Los sets 1 a 4 son a 25 y el 5º a 15, siempre con diferencia de 2. Hasta 2 cifras.
+              Mejor de 5. Los sets 1 a 4 son a 25 y el 5º a 15, siempre con diferencia de 2.
             </p>
 
             {error && <div className={styles.error}>{error}</div>}

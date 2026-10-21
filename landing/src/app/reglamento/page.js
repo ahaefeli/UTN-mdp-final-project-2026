@@ -13,7 +13,7 @@ const mockDocuments = {
       id: 1,
       title: "Reglamento Oficial de Juego 2026",
       description: "Normativa vigente para todas las categorías competitivas.",
-      updatedDate: "ACTUALIZADO: 1 DE ENERO DE 2025",
+      updatedDate: "Actualizado: 1 de enero de 2026",
       href: "/docs/reglamento_juego_2026.pdf",
     },
     {
@@ -71,6 +71,12 @@ export default function ReglamentoPage() {
             Torneos
           </Link>
           <Link 
+            href="/resultados" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
+            Resultados
+          </Link>
+          <Link 
             href="/equipos" 
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/equipos' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
           >
@@ -91,7 +97,7 @@ export default function ReglamentoPage() {
                 : 'text-slate-600 border-transparent hover:text-[#001F54]'
             }`}
           >
-            Conocenos
+            La Plataforma
           </Link>
         </nav>
 
@@ -133,6 +139,9 @@ export default function ReglamentoPage() {
             <Link href="/torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Torneos
             </Link>
+            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+              Resultados
+            </Link>
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
@@ -145,7 +154,7 @@ export default function ReglamentoPage() {
               onClick={() => setIsMobileMenuOpen(false)} 
               className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
             >
-              Conocenos
+              La Plataforma
             </Link>
             <hr />
             <a
@@ -168,7 +177,7 @@ export default function ReglamentoPage() {
             Documentación Oficial
           </h1>
           <p className="text-slate-600 text-sm sm:text-base font-semibold max-w-2xl leading-relaxed">
-            Accede a todos los reglamentos, normativas y formularios necesarios para la participación en los torneos oficiales de VOLEYHUB.
+            Accedé a los reglamentos, normativas y formularios para participar en los torneos oficiales de VoleyHub.
           </p>
         </section>
 
@@ -305,6 +314,7 @@ export default function ReglamentoPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
+                <li><Link href="/resultados" className="text-xs hover:text-white transition-colors duration-200">RESULTADOS</Link></li>
                 <li><Link href="/sitemap" className="text-xs hover:text-white transition-colors duration-200">SITEMAP</Link></li>
                 <li><Link href="/privacidad" className="text-xs hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
                 <li><Link href="/contacto" className="text-xs hover:text-white transition-colors duration-200">CONTACTO</Link></li>

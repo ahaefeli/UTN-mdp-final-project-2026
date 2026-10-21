@@ -122,7 +122,7 @@ class TestEnrollmentRules:
             **auth_header,
         )
         assert res.status_code == 400
-        assert 'Mismatch' in res.json()['error']
+        assert 'categoría' in res.json()['error']
 
     def test_enrollment_success(self, api_client, auth_header, tournament, team_a):
         res = api_client.post(
@@ -149,7 +149,7 @@ class TestMatchRules:
             **auth_header,
         )
         assert res.status_code == 400
-        assert 'Same team' in res.json()['error']
+        assert 'distintos' in res.json()['error']
 
     def test_collision_on_create(
         self, api_client, auth_header, stage, team_a, team_b, team_c, club_b, court, referee_user
@@ -337,7 +337,7 @@ class TestTournamentRulesExtras:
             '/internal/torneos/inscripciones/', data=payload, content_type='application/json', **auth_header
         )
         assert res.status_code == 400
-        assert 'Already enrolled' in res.json()['error']
+        assert 'inscripto' in res.json()['error']
 
     def test_enrollment_list_and_unenroll(self, api_client, auth_header, tournament, team_a):
         api_client.post(

@@ -36,7 +36,7 @@ export default function MatchScheduleFields({
               .filter((enroll) => enroll.team_id !== visitorTeamId)
               .map((enroll) => (
                 <option key={enroll.team_id} value={enroll.team_id}>
-                  {enroll.team_name}
+                  {enroll.club_name ? `${enroll.club_name} — ${enroll.team_name}` : enroll.team_name}
                 </option>
               ))}
           </select>
@@ -60,7 +60,7 @@ export default function MatchScheduleFields({
               .filter((enroll) => enroll.team_id !== localTeamId)
               .map((enroll) => (
                 <option key={enroll.team_id} value={enroll.team_id}>
-                  {enroll.team_name}
+                  {enroll.club_name ? `${enroll.club_name} — ${enroll.team_name}` : enroll.team_name}
                 </option>
               ))}
           </select>

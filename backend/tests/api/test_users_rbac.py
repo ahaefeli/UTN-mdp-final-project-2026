@@ -79,9 +79,9 @@ class TestUsersRbac:
             data=json.dumps({
                 'role': 'PLAYER',
                 'user': 'newplayer',
-                'password': 'pass123',
+                'password': 'pass1234',
                 'organization_id': str(organization.id),
-                'dni': '888001',
+                'dni': '88800111',
                 'name': 'Nuevo Player',
                 'email': 'newplayer@test.com',
             }),

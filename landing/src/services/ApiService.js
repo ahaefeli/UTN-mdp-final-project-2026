@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { getPublicApiBase } from '../utils/publicApi';
 
 class ApiService {
     constructor() {
         this.client = axios.create({
-            baseURL: 'http://192.168.1.8:8000/public/'
+            baseURL: `${getPublicApiBase()}/`,
         });
     }
 

@@ -6,6 +6,8 @@ import authService from '../../services/authService';
 import playerService from '../../services/playerService';
 import { userService } from '../../services/userService';
 import teamService from '../../services/teamService';
+import { dniError, emailError, normalizeDni, passwordError, usernameError } from '../../utils/identity';
+import { uploadFileError } from '../../utils/uploads';
 import {
   PageHeader,
   Button,
@@ -156,11 +158,20 @@ export default function MisJugadoresPage() {
 
   const handleCreatePlayer = async (e) => {
     e.preventDefault();
+    if (!formData.name.trim()) {
+      setErrorMsg('El nombre es obligatorio.');
+      return;
+    }
+    const invalidPlayer = usernameError(formData.user) || emailError(formData.email) || dniError(formData.dni) || passwordError(formData.password);
+    if (invalidPlayer) {
+      setErrorMsg(invalidPlayer);
+      return;
+    }
     setErrorMsg('');
     setSuccessMsg('');
     setIsSubmitting(true);
     try {
-      await userService.createUser(formData);
+      await userService.createUser({ ...formData, dni: normalizeDni(formData.dni) });
       setShowCreateModal(false);
       setFormData({ user: '', email: '', password: '', dni: '', name: '', gender: '', role: 'PLAYER' });
       setSuccessMsg('¡Jugador registrado y federado exitosamente!');
@@ -255,7 +266,7 @@ export default function MisJugadoresPage() {
       return (
         <div className={styles.assignmentDisplay}>
           <span className={styles.assignmentLabel}>
-            {formatCategory(player.team_info.category)} - {formatBranch(player.team_info.branch)}
+            {player.team_info.name} · {formatBranch(player.team_info.branch)}
           </span>
           <div className={styles.assignmentActions}>
             <button
@@ -286,9 +297,15 @@ export default function MisJugadoresPage() {
           className={styles.teamSelect}
         >
           <option value="">Seleccione equipo...</option>
-          {teams.map((team) => (
+          {teams
+            .filter((team) => {
+              if (player.gender === 'M') return team.branch === 'MALE';
+              if (player.gender === 'F') return team.branch === 'FEMALE';
+              return true;
+            })
+            .map((team) => (
             <option key={team.id} value={team.id}>
-              {formatCategory(team.category)} - {formatBranch(team.branch)}
+              {team.name} ({formatCategory(team.category)} · {formatBranch(team.branch)})
             </option>
           ))}
         </select>
@@ -309,10 +326,48 @@ export default function MisJugadoresPage() {
     </StatusBadge>
   );
 
+  const uploadMedicalCertificate = async (player, file) => {
+    const invalidFile = uploadFileError(file);
+    if (invalidFile) {
+      setErrorMsg(invalidFile);
+      return;
+    }
+    setErrorMsg('');
+    setSuccessMsg('');
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('medical_clearance', file);
+      await userService.updateProfile(player.id, formData);
+      setSuccessMsg('Apto físico cargado.');
+      await loadPlayers();
+    } catch (err) {
+      setErrorMsg(err.response?.data?.error || 'No se pudo cargar el apto físico.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const renderMedicalBadge = (player) => (
-    <StatusBadge variant={player.medical_certificate ? 'success' : 'danger'}>
-      {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
-    </StatusBadge>
+    <div className={styles.assignmentForm}>
+      <StatusBadge variant={player.medical_certificate ? 'success' : 'danger'}>
+        {player.medical_certificate ? 'Apto (Cert. Cargado)' : 'Pendiente'}
+      </StatusBadge>
+      <label className={styles.linkAction}>
+        Cargar apto
+        <input
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+          hidden
+          disabled={isSubmitting}
+          onChange={(e) => {
+            const next = e.target.files?.[0];
+            e.target.value = '';
+            if (next) uploadMedicalCertificate(player, next);
+          }}
+        />
+      </label>
+    </div>
   );
 
   if (!isAuthenticated) {
@@ -477,7 +532,7 @@ export default function MisJugadoresPage() {
           open={showCreateModal}
           onClose={handleCloseCreateModal}
           title="Registrar Nuevo Jugador"
-          subtitle="Ingresa los datos para registrar y federar un jugador"
+          subtitle="Ingresá los datos para registrar y federar un jugador"
           footer={
             <>
               <Button variant="secondary" onClick={handleCloseCreateModal} disabled={isSubmitting}>
@@ -489,7 +544,7 @@ export default function MisJugadoresPage() {
             </>
           }
         >
-          <form id="create-player-form" onSubmit={handleCreatePlayer} className={dirStyles.form}>
+          <form id="create-player-form" onSubmit={handleCreatePlayer} className={dirStyles.form} noValidate>
             <div className={dirStyles.formGroup}>
               <label className={dirStyles.label} htmlFor="create-player-name">
                 Nombre y Apellido *
@@ -497,7 +552,6 @@ export default function MisJugadoresPage() {
               <input
                 id="create-player-name"
                 type="text"
-                required
                 placeholder="Ej: Juan Pérez"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -515,7 +569,6 @@ export default function MisJugadoresPage() {
                 className={dirStyles.select}
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                required
                 disabled={isSubmitting}
               >
                 <option value="">Seleccione el género...</option>
@@ -531,7 +584,6 @@ export default function MisJugadoresPage() {
               <input
                 id="create-player-dni"
                 type="text"
-                required
                 placeholder="Ej: 45678912"
                 value={formData.dni}
                 onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
@@ -547,7 +599,6 @@ export default function MisJugadoresPage() {
               <input
                 id="create-player-user"
                 type="text"
-                required
                 placeholder="Ej: juan.perez"
                 value={formData.user}
                 onChange={(e) => setFormData({ ...formData, user: e.target.value })}
@@ -562,8 +613,7 @@ export default function MisJugadoresPage() {
               </label>
               <input
                 id="create-player-email"
-                type="email"
-                required
+                type="text"
                 placeholder="Ej: juan@mail.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -579,8 +629,7 @@ export default function MisJugadoresPage() {
               <input
                 id="create-player-password"
                 type="password"
-                required
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className={dirStyles.input}

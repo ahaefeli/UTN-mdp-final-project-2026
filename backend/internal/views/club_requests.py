@@ -44,6 +44,8 @@ def serialize_club_request(req):
         "created_at": req.created_at.isoformat() if req.created_at else None,
         "expires_at": req.expires_at.isoformat() if req.expires_at else None,
         "submitted_at": req.submitted_at.isoformat() if req.submitted_at else None,
+        "rejection_reason": req.rejection_reason or '',
+        "recipient_label": req.recipient_label or '',
     }
 
 def duplicate_dni_response(dni):
@@ -82,9 +84,9 @@ def friendly_integrity_message(exc, *, for_approval=True):
 
 def check_admin_permission(request):
     if not hasattr(request, 'user') or request.user.role != 'ADMIN':
-        return JsonResponse({'error': 'Forbidden: ADMIN role required'}, status=403)
+        return JsonResponse({'error': 'Solo un administrador puede hacer esto.'}, status=403)
     if not request.user.organization:
-        return JsonResponse({'error': 'Forbidden: User has no organization'}, status=403)
+        return JsonResponse({'error': 'Tu usuario no tiene una liga asignada.'}, status=403)
     return None
 
 @method_decorator(jwt_required, name='dispatch')
@@ -105,6 +107,7 @@ class GenerateLinkView(View):
         except json.JSONDecodeError:
             data = {}
         role = data.get('role', 'CLUB_ADMIN') if data else 'CLUB_ADMIN'
+        recipient_label = str((data or {}).get('recipient_label') or '').strip()[:150]
 
         try:
             req_obj = ClubRegistrationRequest.objects.create(
@@ -112,11 +115,12 @@ class GenerateLinkView(View):
                 organization=request.user.organization,
                 token=token,
                 role=role,
+                recipient_label=recipient_label,
                 expires_at=expires_at,
                 status='PENDING'
             )
-        except Exception as e:
-            return JsonResponse({'error': f'Database error: {str(e)}'}, status=400)
+        except Exception:
+            return JsonResponse({'error': 'No pudimos guardar la invitación.'}, status=400)
 
         frontend_base = getattr(settings, 'FRONTEND_BASE_URL', '')
         registration_link = f"/public-register?token={token}"
@@ -142,6 +146,7 @@ class ClubRequestListView(View):
                 organization=request.user.organization,
                 status='PENDING',
                 submitted_at__isnull=True,
+                expires_at__gt=timezone.now(),
             ).order_by('-created_at')
             if role_filter:
                 qs = qs.filter(role=role_filter)
@@ -152,6 +157,8 @@ class ClubRequestListView(View):
             ).order_by('-created_at')
             if role_filter:
                 qs = qs.filter(role=role_filter)
+                if role_filter in ('REFEREE', 'SCORER'):
+                    qs = qs.exclude(admin_email__isnull=True).exclude(admin_email='').exclude(submitted_at__isnull=True)
             else:
                 qs = qs.exclude(club_name__isnull=True).exclude(club_name='')
 
@@ -181,7 +188,7 @@ class ClubRequestDetailView(View):
         try:
             req_obj = ClubRegistrationRequest.objects.get(pk=pk, organization=request.user.organization)
         except ClubRegistrationRequest.DoesNotExist:
-            return JsonResponse({'error': 'Club registration request not found'}, status=404)
+            return JsonResponse({'error': 'No encontramos la solicitud.'}, status=404)
 
         return JsonResponse({'data': serialize_club_request(req_obj)}, status=200)
 
@@ -195,26 +202,30 @@ class ReviewClubRequestView(View):
         try:
             req_obj = ClubRegistrationRequest.objects.get(pk=pk, organization=request.user.organization)
         except ClubRegistrationRequest.DoesNotExist:
-            return JsonResponse({'error': 'Club registration request not found'}, status=404)
+            return JsonResponse({'error': 'No encontramos la solicitud.'}, status=404)
 
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+            return JsonResponse({'error': 'El pedido no es válido.'}, status=400)
 
         action = data.get('action')
         if action not in ['APPROVE', 'REJECT']:
-            return JsonResponse({'error': 'Invalid action. Must be APPROVE or REJECT'}, status=400)
+            return JsonResponse({'error': 'La acción tiene que ser aprobar o rechazar.'}, status=400)
 
         if req_obj.status != 'PENDING':
-            return JsonResponse({'error': f'Request has already been processed with status: {req_obj.status}'}, status=400)
+            return JsonResponse({'error': 'Esa solicitud ya fue procesada.'}, status=400)
 
         try:
             if action == 'REJECT':
+                reason = str(data.get('rejection_reason') or '').strip()
+                if req_obj.submitted_at and not reason:
+                    return JsonResponse({'error': 'El rechazo necesita un motivo.'}, status=400)
                 req_obj.status = 'REJECTED'
+                req_obj.rejection_reason = reason
                 req_obj.save()
                 return JsonResponse({
-                    'message': 'Club registration request rejected.',
+                    'message': 'Solicitud rechazada.',
                     'data': serialize_club_request(req_obj)
                 }, status=200)
 
@@ -227,7 +238,7 @@ class ReviewClubRequestView(View):
                     with transaction.atomic():
                         username_to_check = req_obj.admin_username or req_obj.admin_email
                         if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=username_to_check).exists():
-                            return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' already exists."}, status=400)
+                            return JsonResponse({'error': 'Ya existe un usuario con ese email o nombre de usuario.'}, status=400)
                         dni_error = duplicate_dni_response(req_obj.admin_dni)
                         if dni_error:
                             return dni_error
@@ -251,7 +262,7 @@ class ReviewClubRequestView(View):
                     with transaction.atomic():
                         username_to_check = req_obj.admin_username or req_obj.admin_email
                         if User.objects.filter(email=req_obj.admin_email).exists() or User.objects.filter(username=username_to_check).exists():
-                            return JsonResponse({'error': f"User with email/username '{req_obj.admin_email}' or '{username_to_check}' already exists."}, status=400)
+                            return JsonResponse({'error': 'Ya existe un usuario con ese email o nombre de usuario.'}, status=400)
                         dni_error = duplicate_dni_response(req_obj.admin_dni)
                         if dni_error:
                             return dni_error
@@ -286,7 +297,7 @@ class ReviewClubRequestView(View):
                     body = (
                         f"Hola {req_obj.admin_first_name} {req_obj.admin_last_name},\n\n"
                         "¡Nos complace informarte que tu Club ha sido aprobado en VoleyHub!\n\n"
-                        "A partir de este momento, puedes iniciar sesión utilizando las credenciales que ingresaste en el formulario de registro:\n"
+                        "A partir de este momento, podés iniciar sesión utilizando las credenciales que ingresaste en el formulario de registro:\n"
                         f"- Usuario: {req_obj.admin_username or req_obj.admin_email}\n"
                         f"- Email: {req_obj.admin_email}\n\n"
                         "Atentamente,\n"
@@ -304,11 +315,11 @@ class ReviewClubRequestView(View):
                     logger.error(f"Failed to send club approval email to {req_obj.admin_email}: {str(mail_err)}")
 
                 return JsonResponse({
-                    'message': 'Club registration request approved, club and admin user created successfully.',
+                    'message': 'Solicitud aprobada. El club y el administrador quedaron creados.',
                     'data': serialize_club_request(req_obj)
                 }, status=200)
 
         except IntegrityError as e:
             return JsonResponse({'error': friendly_integrity_message(e)}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': f"Transaction failed: {str(e)}"}, status=400)
+        except Exception:
+            return JsonResponse({'error': 'No pudimos completar la revisión.'}, status=400)

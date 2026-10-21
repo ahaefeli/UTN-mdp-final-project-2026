@@ -3,12 +3,28 @@ from datetime import datetime
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.views import View
 from public.utils.standings_calculator import calculate_standings
 from core.auth import jwt_required
 from .base import BaseCrudView, parse_body
 from core.models import Tournament, TournamentEnrollment, TournamentStage, Team, Match
+
+def stage_dates_error(raw_dates):
+    seen = set()
+    today = timezone.localdate()
+    for raw in raw_dates:
+        try:
+            stage_date = datetime.strptime(raw, '%Y-%m-%d').date() if isinstance(raw, str) else raw
+        except (TypeError, ValueError):
+            return 'La fecha no es válida.'
+        if stage_date < today:
+            return 'No se puede usar una fecha que ya pasó.'
+        if stage_date in seen:
+            return 'No puede haber dos fechas el mismo día.'
+        seen.add(stage_date)
+    return None
+
 
 def serialize_tournament(t):
     return {
@@ -24,7 +40,8 @@ def serialize_tournament(t):
     }
 
 def serialize_enrollment(e):
-    return {'id': e.id, 'tournament_id': e.tournament_id, 'tournament_name': e.tournament.name, 'team_id': e.team_id, 'team_name': e.team.name, 'category': e.team.category, 'branch': e.team.branch}
+    club_name = e.team.club.name if e.team.club_id else ''
+    return {'id': e.id, 'tournament_id': e.tournament_id, 'tournament_name': e.tournament.name, 'team_id': e.team_id, 'team_name': e.team.name, 'club_name': club_name, 'category': e.team.category, 'branch': e.team.branch}
 
 def serialize_stage(s):
     return {'id': s.id, 'tournament_id': s.tournament_id, 'tournament_name': s.tournament.name, 'date': s.date.isoformat(), 'name': s.name}
@@ -59,7 +76,7 @@ class TournamentView(BaseCrudView):
 
     def post(self, request, *args, **kwargs):
         data = parse_body(request)
-        if not all(k in data for k in ['name', 'year', 'category', 'branch', 'organization_id']): return JsonResponse({'error': 'Missing fields'}, status=400)
+        if not all(k in data for k in ['name', 'year', 'category', 'branch', 'organization_id']): return JsonResponse({'error': 'Faltan datos del torneo.'}, status=400)
         
         organization_id = data.get('organization_id')
         category = data.get('category')
@@ -71,6 +88,20 @@ class TournamentView(BaseCrudView):
             status__in=['PREPARATION', 'IN_PROGRESS'],
             is_deleted=False,
         ).exists()
+
+        start_raw = data.get('start_date')
+        if start_raw:
+            try:
+                start_date = datetime.strptime(start_raw, '%Y-%m-%d').date() if isinstance(start_raw, str) else start_raw
+            except (TypeError, ValueError):
+                return JsonResponse({'error': 'La fecha de inicio no es válida.'}, status=400)
+            if start_date < timezone.localdate():
+                return JsonResponse({'error': 'La fecha de inicio no puede ser anterior a hoy.'}, status=400)
+
+        stages = data.get('stages') or []
+        bad_dates = stage_dates_error([s.get('date') for s in stages])
+        if bad_dates:
+            return JsonResponse({'error': bad_dates}, status=400)
 
         try:
             with transaction.atomic():
@@ -85,7 +116,7 @@ class TournamentView(BaseCrudView):
 
     def put(self, request, obj_id=None, *args, **kwargs):
         tid = obj_id or request.GET.get('tournament_id')
-        if not tid: return JsonResponse({'error': 'Missing tournament_id'}, status=400)
+        if not tid: return JsonResponse({'error': 'Falta el identificador del torneo.'}, status=400)
         data = parse_body(request)
         try:
             o = self.model.objects.get(id=tid, organization=request.user.organization)
@@ -107,6 +138,21 @@ class TournamentView(BaseCrudView):
                 return JsonResponse({'error': 'No se puede reabrir un torneo ya finalizado.'}, status=400)
             if original_status == 'CANCELLED' and o.status != 'CANCELLED':
                 return JsonResponse({'error': 'No se puede reabrir un torneo cancelado.'}, status=400)
+            if original_status != o.status and o.status == 'IN_PROGRESS':
+                team_count = TournamentEnrollment.objects.filter(tournament=o).count()
+                has_stage = TournamentStage.objects.filter(tournament=o).exists()
+                has_matches = Match.objects.filter(tournament_stage__tournament=o).exists()
+                missing = []
+                if team_count < 2:
+                    missing.append('al menos 2 equipos inscriptos')
+                if not has_stage:
+                    missing.append('una fecha')
+                if not has_matches:
+                    missing.append('un partido')
+                if missing:
+                    return JsonResponse({
+                        'error': 'Para pasar a en disputa faltan: ' + ', '.join(missing) + '.',
+                    }, status=400)
             if not o.is_deleted and o.status in ('PREPARATION', 'IN_PROGRESS') and Tournament.objects.filter(
                 organization=o.organization,
                 category=o.category,
@@ -123,12 +169,12 @@ class TournamentView(BaseCrudView):
                     Match.objects.filter(tournament_stage__tournament=o).exclude(status__in=['FINISHED', 'CANCELLED']).update(status='FINISHED')
                     
             o.save(); return JsonResponse({'data': serialize_tournament(o)}, status=200)
-        except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def delete(self, request, obj_id=None, *args, **kwargs):
         tid = obj_id or request.GET.get('tournament_id')
-        if not tid: return JsonResponse({'error': 'Missing tournament_id'}, status=400)
+        if not tid: return JsonResponse({'error': 'Falta el identificador del torneo.'}, status=400)
         try:
             tournament = self.model.objects.get(id=tid, organization=request.user.organization)
         except self.model.DoesNotExist:
@@ -155,47 +201,51 @@ class TournamentEnrollmentView(BaseCrudView):
                 enroll = self.model.objects.get(tournament_id=tid, team_id=tmid)
                 return JsonResponse({'data': serialize_enrollment(enroll)}, status=200)
             except self.model.DoesNotExist:
-                return JsonResponse({'error': 'Not found'}, status=404)
+                return JsonResponse({'error': 'No encontrado.'}, status=404)
         if tid: return JsonResponse({'data': [serialize_enrollment(e) for e in self.model.objects.filter(tournament_id=tid)]}, status=200)
         if tmid: return JsonResponse({'data': [serialize_enrollment(e) for e in self.model.objects.filter(team_id=tmid)]}, status=200)
-        return JsonResponse({'error': 'Missing id'}, status=400)
+        return JsonResponse({'error': 'Falta el identificador.'}, status=400)
 
     def post(self, request, *args, **kwargs):
         data = parse_body(request); tid, tmid = data.get('tournament_id'), data.get('team_id')
-        if not tid or not tmid: return JsonResponse({'error': 'Missing ids'}, status=400)
+        if not tid or not tmid: return JsonResponse({'error': 'Faltan identificadores.'}, status=400)
         try:
             t, tm = Tournament.objects.get(id=tid), Team.objects.get(id=tmid)
-            if tm.category != t.category or tm.branch != t.branch: return JsonResponse({'error': 'Mismatch category/branch'}, status=400)
-            if self.model.objects.filter(tournament=t, team=tm).exists(): return JsonResponse({'error': 'Already enrolled'}, status=400)
+            if tm.category != t.category or tm.branch != t.branch: return JsonResponse({'error': 'El equipo no coincide con la categoría y la rama del torneo.'}, status=400)
+            if self.model.objects.filter(tournament=t, team=tm).exists(): return JsonResponse({'error': 'Ese equipo ya está inscripto.'}, status=400)
             return JsonResponse({'data': serialize_enrollment(self.model.objects.create(tournament=t, team=tm))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def delete(self, request, tournament_id=None, team_id=None, *args, **kwargs):
         tid = tournament_id or request.GET.get('tournament_id')
         tmid = team_id or request.GET.get('team_id')
-        try: self.model.objects.get(tournament_id=tid, team_id=tmid).delete(); return JsonResponse({'message': 'Unenrolled'}, status=200)
-        except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        try: self.model.objects.get(tournament_id=tid, team_id=tmid).delete(); return JsonResponse({'message': 'Equipo dado de baja.'}, status=200)
+        except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)
 
 class TournamentStageView(BaseCrudView):
     model = TournamentStage
     def get(self, request, obj_id=None, *args, **kwargs):
         tid = obj_id or request.GET.get('tournament_id')
-        if not tid: return JsonResponse({'error': 'Missing tournament_id'}, status=400)
+        if not tid: return JsonResponse({'error': 'Falta el identificador del torneo.'}, status=400)
         return JsonResponse({'data': [serialize_stage(s) for s in self.model.objects.filter(tournament_id=tid).order_by('date')]}, status=200)
 
     def post(self, request, *args, **kwargs):
         data = parse_body(request)
-        if not all(k in data for k in ['tournament_id', 'date', 'name']): return JsonResponse({'error': 'Missing fields'}, status=400)
+        if not all(k in data for k in ['tournament_id', 'date', 'name']): return JsonResponse({'error': 'Faltan la fecha y el nombre.'}, status=400)
         
         try:
             stage_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
         except (TypeError, ValueError):
-            return JsonResponse({'error': 'Formato de fecha inválido. Debe usar YYYY-MM-DD.'}, status=400)
+            return JsonResponse({'error': 'La fecha no es válida.'}, status=400)
         if stage_date < timezone.localdate():
             return JsonResponse({'error': 'No se puede agregar una fecha que ya pasó.'}, status=400)
+        if self.model.objects.filter(tournament_id=data['tournament_id'], date=stage_date).exists():
+            return JsonResponse({'error': 'Ya hay una fecha en ese día.'}, status=400)
         data['date'] = stage_date
         
         try: return JsonResponse({'data': serialize_stage(self.model.objects.create(**data))}, status=201)
+        except IntegrityError:
+            return JsonResponse({'error': 'Ya hay una fecha en ese día.'}, status=400)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def delete(self, request, obj_id=None, *args, **kwargs):
@@ -207,7 +257,7 @@ class TournamentStageView(BaseCrudView):
             Match.objects.filter(tournament_stage=s).delete()
             s.delete()
             return JsonResponse({'message': 'Eliminada'}, status=200)
-        except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)
 
 @method_decorator(jwt_required, name='dispatch')
 class InternalStandingsView(View):

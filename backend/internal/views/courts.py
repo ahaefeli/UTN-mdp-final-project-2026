@@ -12,7 +12,7 @@ class CourtView(BaseCrudView):
         cid = obj_id or request.GET.get('court_id')
         if cid:
             try: return JsonResponse({'data': serialize_court(self.model.objects.get(id=cid))}, status=200)
-            except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+            except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)
         cl_id = request.GET.get('club_id')
         qs = self.model.objects.filter(club_id=cl_id).order_by('id') if cl_id else self.model.objects.all().order_by('id')
         page = request.GET.get('page')
@@ -23,24 +23,24 @@ class CourtView(BaseCrudView):
 
     def post(self, request, *args, **kwargs):
         data = parse_body(request)
-        if not all(k in data for k in ['club_id', 'name', 'enabled']): return JsonResponse({'error': 'Missing fields'}, status=400)
+        if not all(k in data for k in ['club_id', 'name', 'enabled']): return JsonResponse({'error': 'Faltan datos.'}, status=400)
         try: return JsonResponse({'data': serialize_court(self.model.objects.create(**data))}, status=201)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def put(self, request, obj_id=None, *args, **kwargs):
         cid = obj_id or request.GET.get('court_id')
-        if not cid: return JsonResponse({'error': 'Missing court_id'}, status=400)
+        if not cid: return JsonResponse({'error': 'Falta el identificador de la cancha.'}, status=400)
         data = parse_body(request)
         try:
             c = self.model.objects.get(id=cid)
             for k, v in data.items():
                 if hasattr(c, k): setattr(c, k, v)
             c.save(); return JsonResponse({'data': serialize_court(c)}, status=200)
-        except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def delete(self, request, obj_id=None, *args, **kwargs):
         cid = obj_id or request.GET.get('court_id')
-        if not cid: return JsonResponse({'error': 'Missing court_id'}, status=400)
-        try: self.model.objects.get(id=cid).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
-        except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        if not cid: return JsonResponse({'error': 'Falta el identificador de la cancha.'}, status=400)
+        try: self.model.objects.get(id=cid).delete(); return JsonResponse({'message': 'Eliminado.'}, status=200)
+        except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)

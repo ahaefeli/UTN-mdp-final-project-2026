@@ -29,7 +29,7 @@ class PlayerView(BaseCrudView):
                 from .users import serialize_user
                 return JsonResponse({'data': serialize_user(obj)}, status=200)
             except self.model.DoesNotExist:
-                return JsonResponse({'error': 'Not found'}, status=404)
+                return JsonResponse({'error': 'No encontrado.'}, status=404)
 
         team_id = request.GET.get('team_id')
         if team_id:

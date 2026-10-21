@@ -130,6 +130,15 @@ class Team(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['club', 'name', 'category', 'branch'],
+                condition=models.Q(is_deleted=False),
+                name='unique_active_team_identity',
+            ),
+        ]
+
 class TournamentEnrollment(models.Model):
     """ Join Table entre torneo y equipo
         CONSTRAINT: Un equipo solo puede estar registrado en UN torneo activo;
@@ -145,6 +154,14 @@ class TournamentStage(models.Model):
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
     date = models.DateField()
     name = models.CharField(max_length=50)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['tournament', 'date'],
+                name='unique_tournament_stage_date',
+            ),
+        ]
 
 class Match(models.Model):
     """ Establece toda la data de un partido (Equipos que juegan, cancha, fase de torneo, etc.) """
@@ -194,6 +211,8 @@ class ClubRegistrationRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     submitted_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, default='')
+    recipient_label = models.CharField(max_length=150, blank=True, default='')
     password = models.CharField(max_length=128, null=True, blank=True)
     admin_username = models.CharField(max_length=150, null=True, blank=True)
     admin_dni = models.CharField(max_length=20, null=True, blank=True)

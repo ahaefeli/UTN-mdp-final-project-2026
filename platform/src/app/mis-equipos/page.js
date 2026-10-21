@@ -167,7 +167,10 @@ export default function MisEquiposPage() {
   // Creación de equipo
   const handleCreateTeam = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
+    if (!formData.name.trim()) {
+      setErrorMsg('El nombre del equipo es obligatorio.');
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorMsg('');
@@ -210,7 +213,10 @@ export default function MisEquiposPage() {
   // Edición de equipo
   const handleEditTeam = async (e) => {
     e.preventDefault();
-    if (!selectedTeam || !formData.name.trim()) return;
+    if (!selectedTeam || !formData.name.trim()) {
+      if (!formData.name.trim()) setErrorMsg('El nombre del equipo es obligatorio.');
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorMsg('');
@@ -317,9 +323,9 @@ export default function MisEquiposPage() {
         <input
           id={`${idPrefix}-name`}
           type="text"
-          required
           placeholder={idPrefix === 'create-team' ? 'Ej: Huracán A' : undefined}
           value={formData.name}
+          maxLength={100}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           className={dirStyles.input}
           disabled={isSubmitting}
@@ -464,7 +470,7 @@ export default function MisEquiposPage() {
           open={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           title="Crear Nuevo Equipo"
-          subtitle="Ingresa los datos para registrar un equipo del club"
+          subtitle="Ingresá los datos para registrar un equipo del club"
           footer={
             <>
               <Button variant="secondary" onClick={() => setShowCreateModal(false)} disabled={isSubmitting}>
@@ -476,7 +482,7 @@ export default function MisEquiposPage() {
             </>
           }
         >
-          <form id="create-team-form" onSubmit={handleCreateTeam} className={dirStyles.form}>
+          <form id="create-team-form" onSubmit={handleCreateTeam} className={dirStyles.form} noValidate>
             {renderTeamFormFields('create-team')}
           </form>
         </Modal>
@@ -507,7 +513,7 @@ export default function MisEquiposPage() {
             </>
           }
         >
-          <form id="edit-team-form" onSubmit={handleEditTeam} className={dirStyles.form}>
+          <form id="edit-team-form" onSubmit={handleEditTeam} className={dirStyles.form} noValidate>
             {renderTeamFormFields('edit-team')}
           </form>
         </Modal>

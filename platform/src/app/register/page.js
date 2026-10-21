@@ -4,6 +4,8 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import apiClient from '../../services/apiClient';
 import { phoneError } from '../../utils/phone';
+import { dniError, emailError, normalizeDni } from '../../utils/identity';
+import { logoFileError } from '../../utils/uploads';
 import { Button, Alert, LoadingState } from '../../components/ui';
 import styles from './page.module.css';
 
@@ -91,8 +93,9 @@ function PublicRegisterForm() {
       setErrorMessage('El nombre del club es obligatorio.');
       return;
     }
-    if (!email.trim()) {
-      setErrorMessage('El email del club es obligatorio.');
+    const invalidClubEmail = emailError(email);
+    if (invalidClubEmail) {
+      setErrorMessage(invalidClubEmail);
       return;
     }
     const invalidPhone = phoneError(phone);
@@ -108,9 +111,17 @@ function PublicRegisterForm() {
     e.preventDefault();
     setErrorMessage(null);
 
-    // Validaciones de DNI, Usuario y Contraseña
-    if (!adminDni.trim()) {
-      setErrorMessage('El DNI es obligatorio.');
+    if (!firstName.trim() || !lastName.trim()) {
+      setErrorMessage('El nombre y el apellido son obligatorios.');
+      return;
+    }
+    const invalidAdminEmail = emailError(adminEmail);
+    if (invalidAdminEmail) {
+      setErrorMessage(invalidAdminEmail);
+      return;
+    }
+    if (dniError(adminDni)) {
+      setErrorMessage('El DNI debe tener 7 u 8 dígitos, sin letras.');
       return;
     }
     if (!adminUsername.trim()) {
@@ -141,7 +152,7 @@ function PublicRegisterForm() {
       formData.append('admin_last_name', lastName.trim());
       formData.append('admin_email', adminEmail.trim());
       formData.append('admin_username', adminUsername.trim());
-      formData.append('admin_dni', adminDni.trim());
+      formData.append('admin_dni', normalizeDni(adminDni));
       formData.append('password', password); // Enviar contraseña
 
       formData.append('first_name', firstName.trim());
@@ -255,12 +266,12 @@ function PublicRegisterForm() {
         </h2>
         <p className={styles.subtitle}>
           {invitationRole === 'REFEREE'
-            ? 'Completa tus datos personales para activar tu cuenta de árbitro oficial.'
+            ? 'Completá tus datos personales para activar tu cuenta de árbitro oficial.'
             : invitationRole === 'SCORER'
-              ? 'Completa tus datos personales para activar tu cuenta de planillero oficial.'
+              ? 'Completá tus datos personales para activar tu cuenta de planillero oficial.'
               : (step === 1 
-                  ? 'Por favor verifica y completa la información de tu club para unirse a la liga.' 
-                  : 'Configura las credenciales de acceso para administrar la cuenta del club.')}
+                  ? 'Verificá y completá los datos del club para sumarte a la liga.' 
+                  : 'Configurá las credenciales para administrar la cuenta del club.')}
         </p>
       </header>
 
@@ -268,7 +279,7 @@ function PublicRegisterForm() {
       {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
 
       {step === 1 && !['REFEREE', 'SCORER'].includes(invitationRole) && (
-        <form onSubmit={handleNextStep}>
+        <form onSubmit={handleNextStep} noValidate>
           <h3 className={styles.sectionTitle}>Datos del Club</h3>
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
@@ -278,7 +289,6 @@ function PublicRegisterForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={styles.input}
-                required
                 disabled={isSubmitting}
               />
             </div>
@@ -286,11 +296,10 @@ function PublicRegisterForm() {
             <div className={styles.formGroup}>
               <label className={styles.label}>Email del Club *</label>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={styles.input}
-                required
                 disabled={isSubmitting}
               />
             </div>
@@ -322,13 +331,23 @@ function PublicRegisterForm() {
               <div className={styles.fileInputContainer}>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                   onChange={(e) => {
                     const file = e.target.files[0];
-                    setLogoFile(file || null);
                     if (file) {
+                      const invalidFile = logoFileError(file);
+                      if (invalidFile) {
+                        setErrorMessage(invalidFile);
+                        e.target.value = '';
+                        setLogoFile(null);
+                        setLogoPreview('');
+                        return;
+                      }
+                      setErrorMessage(null);
+                      setLogoFile(file);
                       setLogoPreview(URL.createObjectURL(file));
                     } else {
+                      setLogoFile(null);
                       setLogoPreview('');
                     }
                   }}
@@ -365,7 +384,7 @@ function PublicRegisterForm() {
       )}
 
       {step === 2 && (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <h3 className={styles.sectionTitle}>
             {['REFEREE', 'SCORER'].includes(invitationRole) ? 'Datos Personales' : 'Datos del Administrador del Club'}
           </h3>
@@ -377,7 +396,6 @@ function PublicRegisterForm() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 className={styles.input}
-                required
                 disabled={isSubmitting}
               />
             </div>
@@ -389,7 +407,6 @@ function PublicRegisterForm() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 className={styles.input}
-                required
                 disabled={isSubmitting}
               />
             </div>
@@ -397,11 +414,10 @@ function PublicRegisterForm() {
             <div className={`${styles.formGroup} ${styles.fullWidth}`}>
               <label className={styles.label}>Email del Usuario *</label>
               <input
-                type="email"
+                type="text"
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
                 className={styles.input}
-                required
                 disabled={isSubmitting}
               />
             </div>
@@ -413,7 +429,6 @@ function PublicRegisterForm() {
                 value={adminUsername}
                 onChange={(e) => setAdminUsername(e.target.value)}
                 className={styles.input}
-                required
                 disabled={isSubmitting}
                 placeholder="Ej: admin_club"
               />
@@ -426,7 +441,6 @@ function PublicRegisterForm() {
                 value={adminDni}
                 onChange={(e) => setAdminDni(e.target.value)}
                 className={styles.input}
-                required
                 disabled={isSubmitting}
                 placeholder="Ej: 12345678"
               />
@@ -439,7 +453,6 @@ function PublicRegisterForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={styles.input}
-                required
                 disabled={isSubmitting}
               />
             </div>
@@ -451,7 +464,6 @@ function PublicRegisterForm() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className={styles.input}
-                required
                 disabled={isSubmitting}
               />
             </div>

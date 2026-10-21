@@ -8,40 +8,42 @@ from .base import BaseCrudView, parse_body
 from core.models import Match
 from core.auth import jwt_required
 
-def validate_match_collisions(match_datetime, referee_id, local_team_id, visitor_team_id, court_id, exclude_id=None):
+def validate_match_collisions(match_datetime, referee_id, local_team_id, visitor_team_id, court_id, exclude_id=None, scorer_id=None):
     from datetime import timedelta
     from django.db.models import Q
     from core.models import Match
     if not match_datetime:
         return None
-    qs = Match.objects.filter(
-        match_datetime=match_datetime,
+    start_window = match_datetime - timedelta(hours=1)
+    end_window = match_datetime + timedelta(hours=1)
+    nearby = Match.objects.filter(
+        match_datetime__gt=start_window,
+        match_datetime__lt=end_window,
         status__in=['PREPARATION', 'SCHEDULED', 'IN_PROGRESS'],
         is_deleted=False,
     )
     if exclude_id:
-        qs = qs.exclude(id=exclude_id)
-    if referee_id and qs.filter(referee_id=referee_id).exists():
-        return 'El árbitro ya tiene un partido asignado a esta misma hora.'
-    if local_team_id and qs.filter(Q(local_team_id=local_team_id) | Q(visitor_team_id=local_team_id)).exists():
-        return 'El equipo local ya tiene otro partido programado a esta misma hora.'
-        
-    if visitor_team_id and qs.filter(Q(local_team_id=visitor_team_id) | Q(visitor_team_id=visitor_team_id)).exists():
-        return 'El equipo visitante ya tiene otro partido programado a esta misma hora.'
-    if court_id:
-        start_window = match_datetime - timedelta(hours=1)
-        end_window = match_datetime + timedelta(hours=1)
-        court_qs = Match.objects.filter(
-            court_id=court_id, 
-            match_datetime__gt=start_window, 
-            match_datetime__lt=end_window,
-            status__in=['PREPARATION', 'SCHEDULED', 'IN_PROGRESS'],
-            is_deleted=False,
-        )
-        if exclude_id:
-            court_qs = court_qs.exclude(id=exclude_id)
-        if court_qs.exists():
-            return 'La cancha ya tiene un partido asignado con menos de 1 hora de diferencia.'
+        nearby = nearby.exclude(id=exclude_id)
+    if referee_id and nearby.filter(referee_id=referee_id).exists():
+        return 'El árbitro ya tiene un partido asignado con menos de 1 hora de diferencia.'
+    if scorer_id and nearby.filter(scorer_id=scorer_id).exists():
+        return 'El planillero ya tiene un partido asignado con menos de 1 hora de diferencia.'
+    if local_team_id and nearby.filter(Q(local_team_id=local_team_id) | Q(visitor_team_id=local_team_id)).exists():
+        return 'El equipo local ya tiene otro partido programado con menos de 1 hora de diferencia.'
+    if visitor_team_id and nearby.filter(Q(local_team_id=visitor_team_id) | Q(visitor_team_id=visitor_team_id)).exists():
+        return 'El equipo visitante ya tiene otro partido programado con menos de 1 hora de diferencia.'
+    if court_id and nearby.filter(court_id=court_id).exists():
+        return 'La cancha ya tiene un partido asignado con menos de 1 hora de diferencia.'
+    return None
+
+
+def match_result_block_reason(match):
+    from django.utils import timezone
+    tournament = getattr(getattr(match, 'tournament_stage', None), 'tournament', None)
+    if tournament and tournament.status != 'IN_PROGRESS':
+        return 'No se puede iniciar ni cargar el resultado hasta que el torneo esté en disputa.'
+    if match.match_datetime and match.match_datetime > timezone.now():
+        return 'No se puede iniciar ni cargar el resultado de un partido que todavía no se juega.'
     return None
 
 def serialize_match_detail(m):
@@ -53,6 +55,7 @@ def serialize_match_detail(m):
     d['category'] = m.tournament_stage.tournament.category if m.tournament_stage and m.tournament_stage.tournament else None
     d['branch'] = m.tournament_stage.tournament.branch if m.tournament_stage and m.tournament_stage.tournament else None
     d['matchday_name'] = m.tournament_stage.name if m.tournament_stage else None
+    d['tournament_status'] = m.tournament_stage.tournament.status if m.tournament_stage and m.tournament_stage.tournament else None
     return d
 
 @method_decorator(jwt_required, name='dispatch')
@@ -121,7 +124,7 @@ class MatchView(BaseCrudView):
             data['referee_id'] = None
         if 'scorer_id' in data and data['scorer_id'] == "":
             data['scorer_id'] = None
-        if data.get('local_team_id') == data.get('visitor_team_id'): return JsonResponse({'error': 'Same team'}, status=400)
+        if data.get('local_team_id') == data.get('visitor_team_id'): return JsonResponse({'error': 'Los dos equipos tienen que ser distintos.'}, status=400)
         try:
             court_id = data.get('court_id')
             match_datetime_str = data.get('match_datetime')
@@ -136,7 +139,8 @@ class MatchView(BaseCrudView):
                 referee_id=data.get('referee_id'),
                 local_team_id=data.get('local_team_id'),
                 visitor_team_id=data.get('visitor_team_id'),
-                court_id=data.get('court_id')
+                court_id=data.get('court_id'),
+                scorer_id=data.get('scorer_id'),
             )
             if collision_error:
                 return JsonResponse({'error': collision_error}, status=400)
@@ -149,7 +153,7 @@ class MatchView(BaseCrudView):
 
     def put(self, request, obj_id=None, *args, **kwargs):
         mid = obj_id or request.GET.get('match_id')
-        if not mid: return JsonResponse({'error': 'Missing match_id'}, status=400)
+        if not mid: return JsonResponse({'error': 'Falta el identificador del partido.'}, status=400)
         data = parse_body(request)
         if 'referee_id' in data and data['referee_id'] == "":
             data['referee_id'] = None
@@ -160,14 +164,17 @@ class MatchView(BaseCrudView):
             if o.status == 'FINISHED': return JsonResponse({'error': 'No se puede editar un partido finalizado.'}, status=400)
             if data.get('status') == 'FINISHED':
                 return JsonResponse(
-                    {'error': 'Para finalizar un partido use POST /internal/torneos/partidos/finalizar/.'},
+                    {'error': 'Para finalizar el partido cargá el resultado desde la planilla.'},
                     status=400,
                 )
             if 'status' in data:
                 valid_admin_statuses = ['SUSPENDED', 'CANCELLED', 'PREPARATION', 'IN_PROGRESS']
+                if data['status'] == 'IN_PROGRESS':
+                    blocked = match_result_block_reason(o)
+                    if blocked:
+                        return JsonResponse({'error': blocked}, status=400)
                 if data['status'] in valid_admin_statuses:
                     o.status = data['status']
-                # Ignore invalid status if provided
                 del data['status']
                 
             match_datetime_str = data.get('match_datetime')
@@ -186,6 +193,7 @@ class MatchView(BaseCrudView):
                 local_team_id=data.get('local_team_id', o.local_team_id_id if hasattr(o, 'local_team_id_id') else o.local_team_id),
                 visitor_team_id=data.get('visitor_team_id', o.visitor_team_id_id if hasattr(o, 'visitor_team_id_id') else o.visitor_team_id),
                 court_id=data.get('court_id', o.court_id_id if hasattr(o, 'court_id_id') else o.court_id),
+                scorer_id=data.get('scorer_id', o.scorer_id),
                 exclude_id=mid
             )
             if collision_error:
@@ -200,8 +208,8 @@ class MatchView(BaseCrudView):
 
     def delete(self, request, obj_id=None, *args, **kwargs):
         mid = obj_id or request.GET.get('match_id')
-        try: self.model.objects.get(id=mid).delete(); return JsonResponse({'message': 'Deleted'}, status=200)
-        except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+        try: self.model.objects.get(id=mid).delete(); return JsonResponse({'message': 'Eliminado.'}, status=200)
+        except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)
 
 @method_decorator(jwt_required, name='dispatch')
 class MatchRescheduleView(View):
@@ -209,7 +217,7 @@ class MatchRescheduleView(View):
         data = parse_body(request)
         mid = data.get('match_id')
         if not mid:
-            return JsonResponse({'error': 'Missing match_id'}, status=400)
+            return JsonResponse({'error': 'Falta el identificador del partido.'}, status=400)
         try:
             m = Match.objects.get(
                 id=mid,
@@ -233,7 +241,7 @@ class MatchRescheduleView(View):
                 elif isinstance(dt_raw, str):
                     parsed = parse_datetime(dt_raw)
                     if parsed is None:
-                        return JsonResponse({'error': 'match_datetime inválido.'}, status=400)
+                        return JsonResponse({'error': 'La fecha y hora del partido no son válidas.'}, status=400)
                     m.match_datetime = parsed
                 else:
                     m.match_datetime = dt_raw
@@ -244,6 +252,7 @@ class MatchRescheduleView(View):
                 local_team_id=m.local_team_id,
                 visitor_team_id=m.visitor_team_id,
                 court_id=m.court_id,
+                scorer_id=m.scorer_id,
                 exclude_id=m.id,
             )
             if collision_error:
@@ -275,15 +284,19 @@ def validate_volleyball_sets(score_detail):
             return None, f'Puntos inválidos en el set {i + 1}.'
         if lp < 0 or vp < 0:
             return None, f'Los puntos del set {i + 1} no pueden ser negativos.'
-        if lp > 99 or vp > 99:
-            return None, f'Los puntos del set {i + 1} no pueden tener más de 2 cifras.'
         if lp == vp:
             return None, f'El set {i + 1} no puede empatar.'
         target = 15 if i == 4 else 25
         winner = max(lp, vp)
         loser = min(lp, vp)
+        legal_overtime = winner > target and winner - loser == 2 and loser >= target - 1
         if winner < target or winner - loser < 2:
             return None, f'El set {i + 1} se juega a {target} y debe ganarse por 2 puntos.'
+        if winner > target and not legal_overtime:
+            return None, (
+                f'El set {i + 1} ya habría terminado antes de ese marcador. '
+                f'Si se pasa de {target}, tiene que ser por diferencia de 2.'
+            )
         set_number = s.get('set_number', i + 1)
         try:
             set_number = int(set_number)
@@ -345,6 +358,10 @@ class MatchFinishView(View):
 
         if m.status == 'CANCELLED':
             return JsonResponse({'error': 'No se puede cargar resultado de un partido cancelado.'}, status=400)
+
+        blocked = match_result_block_reason(m)
+        if blocked:
+            return JsonResponse({'error': blocked}, status=400)
 
         if role == 'REFEREE' and m.referee_id and m.referee_id != request.user.id:
             return JsonResponse({'error': 'Solo el árbitro asignado puede finalizar este partido.'}, status=403)

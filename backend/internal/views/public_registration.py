@@ -6,6 +6,7 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 
 from core.models import User, ClubRegistrationRequest
+from core.identity import dni_error, normalize_dni, password_error, username_error
 from core.phone import phone_error
 from internal.views.club_requests import serialize_club_request
 
@@ -54,7 +55,7 @@ class PublicClubRegistrationView(View):
             return rejected
 
         return JsonResponse({
-            'message': 'Token is valid',
+            'message': 'El enlace es válido.',
             'data': serialize_club_request(req_obj)
         }, status=200)
 
@@ -106,17 +107,29 @@ class PublicClubRegistrationView(View):
             return JsonResponse({'error': 'Ya existe un usuario con ese email.'}, status=400)
         if admin_username and (User.objects.filter(username=admin_username).exists() or User.objects.filter(email=admin_username).exists()):
             return JsonResponse({'error': 'Ya existe un usuario con ese nombre de usuario.'}, status=400)
+        invalid_dni = dni_error(admin_dni)
+        if invalid_dni:
+            return JsonResponse({'error': invalid_dni}, status=400)
+        admin_dni = normalize_dni(admin_dni)
+        invalid_user = username_error(admin_username)
+        if invalid_user:
+            return JsonResponse({'error': invalid_user}, status=400)
         if _dni_values(admin_dni) and User.objects.filter(dni__in=_dni_values(admin_dni)).exists():
             return JsonResponse({'error': 'Ya existe un usuario con ese DNI.'}, status=400)
+        invalid_password = password_error(data.get('password'))
+        if invalid_password:
+            return JsonResponse({'error': invalid_password}, status=400)
 
         # Upload logo to GCS if provided
         club_logo_url = req_obj.club_logo_url
         if logo_file:
             try:
                 from core.utils.storage import upload_to_gcs
-                club_logo_url = upload_to_gcs(logo_file, logo_file.name, 'club_logo')
-            except Exception as upload_err:
-                return JsonResponse({'error': f'Failed to upload club logo: {str(upload_err)}'}, status=400)
+                club_logo_url = upload_to_gcs(logo_file, logo_file.name, 'club_logo', logo=True)
+            except ValueError as upload_err:
+                return JsonResponse({'error': str(upload_err)}, status=400)
+            except Exception:
+                return JsonResponse({'error': 'No pudimos guardar el escudo. Probá con otra imagen.'}, status=400)
 
         # 5. Update ClubRegistrationRequest with form data
         req_obj.club_name = club_name or req_obj.club_name
@@ -139,6 +152,6 @@ class PublicClubRegistrationView(View):
         req_obj.save()
 
         return JsonResponse({
-            'message': 'Registration information saved successfully. Pending review by organization administrator.',
+            'message': 'Los datos quedaron guardados. La liga tiene que revisar la solicitud.',
             'data': serialize_club_request(req_obj)
         }, status=200)

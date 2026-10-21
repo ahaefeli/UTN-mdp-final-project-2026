@@ -25,19 +25,19 @@ class TestValidateMatchCollisions:
         dt = timezone.now() + timedelta(days=1)
         make_match(stage, team_a, team_b, court=court, match_datetime=dt, referee=referee_user)
         err = validate_match_collisions(dt, referee_user.id, team_c.id, team_b.id, court_b.id)
-        assert err == 'El árbitro ya tiene un partido asignado a esta misma hora.'
+        assert err == 'El árbitro ya tiene un partido asignado con menos de 1 hora de diferencia.'
 
     def test_local_team_same_datetime_as_visitor(self, stage, team_a, team_b, team_c, court, court_b):
         dt = timezone.now() + timedelta(days=1)
         make_match(stage, team_a, team_b, court=court, match_datetime=dt)
         err = validate_match_collisions(dt, None, team_b.id, team_c.id, court_b.id)
-        assert err == 'El equipo local ya tiene otro partido programado a esta misma hora.'
+        assert err == 'El equipo local ya tiene otro partido programado con menos de 1 hora de diferencia.'
 
     def test_visitor_team_same_datetime(self, stage, team_a, team_b, team_c, court, court_b):
         dt = timezone.now() + timedelta(days=1)
         make_match(stage, team_a, team_b, court=court, match_datetime=dt)
         err = validate_match_collisions(dt, None, team_c.id, team_a.id, court_b.id)
-        assert err == 'El equipo visitante ya tiene otro partido programado a esta misma hora.'
+        assert err == 'El equipo visitante ya tiene otro partido programado con menos de 1 hora de diferencia.'
 
     def test_court_within_one_hour_window(self, stage, team_a, team_b, team_c, club_b, court):
         from tests.factories import make_team
@@ -156,7 +156,7 @@ class TestValidateMatchCollisions:
         dt = timezone.now() + timedelta(days=1)
         make_match(stage, team_a, team_b, court=court, match_datetime=dt, status='PREPARATION')
         err = validate_match_collisions(dt, None, team_a.id, team_c.id, court_b.id)
-        assert err == 'El equipo local ya tiene otro partido programado a esta misma hora.'
+        assert err == 'El equipo local ya tiene otro partido programado con menos de 1 hora de diferencia.'
 
     def test_soft_deleted_match_does_not_collide(self, stage, team_a, team_b, team_c, club_b, court, referee_user):
         from tests.factories import make_team

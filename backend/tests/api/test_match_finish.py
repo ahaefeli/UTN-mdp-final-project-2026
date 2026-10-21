@@ -58,6 +58,8 @@ class TestMatchFinishViewSuccess:
     def test_finish_updates_standings(
         self, api_client, auth_header, enrolled_tournament, stage, team_a, team_b, court, referee_user
     ):
+        enrolled_tournament.status = 'IN_PROGRESS'
+        enrolled_tournament.save(update_fields=['status'])
         m = make_match(stage, team_a, team_b, court=court, referee=referee_user, status='PREPARATION')
         res = _finish(api_client, auth_header, m.id, sets_3_0_local())
         assert res.status_code == 200
@@ -177,12 +179,16 @@ class TestMatchFinishViewExtras:
     def test_unassigned_referee_can_finish(self, api_client, organization, stage, team_a, team_b, court):
         """PIN: if referee_id is None, any REFEREE may finish."""
         ref = make_user(organization=organization, role='REFEREE', email='free_ref@test.com', username='free_ref')
+        stage.tournament.status = 'IN_PROGRESS'
+        stage.tournament.save(update_fields=['status'])
         m = make_match(stage, team_a, team_b, court=court, referee=None, status='PREPARATION')
         res = _finish(api_client, auth_header_for(ref), m.id, sets_3_0_local())
         assert res.status_code == 200
 
     def test_unassigned_scorer_can_finish(self, api_client, organization, stage, team_a, team_b, court):
         sc = make_user(organization=organization, role='SCORER', email='free_sc@test.com', username='free_sc')
+        stage.tournament.status = 'IN_PROGRESS'
+        stage.tournament.save(update_fields=['status'])
         m = make_match(stage, team_a, team_b, court=court, scorer=None, status='PREPARATION')
         res = _finish(api_client, auth_header_for(sc), m.id, sets_3_0_local())
         assert res.status_code == 200
@@ -195,3 +201,34 @@ class TestMatchFinishViewExtras:
             **auth_header,
         )
         assert res.status_code == 400
+
+
+@pytest.mark.django_db
+class TestMatchPlayRules:
+    def test_deuce_above_99_is_valid(self, api_client, auth_header, match_prep):
+        score = [
+            {'set_number': 1, 'local_points': 25, 'visitor_points': 20},
+            {'set_number': 2, 'local_points': 20, 'visitor_points': 25},
+            {'set_number': 3, 'local_points': 25, 'visitor_points': 23},
+            {'set_number': 4, 'local_points': 23, 'visitor_points': 25},
+            {'set_number': 5, 'local_points': 101, 'visitor_points': 99},
+        ]
+        res = _finish(api_client, auth_header, match_prep.id, score)
+        assert res.status_code == 200
+
+    def test_future_match_cannot_be_finished(self, api_client, auth_header, stage, team_a, team_b, court):
+        stage.tournament.status = 'IN_PROGRESS'
+        stage.tournament.save(update_fields=['status'])
+        m = make_match(
+            stage, team_a, team_b, court=court,
+            match_datetime=timezone.now() + timedelta(days=2),
+        )
+        res = _finish(api_client, auth_header, m.id, sets_3_0_local())
+        assert res.status_code == 400
+        assert 'todavía no se juega' in res.json()['error']
+
+    def test_preparation_tournament_cannot_load_result(self, api_client, auth_header, stage, team_a, team_b, court):
+        m = make_match(stage, team_a, team_b, court=court)
+        res = _finish(api_client, auth_header, m.id, sets_3_0_local())
+        assert res.status_code == 400
+        assert 'en disputa' in res.json()['error']

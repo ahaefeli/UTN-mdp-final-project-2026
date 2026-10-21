@@ -30,6 +30,12 @@ export default function PrivacidadPage() {
             Torneos
           </Link>
           <Link 
+            href="/resultados" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
+            Resultados
+          </Link>
+          <Link 
             href="/equipos" 
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/equipos' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
           >
@@ -50,7 +56,7 @@ export default function PrivacidadPage() {
                 : 'text-slate-600 border-transparent hover:text-[#001F54]'
             }`}
           >
-            Conocenos
+            La Plataforma
           </Link>
         </nav>
 
@@ -92,6 +98,9 @@ export default function PrivacidadPage() {
             <Link href="/torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Torneos
             </Link>
+            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+              Resultados
+            </Link>
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
@@ -104,7 +113,7 @@ export default function PrivacidadPage() {
               onClick={() => setIsMobileMenuOpen(false)} 
               className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
             >
-              Conocenos
+              La Plataforma
             </Link>
             <hr />
             <a
@@ -183,7 +192,7 @@ export default function PrivacidadPage() {
             </p>
             <ul className="list-disc pl-6 mt-3 space-y-2 text-slate-700 leading-relaxed">
               <li>Cifrado de datos en tránsito y almacenamiento de contraseñas de acceso mediante métodos criptográficos seguros.</li>
-              <li>Restricciones de acceso para asegurar que únicamente los administradores autorizados de la LNV y delegados de cada club tengan ingreso al panel interno.</li>
+              <li>Restricciones de acceso para asegurar que únicamente los administradores autorizados de VoleyHub y delegados de cada club tengan ingreso al panel interno.</li>
               <li>Revisiones y auditorías periódicas del software de la plataforma para mitigar posibles vulnerabilidades informáticas.</li>
             </ul>
           </section>
@@ -247,6 +256,7 @@ export default function PrivacidadPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
+                <li><Link href="/resultados" className="text-xs hover:text-white transition-colors duration-200">RESULTADOS</Link></li>
                 <li><Link href="/sitemap" className="text-xs hover:text-white transition-colors duration-200">SITEMAP</Link></li>
                 <li><Link href="/privacidad" className="text-xs hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
                 <li><Link href="/contacto" className="text-xs hover:text-white transition-colors duration-200">CONTACTO</Link></li>

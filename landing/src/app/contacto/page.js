@@ -18,10 +18,21 @@ export default function ContactoPage() {
   const [asunto, setAsunto] = useState("Consulta General");
   const [mensaje, setMensaje] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [formError, setFormError] = useState("");
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Simular envío del formulario
+    const emailText = email.trim();
+    if (!nombre.trim() || !mensaje.trim()) {
+      setFormError("Completá el nombre y el mensaje.");
+      setIsSubmitted(false);
+      return;
+    }
+    if (!emailText || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailText)) {
+      setFormError("El email tiene que incluir un @ y un dominio.");
+      setIsSubmitted(false);
+      return;
+    }
+    setFormError("");
     setIsSubmitted(true);
     
     // Limpiar campos del formulario
@@ -57,6 +68,12 @@ export default function ContactoPage() {
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/torneos' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
           >
             Torneos
+          </Link>
+          <Link 
+            href="/resultados" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
+            Resultados
           </Link>
           <Link 
             href="/equipos" 
@@ -120,6 +137,9 @@ export default function ContactoPage() {
             <Link href="/torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Torneos
             </Link>
+            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+              Resultados
+            </Link>
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
@@ -160,7 +180,7 @@ export default function ContactoPage() {
             CONTACTO
           </h1>
           <p className="text-slate-800 text-sm sm:text-base font-medium max-w-2xl leading-relaxed">
-            Estamos para ayudarte. Envíanos tu consulta sobre inscripciones, torneos o afiliaciones de forma rápida y sencilla.
+            Estamos para ayudarte. Envianos tu consulta sobre inscripciones, torneos o afiliaciones.
           </p>
         </div>
       </section>
@@ -177,14 +197,17 @@ export default function ContactoPage() {
               
               <div className="mb-6 select-none">
                 <h2 className="text-2xl font-black text-[#001F54] tracking-tight">
-                  Envíanos un Mensaje
+                  Envianos un mensaje
                 </h2>
                 <p className="text-xs text-slate-500 font-semibold mt-1">
-                  Completa los campos a continuación y te responderemos a la brevedad.
+                  Completá los campos y te respondemos a la brevedad.
                 </p>
               </div>
 
               {/* Mensaje de Éxito Condicional */}
+              {formError && (
+                <p className="text-sm font-bold text-red-700">{formError}</p>
+              )}
               {isSubmitted && (
                 <div className="mb-6 bg-emerald-50 border border-emerald-100 text-emerald-800 p-4 rounded-2xl flex items-start gap-3 select-none">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
@@ -194,7 +217,7 @@ export default function ContactoPage() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
                 
                 {/* Nombre y Apellido */}
                 <div className="flex flex-col">
@@ -203,7 +226,6 @@ export default function ContactoPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                     placeholder="Ej: Juan Pérez"
@@ -217,8 +239,7 @@ export default function ContactoPage() {
                     Correo Electrónico
                   </label>
                   <input
-                    type="email"
-                    required
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Ej: juan.perez@email.com"
@@ -268,11 +289,10 @@ export default function ContactoPage() {
                     Mensaje
                   </label>
                   <textarea
-                    required
                     rows="5"
                     value={mensaje}
                     onChange={(e) => setMensaje(e.target.value)}
-                    placeholder="Escribe tu mensaje o consulta detallada aquí..."
+                    placeholder="Escribí tu mensaje o consulta acá..."
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-[#001F54] focus:ring-1 focus:ring-[#001F54] focus:bg-white transition-all placeholder-slate-400 resize-none"
                   ></textarea>
                 </div>
@@ -388,6 +408,7 @@ export default function ContactoPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
+                <li><Link href="/resultados" className="hover:text-white transition-colors duration-200">RESULTADOS</Link></li>
                 <li><Link href="/sitemap" className="hover:text-white transition-colors duration-200">SITEMAP</Link></li>
                 <li><Link href="/privacidad" className="hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
                 <li><Link href="/contacto" className="hover:text-white transition-colors duration-200">CONTACTO</Link></li>

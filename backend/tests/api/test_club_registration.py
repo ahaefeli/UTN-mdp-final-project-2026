@@ -60,7 +60,7 @@ class TestPublicRegistration:
         req = make_registration_request(organization)
         res = api_client.get(f'/public/club-registration/?token={req.token}')
         assert res.status_code == 200
-        assert res.json()['message'] == 'Token is valid'
+        assert res.json()['message'] == 'El enlace es válido.'
 
     def test_get_missing_token(self, api_client):
         assert api_client.get('/public/club-registration/').status_code == 400
@@ -91,6 +91,7 @@ class TestPublicRegistration:
                 'club_name': 'Nuevo Club',
                 'admin_email': 'newadmin@test.com',
                 'admin_username': 'newadmin',
+                'admin_dni': '30111222',
                 'admin_first_name': 'Nuevo',
                 'admin_last_name': 'Admin',
                 'password': 'secret123',

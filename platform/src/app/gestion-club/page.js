@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { getApiBaseUrl } from '../../services/apiClient';
+import { dniError, emailError, normalizeDni, passwordError, usernameError } from '../../utils/identity';
 import {
   PageHeader,
   Button,
@@ -173,6 +174,11 @@ export default function GestionClubPage() {
       setErrorMsg('Por favor completa todos los campos obligatorios.');
       return;
     }
+    const invalidCoach = usernameError(formData.username) || emailError(formData.email) || dniError(formData.dni) || passwordError(formData.password);
+    if (invalidCoach) {
+      setErrorMsg(invalidCoach);
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorMsg('');
@@ -183,7 +189,7 @@ export default function GestionClubPage() {
         user: formData.username.trim(),
         name: formData.name.trim(),
         email: formData.email.trim(),
-        dni: formData.dni.trim(),
+        dni: normalizeDni(formData.dni),
         password: formData.password.trim(),
         club_id: clubId,
         organization_id: organizationId,
@@ -227,6 +233,11 @@ export default function GestionClubPage() {
       setErrorMsg('Por favor completa todos los campos requeridos.');
       return;
     }
+    const invalidCoach = usernameError(formData.username) || emailError(formData.email) || dniError(formData.dni) || (formData.password.trim() ? passwordError(formData.password) : null);
+    if (invalidCoach) {
+      setErrorMsg(invalidCoach);
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorMsg('');
@@ -236,7 +247,7 @@ export default function GestionClubPage() {
         user: formData.username.trim(),
         name: formData.name.trim(),
         email: formData.email.trim(),
-        dni: formData.dni.trim(),
+        dni: normalizeDni(formData.dni),
       };
 
       if (formData.password.trim()) {
@@ -450,7 +461,7 @@ export default function GestionClubPage() {
             </>
           }
         >
-          <form id="create-coach-form" onSubmit={handleCreateCoach} className={dirStyles.form}>
+          <form id="create-coach-form" onSubmit={handleCreateCoach} className={dirStyles.form} noValidate>
             <div className={dirStyles.formGroup}>
               <label className={dirStyles.label} htmlFor="create-coach-name">
                 Nombre Completo *
@@ -458,7 +469,6 @@ export default function GestionClubPage() {
               <input
                 id="create-coach-name"
                 type="text"
-                required
                 placeholder="Ej: Marcelo Méndez"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -474,7 +484,6 @@ export default function GestionClubPage() {
               <input
                 id="create-coach-username"
                 type="text"
-                required
                 placeholder="Ej: marcelovoley"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -490,7 +499,6 @@ export default function GestionClubPage() {
               <input
                 id="create-coach-dni"
                 type="text"
-                required
                 placeholder="Ej: 22334455"
                 value={formData.dni}
                 onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
@@ -505,8 +513,7 @@ export default function GestionClubPage() {
               </label>
               <input
                 id="create-coach-email"
-                type="email"
-                required
+                type="text"
                 placeholder="Ej: marcelo@email.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -522,7 +529,6 @@ export default function GestionClubPage() {
               <input
                 id="create-coach-password"
                 type="password"
-                required
                 placeholder="Mínimo 8 caracteres"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -549,7 +555,7 @@ export default function GestionClubPage() {
             </>
           }
         >
-          <form id="edit-coach-form" onSubmit={handleEditCoach} className={dirStyles.form}>
+          <form id="edit-coach-form" onSubmit={handleEditCoach} className={dirStyles.form} noValidate>
             <div className={dirStyles.formGroup}>
               <label className={dirStyles.label} htmlFor="edit-coach-name">
                 Nombre Completo *
@@ -557,7 +563,6 @@ export default function GestionClubPage() {
               <input
                 id="edit-coach-name"
                 type="text"
-                required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className={dirStyles.input}
@@ -572,7 +577,6 @@ export default function GestionClubPage() {
               <input
                 id="edit-coach-username"
                 type="text"
-                required
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 className={dirStyles.input}
@@ -587,7 +591,6 @@ export default function GestionClubPage() {
               <input
                 id="edit-coach-dni"
                 type="text"
-                required
                 value={formData.dni}
                 onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
                 className={dirStyles.input}
@@ -601,8 +604,7 @@ export default function GestionClubPage() {
               </label>
               <input
                 id="edit-coach-email"
-                type="email"
-                required
+                type="text"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className={dirStyles.input}

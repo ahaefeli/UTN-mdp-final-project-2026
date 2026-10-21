@@ -5,6 +5,8 @@ import styles from './PendingAlerts.module.css';
 
 const ALERT_ROUTES = {
   NEW_AFFILIATION: '/clubes',
+  NEW_REFEREE: '/arbitros',
+  NEW_SCORER: '/planilleros',
   MATCH_NEEDS_SCORE: '/torneos',
 };
 

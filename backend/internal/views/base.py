@@ -30,7 +30,7 @@ class BaseCrudView(View):
                 if 'id' not in data: data['id'] = str(obj.id)
                 if 'password' in data: del data['password']
                 return JsonResponse({'data': data}, status=200)
-            except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+            except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)
         qs = self.model.objects.all()
         for k, v in request.GET.items():
             if hasattr(self.model, k): qs = qs.filter(**{k: v})
@@ -55,7 +55,7 @@ class BaseCrudView(View):
     def put(self, request, obj_id=None, *args, **kwargs):
         from core.models import User
         obj_id = self._get_id_from_params(request, obj_id)
-        if not obj_id: return JsonResponse({'error': 'Missing id parameter'}, status=400)
+        if not obj_id: return JsonResponse({'error': 'Falta el identificador.'}, status=400)
         data = parse_body(request)
         try:
             self.model.objects.filter(id=obj_id).update(**data)
@@ -70,8 +70,8 @@ class BaseCrudView(View):
 
     def delete(self, request, obj_id=None, *args, **kwargs):
         obj_id = self._get_id_from_params(request, obj_id)
-        if not obj_id: return JsonResponse({'error': 'Missing id parameter'}, status=400)
+        if not obj_id: return JsonResponse({'error': 'Falta el identificador.'}, status=400)
         try:
             obj = self.model.objects.get(id=obj_id); obj.delete()
-            return JsonResponse({'message': 'Deleted successfully'}, status=200)
-        except self.model.DoesNotExist: return JsonResponse({'error': 'Not found'}, status=404)
+            return JsonResponse({'message': 'Eliminado.'}, status=200)
+        except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)

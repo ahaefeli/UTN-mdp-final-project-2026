@@ -249,7 +249,10 @@ export default function UsuariosPage() {
               <span className={styles.paginationLabel}>Por página</span>
               <select
                 value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
                 className={chrome.select}
                 aria-label="Usuarios por página"
               >
@@ -268,7 +271,7 @@ export default function UsuariosPage() {
             </Button>
             <span className={styles.paginationLabel}>
               Página {pagination.current_page || page} de {Math.max(1, pagination.total_pages || 1)}
-              {` · ${pagination.total_items || 0} usuarios`}
+              {` · ${pagination.total_items || 0} ${(pagination.total_items || 0) === 1 ? 'usuario' : 'usuarios'}`}
             </span>
             <Button
               variant="secondary"

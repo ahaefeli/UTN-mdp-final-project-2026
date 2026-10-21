@@ -134,6 +134,8 @@ def enrolled_tournament(tournament, team_a, team_b, team_c):
 
 @pytest.fixture
 def match_prep(stage, team_a, team_b, court, referee_user, scorer_user):
+    stage.tournament.status = 'IN_PROGRESS'
+    stage.tournament.save(update_fields=['status'])
     return make_match(
         stage,
         team_a,

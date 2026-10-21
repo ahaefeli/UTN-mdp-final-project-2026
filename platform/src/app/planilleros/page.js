@@ -69,6 +69,7 @@ export default function PlanillerosAdminPage() {
   // Modals state
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
+  const [inviteLabel, setInviteLabel] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
 
@@ -81,6 +82,8 @@ export default function PlanillerosAdminPage() {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [inviteTick, setInviteTick] = useState(0);
   const [reviewTarget, setReviewTarget] = useState(null);
+  const [reviewError, setReviewError] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Enforce ADMIN role-based access
   useEffect(() => {
@@ -122,8 +125,16 @@ export default function PlanillerosAdminPage() {
   const handleCloseInviteModal = () => {
     setIsInviteModalOpen(false);
     setGeneratedLink('');
+    setInviteLabel('');
     setIsCopied(false);
     setCopyError('');
+  };
+
+  const openInviteModal = () => {
+    setGeneratedLink('');
+    setInviteLabel('');
+    setCopyError('');
+    setIsInviteModalOpen(true);
   };
 
   const handleCloseDetailModal = () => {
@@ -143,7 +154,10 @@ export default function PlanillerosAdminPage() {
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const res = await apiClient.post('admin/club-requests/generate-link/', { role: targetRole });
+      const res = await apiClient.post('admin/club-requests/generate-link/', {
+        role: targetRole,
+        recipient_label: inviteLabel.trim(),
+      });
 
       const token = res.data?.token || '';
       const link = `${window.location.origin}/register?token=${token}`;
@@ -193,26 +207,36 @@ export default function PlanillerosAdminPage() {
 
   // Approve or Reject Proposed Request (POST)
   const handleReviewRequest = (requestId, action) => {
+    setReviewError('');
+    setRejectionReason('');
     setReviewTarget({ requestId, action });
   };
 
   const confirmReview = async () => {
     if (!reviewTarget) return;
     const { requestId, action } = reviewTarget;
+    if (action === 'REJECT' && !rejectionReason.trim()) {
+      setReviewError('El rechazo necesita un motivo.');
+      return;
+    }
     setIsSubmitting(true);
-    setErrorMsg('');
+    setReviewError('');
     setSuccessMsg('');
     try {
-      await apiClient.post(`admin/club-requests/${requestId}/review/`, { action });
+      await apiClient.post(`admin/club-requests/${requestId}/review/`, {
+        action,
+        rejection_reason: rejectionReason.trim(),
+      });
       setSuccessMsg(`Solicitud ${action === 'APPROVE' ? 'aprobada' : 'rechazada'} con éxito.`);
       setIsDetailModalOpen(false);
       setSelectedRequest(null);
       setReviewTarget(null);
+      setRejectionReason('');
       setInviteTick((value) => value + 1);
       loadData();
     } catch (err) {
       console.error('Error al procesar solicitud:', err);
-      setErrorMsg(err.response?.data?.error || 'No se pudo procesar la solicitud.');
+      setReviewError(err.response?.data?.error || 'No se pudo procesar la solicitud.');
     } finally {
       setIsSubmitting(false);
     }
@@ -231,7 +255,7 @@ export default function PlanillerosAdminPage() {
           actions={
             <Button
               variant="accent"
-              onClick={() => handleGenerateLink('SCORER')}
+              onClick={openInviteModal}
               disabled={isGeneratingLink}
             >
               {isGeneratingLink ? (
@@ -250,12 +274,18 @@ export default function PlanillerosAdminPage() {
 
         <Modal
           open={Boolean(reviewTarget)}
-          onClose={() => !isSubmitting && setReviewTarget(null)}
+          stacked
+          onClose={() => {
+            if (isSubmitting) return;
+            setReviewTarget(null);
+            setReviewError('');
+            setRejectionReason('');
+          }}
           title={reviewTarget?.action === 'APPROVE' ? 'Aprobar solicitud' : 'Rechazar solicitud'}
           size="sm"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setReviewTarget(null)} disabled={isSubmitting}>
+              <Button variant="secondary" onClick={() => { setReviewTarget(null); setReviewError(''); setRejectionReason(''); }} disabled={isSubmitting}>
                 Cancelar
               </Button>
               <Button
@@ -273,6 +303,19 @@ export default function PlanillerosAdminPage() {
               ? 'Se crea la cuenta con los datos de la solicitud.'
               : 'La solicitud queda rechazada y, si era un enlace, deja de servir.'}
           </p>
+          {reviewTarget?.action === 'REJECT' && (
+            <label className={dirStyles.label} htmlFor="scorer-rejection-reason">
+              Motivo
+              <textarea
+                id="scorer-rejection-reason"
+                className={dirStyles.textarea}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={3}
+              />
+            </label>
+          )}
+          {reviewError && <Alert variant="error">{reviewError}</Alert>}
         </Modal>
 
         {(successMsg || errorMsg) && (
@@ -402,36 +445,64 @@ export default function PlanillerosAdminPage() {
         <Modal
           open={isInviteModalOpen}
           onClose={handleCloseInviteModal}
-          title="Invitación Generada"
+          title={generatedLink ? 'Invitación generada' : 'Nueva invitación'}
+          size="sm"
           footer={
-            <Button variant="secondary" onClick={handleCloseInviteModal}>
-              Cerrar
-            </Button>
+            generatedLink ? (
+              <Button variant="secondary" onClick={handleCloseInviteModal}>
+                Cerrar
+              </Button>
+            ) : (
+              <Button onClick={() => handleGenerateLink('SCORER')} disabled={isGeneratingLink}>
+                {isGeneratingLink ? 'Generando...' : 'Generar enlace'}
+              </Button>
+            )
           }
         >
-          <p className={dirStyles.muted}>
-            Enlace generado con éxito. Compártelo con el planillero.
-          </p>
-          <div className={dirStyles.formGroup}>
-            <span className={dirStyles.label}>Enlace de registro:</span>
-            <div className={styles.linkRow}>
-              <input
-                type="text"
-                readOnly
-                value={generatedLink}
-                className={dirStyles.input}
-                onClick={(e) => e.target.select()}
-              />
-              <Button
-                type="button"
-                onClick={handleCopyLink}
-                size="sm"
-                className={isCopied ? buttonStyles.copied : ''}
-              >
-                {isCopied ? 'Copiado' : 'Copiar Link'}
-              </Button>
-            </div>
-            {copyError ? <p className={dirStyles.copyError}>{copyError}</p> : null}
+          <div className={dirStyles.form}>
+            {!generatedLink ? (
+              <label className={dirStyles.label} htmlFor="scorer-invite-recipient">
+                Destinatario (opcional)
+                <input
+                  id="scorer-invite-recipient"
+                  className={dirStyles.input}
+                  value={inviteLabel}
+                  onChange={(e) => setInviteLabel(e.target.value)}
+                  placeholder="Ej: planillero de la fecha 3"
+                />
+              </label>
+            ) : null}
+            <p className={dirStyles.muted}>
+              {generatedLink
+                ? 'Enlace generado. Compartilo con la persona indicada.'
+                : 'El enlace sirve una sola vez y vence a las 48 horas.'}
+            </p>
+            {generatedLink ? (
+              <div className={dirStyles.formGroup}>
+                <label className={dirStyles.label} htmlFor="scorer-invite-link">
+                  Enlace de registro:
+                </label>
+                <div className={styles.linkRow}>
+                  <input
+                    id="scorer-invite-link"
+                    type="text"
+                    readOnly
+                    value={generatedLink}
+                    className={dirStyles.input}
+                    onClick={(e) => e.target.select()}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleCopyLink}
+                    size="sm"
+                    className={isCopied ? buttonStyles.copied : ''}
+                  >
+                    {isCopied ? 'Copiado' : 'Copiar Link'}
+                  </Button>
+                </div>
+                {copyError ? <p className={dirStyles.copyError}>{copyError}</p> : null}
+              </div>
+            ) : null}
           </div>
         </Modal>
 

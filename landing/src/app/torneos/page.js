@@ -1,5 +1,6 @@
 "use client";
 import { getPlatformLoginUrl } from '../../utils/platformUrl';
+import { getPublicApiBase } from '../../utils/publicApi';
 import { formatBranch, formatCategory, formatStatus } from '../../utils/labels';
 
 import React, { useState, useEffect } from "react";
@@ -37,7 +38,7 @@ export default function TorneosPage() {
         setIsLoading(true);
         setError(null);
 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.8:8000/public';
+        const baseUrl = getPublicApiBase();
         const url = `${baseUrl}/torneos/`;
 
         const res = await fetch(url);
@@ -154,6 +155,12 @@ export default function TorneosPage() {
             Torneos
           </Link>
           <Link 
+            href="/resultados" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
+            Resultados
+          </Link>
+          <Link 
             href="/equipos" 
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/equipos' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
           >
@@ -174,7 +181,7 @@ export default function TorneosPage() {
                 : 'text-slate-600 border-transparent hover:text-[#001F54]'
             }`}
           >
-            Conocenos
+            La Plataforma
           </Link>
         </nav>
 
@@ -216,6 +223,9 @@ export default function TorneosPage() {
             <Link href="/torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Torneos
             </Link>
+            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+              Resultados
+            </Link>
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
@@ -228,7 +238,7 @@ export default function TorneosPage() {
               onClick={() => setIsMobileMenuOpen(false)} 
               className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
             >
-              Conocenos
+              La Plataforma
             </Link>
             <hr />
             <a
@@ -470,6 +480,7 @@ export default function TorneosPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
+                <li><Link href="/resultados" className="text-xs hover:text-white transition-colors duration-200">RESULTADOS</Link></li>
                 <li><Link href="/sitemap" className="text-xs hover:text-white transition-colors duration-200">SITEMAP</Link></li>
                 <li><Link href="/privacidad" className="text-xs hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
                 <li><Link href="/contacto" className="text-xs hover:text-white transition-colors duration-200">CONTACTO</Link></li>

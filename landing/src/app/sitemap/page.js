@@ -31,6 +31,12 @@ export default function SitemapPage() {
             Torneos
           </Link>
           <Link 
+            href="/resultados" 
+            className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/resultados' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
+          >
+            Resultados
+          </Link>
+          <Link 
             href="/equipos" 
             className={`text-sm font-semibold pb-1 transition-colors duration-200 border-b-2 ${pathname === '/equipos' ? 'text-[#001F54] border-orange-500 font-bold' : 'text-slate-600 border-transparent hover:text-[#001F54]'}`}
           >
@@ -51,7 +57,7 @@ export default function SitemapPage() {
                 : 'text-slate-600 border-transparent hover:text-[#001F54]'
             }`}
           >
-            Conocenos
+            La Plataforma
           </Link>
         </nav>
 
@@ -93,6 +99,9 @@ export default function SitemapPage() {
             <Link href="/torneos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Torneos
             </Link>
+            <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
+              Resultados
+            </Link>
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity">
               Equipos
             </Link>
@@ -105,7 +114,7 @@ export default function SitemapPage() {
               onClick={() => setIsMobileMenuOpen(false)} 
               className="text-xl font-bold text-[#001F54] hover:opacity-80 transition-opacity"
             >
-              Conocenos
+              La Plataforma
             </Link>
             <hr />
             <a
@@ -168,6 +177,12 @@ export default function SitemapPage() {
                 </Link>
               </li>
               <li>
+                <Link href="/resultados" className="group flex items-center gap-1.5 text-slate-600 hover:text-[#001F54] hover:translate-x-1 transition-all text-sm font-bold">
+                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500" />
+                  <span>Resultados</span>
+                </Link>
+              </li>
+              <li>
                 <Link href="/equipos" className="group flex items-center gap-1.5 text-slate-600 hover:text-[#001F54] hover:translate-x-1 transition-all text-sm font-bold">
                   <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500" />
                   <span>Equipos</span>
@@ -206,25 +221,19 @@ export default function SitemapPage() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="group flex items-center justify-between text-slate-600 hover:text-[#001F54] hover:translate-x-0.5 transition-all text-sm font-bold">
+                <Link href="/torneos" className="group flex items-center justify-between text-slate-600 hover:text-[#001F54] hover:translate-x-0.5 transition-all text-sm font-bold">
                   <div className="flex items-center gap-1.5">
                     <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500" />
-                    <span>Mi Panel LNV</span>
+                    <span>Competencias</span>
                   </div>
-                  <span className="bg-slate-100 text-slate-500 text-[9px] font-black tracking-wider px-2 py-0.5 rounded uppercase flex-shrink-0 select-none">
-                    Requiere acceso
-                  </span>
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard/jugadores" className="group flex items-center justify-between text-slate-600 hover:text-[#001F54] hover:translate-x-0.5 transition-all text-sm font-bold">
+                <Link href="/resultados" className="group flex items-center justify-between text-slate-600 hover:text-[#001F54] hover:translate-x-0.5 transition-all text-sm font-bold">
                   <div className="flex items-center gap-1.5">
                     <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500" />
-                    <span>Mis Jugadores</span>
+                    <span>Resultados</span>
                   </div>
-                  <span className="bg-slate-100 text-slate-500 text-[9px] font-black tracking-wider px-2 py-0.5 rounded uppercase flex-shrink-0 select-none">
-                    Requiere acceso
-                  </span>
                 </Link>
               </li>
             </ul>
@@ -298,6 +307,7 @@ export default function SitemapPage() {
                 NAVEGACIÓN
               </h4>
               <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
+                <li><Link href="/resultados" className="text-xs hover:text-white transition-colors duration-200">RESULTADOS</Link></li>
                 <li><Link href="/sitemap" className="text-xs hover:text-white transition-colors duration-200">SITEMAP</Link></li>
                 <li><Link href="/privacidad" className="text-xs hover:text-white transition-colors duration-200">POLÍTICAS DE PRIVACIDAD</Link></li>
                 <li><Link href="/contacto" className="text-xs hover:text-white transition-colors duration-200">CONTACTO</Link></li>

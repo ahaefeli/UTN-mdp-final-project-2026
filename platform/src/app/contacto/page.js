@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { PageHeader, Button, Alert } from "../../components/ui";
+import { emailError } from "../../utils/identity";
 import chromeStyles from "../../components/ui/PageChrome.module.css";
 import styles from "./page.module.css";
 
@@ -12,11 +13,22 @@ export default function ContactoPage() {
   const [asunto, setAsunto] = useState("Consulta General");
   const [mensaje, setMensaje] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Simular envío del formulario
+    if (!nombre.trim() || !mensaje.trim()) {
+      setFormError("Completá el nombre y el mensaje.");
+      setIsSubmitted(false);
+      return;
+    }
+    const invalidEmail = emailError(email);
+    if (invalidEmail) {
+      setFormError(invalidEmail);
+      setIsSubmitted(false);
+      return;
+    }
+    setFormError("");
     setIsSubmitted(true);
     
     // Limpiar campos del formulario
@@ -35,23 +47,24 @@ export default function ContactoPage() {
       <div className={chromeStyles.page}>
         <PageHeader
           title="Contacto"
-          subtitle="Estamos para ayudarte. Envíanos tu consulta sobre inscripciones, torneos o afiliaciones."
+          subtitle="Estamos para ayudarte. Envianos tu consulta sobre inscripciones, torneos o afiliaciones."
         />
 
         <div className={styles.twoCol}>
           <div className={chromeStyles.card}>
-            <h2 className={chromeStyles.sectionTitle}>Envíanos un Mensaje</h2>
+            <h2 className={chromeStyles.sectionTitle}>Envianos un mensaje</h2>
             <p className={chromeStyles.muted}>
-              Completa los campos a continuación y te responderemos a la brevedad.
+              Completá los campos y te respondemos a la brevedad.
             </p>
 
+            {formError && <Alert variant="error">{formError}</Alert>}
             {isSubmitted && (
               <Alert variant="success">
                 ¡Mensaje enviado con éxito! Nos pondremos en contacto a la brevedad.
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className={chromeStyles.form}>
+            <form onSubmit={handleSubmit} className={chromeStyles.form} noValidate>
               <div className={chromeStyles.formGroup}>
                 <label className={chromeStyles.label} htmlFor="contacto-nombre">
                   Nombre y Apellido
@@ -59,7 +72,6 @@ export default function ContactoPage() {
                 <input
                   id="contacto-nombre"
                   type="text"
-                  required
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                   placeholder="Ej: Juan Pérez"
@@ -73,8 +85,7 @@ export default function ContactoPage() {
                 </label>
                 <input
                   id="contacto-email"
-                  type="email"
-                  required
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Ej: juan.perez@email.com"
@@ -119,7 +130,6 @@ export default function ContactoPage() {
                 </label>
                 <textarea
                   id="contacto-mensaje"
-                  required
                   rows={5}
                   value={mensaje}
                   onChange={(e) => setMensaje(e.target.value)}

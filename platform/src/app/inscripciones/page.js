@@ -198,7 +198,7 @@ export default function InscripcionesPage() {
                   onChange={(e) => setSelectedTournamentId(e.target.value)}
                   disabled={isSubmitting}
                 >
-                  <option value="">-- Selecciona un Torneo --</option>
+                  <option value="">-- Seleccioná un torneo --</option>
                   {tournaments.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name} ({t.category} - {t.branch})
@@ -218,7 +218,7 @@ export default function InscripcionesPage() {
                   onChange={(e) => setSelectedTeamId(e.target.value)}
                   disabled={isSubmitting}
                 >
-                  <option value="">-- Selecciona un Equipo --</option>
+                  <option value="">-- Seleccioná un equipo --</option>
                   {teams.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name} ({t.category} - {t.branch})
@@ -266,7 +266,7 @@ export default function InscripcionesPage() {
             {isLoadingEnrollments ? (
               <LoadingState label="Cargando inscripciones..." />
             ) : !filterTournamentId ? (
-              <EmptyState title="Selecciona un torneo oficial en el filtro para visualizar las inscripciones." />
+              <EmptyState title="Seleccioná un torneo oficial en el filtro para ver las inscripciones." />
             ) : enrollments.length === 0 ? (
               <EmptyState title="No hay equipos inscritos en este torneo." />
             ) : (

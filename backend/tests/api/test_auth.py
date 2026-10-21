@@ -100,7 +100,7 @@ class TestJwtRequired:
     def test_missing_header(self, api_client):
         res = api_client.get('/internal/torneos/partidos/')
         assert res.status_code == 401
-        assert 'Authorization header missing' in res.json()['error']
+        assert 'Falta iniciar sesión' in res.json()['error']
 
     def test_bad_format(self, api_client, admin_user):
         res = api_client.get(
@@ -113,7 +113,7 @@ class TestJwtRequired:
         headers = auth_header_for(admin_user, expired=True)
         res = api_client.get('/internal/torneos/partidos/', **headers)
         assert res.status_code == 401
-        assert 'expired' in res.json()['error'].lower()
+        assert 'venció' in res.json()['error'].lower()
 
     def test_invalid_token(self, api_client):
         res = api_client.get(

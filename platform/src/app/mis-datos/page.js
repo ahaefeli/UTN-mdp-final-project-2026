@@ -8,6 +8,7 @@ import userService from '../../services/userService';
 import { ROLE_TRANSLATIONS } from '../../utils/roles';
 import { clubInitials } from '../../utils/clubMark';
 import { phoneError } from '../../utils/phone';
+import { uploadFileError } from '../../utils/uploads';
 import {
   PageHeader,
   Button,
@@ -93,11 +94,20 @@ export default function MisDatosPage() {
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-    } else {
+    const next = e.target.files && e.target.files.length > 0 ? e.target.files[0] : null;
+    if (!next) {
       setFile(null);
+      return;
     }
+    const invalidFile = uploadFileError(next);
+    if (invalidFile) {
+      setErrorMsg(invalidFile);
+      e.target.value = '';
+      setFile(null);
+      return;
+    }
+    setErrorMsg('');
+    setFile(next);
   };
 
   const savedFirstName = user?.first_name || '';
@@ -368,7 +378,7 @@ export default function MisDatosPage() {
                     id="profile-document"
                     type="file"
                     className={styles.fileInput}
-                    accept=".pdf,image/*"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
                     onChange={handleFileChange}
                     disabled={isSubmitting}
                   />

@@ -59,7 +59,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className={styles.form}>
+        <form onSubmit={handleLogin} className={styles.form} noValidate>
           <div className={styles.formGroup}>
             <label className={styles.label} htmlFor="login-dni">
               Documento, email o usuario
@@ -73,9 +73,6 @@ export default function LoginPage() {
               disabled={isLoading}
               className={styles.input}
               autoComplete="username"
-              required
-              onInvalid={(e) => e.target.setCustomValidity('Ingresá tu documento, email o usuario.')}
-              onInput={(e) => e.target.setCustomValidity('')}
             />
           </div>
 
@@ -92,9 +89,6 @@ export default function LoginPage() {
               disabled={isLoading}
               className={styles.input}
               autoComplete="current-password"
-              required
-              onInvalid={(e) => e.target.setCustomValidity('Ingresá tu contraseña.')}
-              onInput={(e) => e.target.setCustomValidity('')}
             />
           </div>
 
@@ -106,15 +100,8 @@ export default function LoginPage() {
         </form>
 
         <div className={styles.footer}>
-          ¿Queres ser parte?{" "}
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              alert("Simulación de contacto");
-            }}
-            className={styles.footerLink}
-          >
+          ¿Querés ser parte?{" "}
+          <a href="https://voleyhub.com/contacto" className={styles.footerLink}>
             Contactanos
           </a>
         </div>

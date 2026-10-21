@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './Modal.module.css';
 
 export default function Modal({
@@ -9,11 +11,15 @@ export default function Modal({
   footer,
   size = 'md',
   showClose = true,
+  stacked = false,
 }) {
-  if (!open) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  return (
-    <div className={styles.overlay} onClick={onClose} role="presentation">
+  if (!open || !mounted) return null;
+
+  return createPortal(
+    <div className={`${styles.overlay} ${stacked ? styles.overlayStack : ''}`} onClick={onClose} role="presentation">
       <div
         className={`${styles.modal} ${size !== 'md' ? styles[size] : ''}`}
         onClick={(e) => e.stopPropagation()}
@@ -37,6 +43,7 @@ export default function Modal({
         <div className={styles.body}>{children}</div>
         {footer ? <div className={styles.footer}>{footer}</div> : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

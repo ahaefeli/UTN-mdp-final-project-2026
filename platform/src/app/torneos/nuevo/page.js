@@ -123,6 +123,21 @@ export default function TorneosNuevoPage() {
       setError('La Fecha 1 es obligatoria.');
       return;
     }
+    const today = new Date();
+    const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const seenDates = new Set();
+    for (const stage of stages) {
+      if (!stage.date) continue;
+      if (stage.date < todayIso) {
+        setError('No se puede usar una fecha que ya pasó.');
+        return;
+      }
+      if (seenDates.has(stage.date)) {
+        setError('No puede haber dos fechas el mismo día.');
+        return;
+      }
+      seenDates.add(stage.date);
+    }
     setError('');
     try {
       const res = await tournamentService.getTournaments();
@@ -280,10 +295,10 @@ export default function TorneosNuevoPage() {
                     }}
                     className={chromeStyles.select}
                   >
-                    <option value="SUB_14">Sub 14</option>
-                    <option value="SUB_16">Sub 16</option>
-                    <option value="SUB_18">Sub 18</option>
-                    <option value="SUB_21">Sub 21</option>
+                    <option value="SUB_14">Sub-14</option>
+                    <option value="SUB_16">Sub-16</option>
+                    <option value="SUB_18">Sub-18</option>
+                    <option value="SUB_21">Sub-21</option>
                     <option value="PRIMERA">Primera</option>
                     <option value="MAXI">Maxi</option>
                   </select>
@@ -322,11 +337,28 @@ export default function TorneosNuevoPage() {
                     <div key={index} className={styles.stageRow}>
                       <span className={styles.stageLabel}>{stage.name}</span>
                       <input
-                        type="date"
-                        value={stage.date}
-                        onChange={(e) => handleStageDateChange(index, e.target.value)}
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="dd/mm/aaaa"
+                        aria-describedby={`stage-date-hint-${index}`}
+                        value={/^\d{4}-\d{2}-\d{2}$/.test(stage.date || '') ? `${stage.date.slice(8, 10)}/${stage.date.slice(5, 7)}/${stage.date.slice(0, 4)}` : (stage.date || '')}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw);
+                          handleStageDateChange(index, match ? `${match[3]}-${match[2]}-${match[1]}` : raw);
+                        }}
                         className={chromeStyles.input}
                       />
+                      <span id={`stage-date-hint-${index}`} className={styles.stageLabel}>
+                        {stage.date
+                          ? new Date(`${stage.date}T12:00:00`).toLocaleDateString('es-AR', {
+                              weekday: 'long',
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })
+                          : 'día/mes/año'}
+                      </span>
                       {index > 0 && (
                         <Button
                           type="button"
