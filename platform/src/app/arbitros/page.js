@@ -17,6 +17,7 @@ import {
   EmptyState,
   StatusBadge,
   Tabs,
+  EntityThumb,
 } from '../../components/ui';
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
@@ -370,10 +371,14 @@ export default function ArbitrosAdminPage() {
             <EmptyState title="No hay árbitros registrados en el sistema." />
           ) : (
             <DataTable columns={ACTIVE_COLUMNS}>
-              {referees.map((ref) => (
+              {referees.map((ref) => {
+                const name = ref.name || `${ref.first_name || ''} ${ref.last_name || ''}`.trim();
+                return (
                 <tr key={ref.id}>
                   <td className={styles.nameCell}>
-                    {ref.name || `${ref.first_name || ''} ${ref.last_name || ''}`}
+                    <EntityThumb src={ref.photo_url} name={name}>
+                      {name || 'Sin especificar'}
+                    </EntityThumb>
                   </td>
                   <td>{formatDni(ref.dni) || 'Sin especificar'}</td>
                   <td>{ref.email || 'Sin especificar'}</td>
@@ -384,17 +389,22 @@ export default function ArbitrosAdminPage() {
                     />
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </DataTable>
           )
         ) : requests.length === 0 ? (
           <EmptyState title="No hay solicitudes de registro pendientes." />
         ) : (
           <DataTable columns={REQUEST_COLUMNS}>
-            {requests.map((req) => (
+            {requests.map((req) => {
+              const name = `${req.admin_first_name || ''} ${req.admin_last_name || ''}`.trim();
+              return (
               <tr key={req.id}>
                 <td className={styles.nameCell}>
-                  {req.admin_first_name} {req.admin_last_name}
+                  <EntityThumb name={name}>
+                    {name || 'Sin especificar'}
+                  </EntityThumb>
                 </td>
                 <td>{req.admin_email}</td>
                 <td>
@@ -439,7 +449,8 @@ export default function ArbitrosAdminPage() {
                   )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </DataTable>
         )}
 

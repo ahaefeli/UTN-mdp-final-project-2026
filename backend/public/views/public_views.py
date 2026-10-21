@@ -1,7 +1,7 @@
 from django.views import View
 from django.http import JsonResponse
 from django.core.paginator import Paginator
-from core.models import Tournament, Organization
+from core.models import Tournament, Organization, Team, TournamentEnrollment
 
 def serialize_tournament_public(t):
     return {
@@ -52,6 +52,37 @@ class PublicTournamentView(View):
         return JsonResponse({
             'data': [serialize_tournament_public(t) for t in qs]
         }, status=200)
+
+class PublicTeamView(View):
+    def get(self, request, *args, **kwargs):
+        teams = (
+            Team.objects.filter(is_deleted=False, club__is_deleted=False)
+            .select_related('club')
+            .order_by('club__name', 'name')
+        )
+        enrollments = {
+            item.team_id: item
+            for item in TournamentEnrollment.objects.filter(
+                team__in=teams,
+                tournament__is_deleted=False,
+            ).select_related('tournament').order_by('tournament__year')
+        }
+        data = []
+        for team in teams:
+            enrollment = enrollments.get(team.id)
+            tournament = enrollment.tournament if enrollment else None
+            data.append({
+                'id': str(team.id),
+                'name': team.name,
+                'category': team.category,
+                'branch': team.branch,
+                'club_name': team.club.name,
+                'club_logo_url': team.club.logo_url,
+                'tournament_id': str(tournament.id) if tournament else None,
+                'tournament_name': tournament.name if tournament else None,
+            })
+        return JsonResponse({'data': data}, status=200)
+
 
 class PublicOrganizationView(View):
     def get(self, request, *args, **kwargs):

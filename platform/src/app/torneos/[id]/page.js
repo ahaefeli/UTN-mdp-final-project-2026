@@ -1063,7 +1063,7 @@ export default function TorneoDetailPage() {
 
           title={tournament?.name}
 
-          subtitle={`${STATUS_TRANSLATIONS[tournament?.status] || 'Torneo'}: gestioná las fechas y programá los partidos.`}
+          subtitle={`${STATUS_TRANSLATIONS[tournament?.status] || 'Torneo'}: gestióná las fechas y programá los partidos.`}
 
           actions={
 

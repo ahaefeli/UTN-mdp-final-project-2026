@@ -20,6 +20,18 @@
   gap: var(--space-5);
 }
 
+.backLink {
+  align-self: flex-start;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
 .brand {
   font-size: 1rem;
   font-weight: 700;

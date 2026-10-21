@@ -15,7 +15,7 @@ export default function QuickActions() {
       colorClass: styles.blueIcon
     },
     {
-      label: 'Gestionar usuarios',
+      label: 'Gestiónar usuarios',
       icon: Users,
       path: '/usuarios',
       description: 'Administra usuarios, roles y permisos del sistema.',

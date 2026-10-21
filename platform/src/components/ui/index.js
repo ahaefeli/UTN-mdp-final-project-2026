@@ -8,3 +8,4 @@ export { default as LoadingState } from './LoadingState';
 export { default as StatusBadge } from './StatusBadge';
 export { default as MatchRow } from './MatchRow';
 export { default as Tabs } from './Tabs';
+export { default as EntityThumb } from './EntityThumb';

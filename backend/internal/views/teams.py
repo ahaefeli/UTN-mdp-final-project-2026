@@ -20,6 +20,7 @@ def serialize_team(t):
             'dni': p.dni,
             'username': p.username,
             'email': p.email,
+            'photo_url': p.photo_url,
             'is_active': p.is_active,
             'medical_certificate': p.medical_certificate,
             'team_info': {

@@ -1,4 +1,5 @@
 "use client";
+import SiteFooter from "../../components/SiteFooter";
 import { getPlatformLoginUrl } from '../../utils/platformUrl';
 import { getPublicApiBase } from '../../utils/publicApi';
 import { formatBranch, formatCategory, formatStatus } from '../../utils/labels';
@@ -61,7 +62,7 @@ export default function ResultadosPage() {
             Reglamento
           </Link>
           <Link href="/plataforma" className="text-sm font-semibold pb-1 text-slate-600 border-b-2 border-transparent hover:text-[#001F54]">
-            La plataforma
+            La Plataforma
           </Link>
         </nav>
 
@@ -92,7 +93,7 @@ export default function ResultadosPage() {
             <Link href="/resultados" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54]">Resultados</Link>
             <Link href="/equipos" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54]">Equipos</Link>
             <Link href="/reglamento" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54]">Reglamento</Link>
-            <Link href="/plataforma" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54]">La plataforma</Link>
+            <Link href="/plataforma" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#001F54]">La Plataforma</Link>
             <a href={getPlatformLoginUrl()} className="w-full bg-[#001F54] text-white font-semibold text-center py-3 rounded-lg text-sm">Ingresar</a>
           </div>
         )}
@@ -143,17 +144,7 @@ export default function ResultadosPage() {
         )}
       </main>
 
-      <footer className="bg-slate-950 text-white pt-16 pb-8 px-6 lg:px-16 w-full select-none border-t border-slate-900/60">
-        <div className="max-w-7xl mx-auto w-full flex flex-col gap-8">
-          <ul className="flex flex-col gap-2.5 text-xs text-blue-200/60 font-bold">
-            <li><Link href="/torneos" className="hover:text-white">COMPETENCIAS</Link></li>
-            <li><Link href="/resultados" className="hover:text-white">RESULTADOS</Link></li>
-            <li><Link href="/sitemap" className="hover:text-white">SITEMAP</Link></li>
-            <li><Link href="/contacto" className="hover:text-white">CONTACTO</Link></li>
-          </ul>
-          <span className="text-xs text-blue-200/35 font-semibold">© 2026 VOLEYHUB</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -12,8 +12,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "VoleyHub - Gestion Deportiva de Voley en toda la República Argentina",
-  description: "Sumate a la red de VoleyHub y viví el torneo punto a punto.",
+  title: {
+    default: "VoleyHub",
+    template: "%s | VoleyHub",
+  },
+  description:
+    "Todo el vóley en un solo lugar: competencias, resultados y la gestión de clubes, árbitros y jugadores.",
 };
 
 export default function RootLayout({ children }) {

@@ -9,7 +9,7 @@ export default function NotFound() {
       </p>
       <div className="flex gap-3">
         <Link href="/" className="bg-[#001F54] text-white font-bold py-3 px-5 rounded-lg">Inicio</Link>
-        <Link href="/torneos" className="bg-[#F97316] text-[#001F54] font-bold py-3 px-5 rounded-lg">Competencias</Link>
+        <Link href="/torneos" className="bg-[#F97316] text-[#001F54] font-bold py-3 px-5 rounded-lg">Torneos</Link>
       </div>
     </main>
   );

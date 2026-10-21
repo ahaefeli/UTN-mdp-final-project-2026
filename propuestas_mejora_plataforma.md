@@ -108,7 +108,7 @@ Principio rector: **una tarea primaria por pantalla, feedback inmediato, cero na
 | Landing → Login | Mezcla de `localhost:3001/login` hardcodeado vs `href="/login"` (404 en landing) | CTA principal inconsistente/roto |
 | Carga de resultado | `finishMatch` / `rescheduleMatch` en servicio **sin callers de UI** | Datos de liga incompletos |
 | ADMIN fixture | Torneo → fechas → partido a partido (wizard + detalle largo) | Alto tiempo operativo |
-| Setup de club | Tres pantallas: `gestion-club` + `mis-equipos` + `mis-datos` para un club usable | Onboarding lento |
+| Setup de club | Tres pantallas: `gestión-club` + `mis-equipos` + `mis-datos` para un club usable | Onboarding lento |
 | Inscripciones | Ruta existe, no está en Navbar; AuthContext la restringe | Feature invisible |
 | REFEREE / SCORER | Navbar: Inicio + Resultados + Mis Datos | Roles “de papel” |
 | Landing equipos | UI completa detrás de “Próximamente” + datos mock | Expectativa incumplida |
@@ -279,7 +279,7 @@ Recomendaciones **periféricas/arquitectónicas** para escalar sin reescribir el
 | `sets_data` JSON | Lectura parcial; escritura incompleta (TODO backend) | Standings frágiles |
 | Dashboard `pending_actions` | `PendingAlerts` importado, no renderizado | Alertas duplicadas/manuales |
 | Colisiones de fixture en API | Sin UI de conflicto | ADMIN descubre errores tarde |
-| Court CRUD completo | Solo GET en `courtService` | Canchas no gestionables en UI |
+| Court CRUD completo | Solo GET en `courtService` | Canchas no gestiónables en UI |
 | `is_federated` | Seed/métricas | Sin gate de negocio |
 | API pública clubes/equipos | Landing mock + “Próximamente” | Escaparate vacío |
 | Soft-delete campos | Casi no usados | Datos “borrados” inconsistentes |

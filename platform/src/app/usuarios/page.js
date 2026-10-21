@@ -16,6 +16,7 @@ import {
   LoadingState,
   EmptyState,
   StatusBadge,
+  EntityThumb,
 } from '../../components/ui';
 import chrome from '../../components/ui/PageChrome.module.css';
 import styles from './page.module.css';
@@ -226,14 +227,24 @@ export default function UsuariosPage() {
             {usersList.map((u) => (
               <tr key={u.id}>
                 <td className={styles.usernameCell}>{u.username}</td>
-                <td className={styles.cellStrong}>{u.name || '-'}</td>
+                <td className={styles.cellStrong}>
+                  <EntityThumb src={u.photo_url} name={u.name || u.username}>
+                    {u.name || '-'}
+                  </EntityThumb>
+                </td>
                 <td>
                   <StatusBadge variant={ROLE_VARIANTS[u.role] || 'neutral'}>
                     {ROLE_TRANSLATIONS[u.role] || u.role}
                   </StatusBadge>
                 </td>
                 <td>{formatDni(u.dni) || '-'}</td>
-                <td className={styles.clubCell}>{u.club_name || '-'}</td>
+                <td className={styles.clubCell}>
+                  {u.club_name ? (
+                    <EntityThumb src={u.club_logo_url} name={u.club_name}>
+                      {u.club_name}
+                    </EntityThumb>
+                  ) : '-'}
+                </td>
                 <td>
                   <StatusBadge variant={u.enable ? 'success' : 'neutral'}>
                     {u.enable ? 'Activo' : 'Inactivo'}

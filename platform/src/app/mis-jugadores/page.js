@@ -17,6 +17,7 @@ import {
   LoadingState,
   EmptyState,
   StatusBadge,
+  EntityThumb,
 } from '../../components/ui';
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import chrome from '../../components/ui/PageChrome.module.css';
@@ -380,7 +381,7 @@ export default function MisJugadoresPage() {
         <PageHeader
           title="Mis"
           highlight="Jugadores"
-          subtitle="Gestiona el padrón del club y las asignaciones por equipo."
+          subtitle="Gestióna el padrón del club y las asignaciones por equipo."
           actions={
             <Button onClick={handleOpenCreateModal} disabled={isLoading}>
               <i className="bi bi-plus-lg" aria-hidden="true" />
@@ -426,9 +427,15 @@ export default function MisJugadoresPage() {
               ) : (
                 <>
                   <DataTable columns={ROSTER_COLUMNS}>
-                    {paginatedPlayers.map((player) => (
+                    {paginatedPlayers.map((player) => {
+                      const name = getPlayerName(player);
+                      return (
                       <tr key={player.id}>
-                        <td>{getPlayerName(player)}</td>
+                        <td>
+                          <EntityThumb src={player.photo_url} name={name}>
+                            {name || '-'}
+                          </EntityThumb>
+                        </td>
                         <td>{formatDni(player.dni) || '-'}</td>
                         <td>{formatGender(player.gender)}</td>
                         <td>{player.email || '-'}</td>
@@ -436,7 +443,8 @@ export default function MisJugadoresPage() {
                         <td>{renderPlayerStatusBadge(player)}</td>
                         <td className={styles.assignmentCell}>{renderAssignmentCell(player)}</td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </DataTable>
 
                   <PaginationBar
@@ -486,15 +494,22 @@ export default function MisJugadoresPage() {
                           <>
                             <div className={styles.teamTableWrap}>
                               <DataTable columns={TEAM_PLAYER_COLUMNS}>
-                                {paginatedTeamPlayers.map((player) => (
+                                {paginatedTeamPlayers.map((player) => {
+                                  const name = getPlayerName(player);
+                                  return (
                                   <tr key={player.id}>
-                                    <td>{getPlayerName(player)}</td>
+                                    <td>
+                                      <EntityThumb src={player.photo_url} name={name}>
+                                        {name || '-'}
+                                      </EntityThumb>
+                                    </td>
                                     <td>{formatDni(player.dni) || '-'}</td>
                                     <td>{player.email || '-'}</td>
                                     <td>{renderMedicalBadge(player)}</td>
                                     <td>{renderPlayerStatusBadge(player)}</td>
                                   </tr>
-                                ))}
+                                  );
+                                })}
                               </DataTable>
                             </div>
 

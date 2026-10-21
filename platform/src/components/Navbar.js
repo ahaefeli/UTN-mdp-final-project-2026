@@ -126,8 +126,8 @@ export default function Navbar() {
                 Mis Equipos
               </Link>
               <Link
-                href="/gestion-club"
-                className={`${styles.navLink} ${isActive('/gestion-club') ? styles.navLinkActive : ''}`}
+                href="/gestión-club"
+                className={`${styles.navLink} ${isActive('/gestión-club') ? styles.navLinkActive : ''}`}
               >
                 Gestión del Club
               </Link>

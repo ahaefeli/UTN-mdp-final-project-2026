@@ -435,15 +435,15 @@ export default function RootDashboardPage() {
       },
       {
         label: 'Mi Club',
-        path: '/gestion-club',
-        description: 'Gestiona los entrenadores y jugadores del club',
+        path: '/gestión-club',
+        description: 'Gestióna los entrenadores y jugadores del club',
         iconClass: 'bi-building',
         iconTone: styles.iconOrange,
       },
       {
         label: 'Mis Equipos',
         path: '/mis-equipos',
-        description: 'Gestiona categorías, ramas y asigna entrenadores.',
+        description: 'Gestióna categorías, ramas y asigna entrenadores.',
         iconClass: 'bi-shield-fill',
         iconTone: styles.iconGreen,
       },
@@ -519,7 +519,7 @@ export default function RootDashboardPage() {
       {
         label: 'Mis Datos y Certificados',
         path: '/mis-datos',
-        description: 'Gestioná tu perfil y cargá tu certificado de entrenador habilitante.',
+        description: 'Gestióná tu perfil y cargá tu certificado de entrenador habilitante.',
         iconClass: 'bi bi-person-vcard-fill',
         iconTone: styles.iconBlue,
       },

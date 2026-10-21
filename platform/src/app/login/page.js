@@ -50,12 +50,16 @@ export default function LoginPage() {
   return (
     <div className={styles.authShell}>
       <div className={styles.authCard}>
+        <a href="https://voleyhub.com" className={styles.backLink}>
+          Volver a voleyhub.com
+        </a>
+
         <p className={styles.brand}>VoleyHub</p>
 
         <div className={styles.header}>
-          <h1 className={styles.title}>Bienvenido de nuevo</h1>
+          <h1 className={styles.title}>Ingresar</h1>
           <p className={styles.subtitle}>
-            Clubes, entrenadores, árbitros, planilleros y administración usan el mismo ingreso.
+            Jugadores, clubes, entrenadores, árbitros, planilleros y administración usan el mismo ingreso.
           </p>
         </div>
 

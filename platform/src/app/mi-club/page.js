@@ -16,7 +16,7 @@ export default function MiClubPage() {
       return;
     }
     if (role === 'CLUB_ADMIN') {
-      router.replace('/gestion-club');
+      router.replace('/gestión-club');
     } else if (role === 'COACH') {
       router.replace('/mis-jugadores');
     } else {

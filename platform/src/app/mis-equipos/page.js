@@ -402,7 +402,7 @@ export default function MisEquiposPage() {
         <PageHeader
           title="Mis"
           highlight="Equipos"
-          subtitle="Gestiona los equipos registrados en tu club."
+          subtitle="Gestióna los equipos registrados en tu club."
           actions={
             <Button onClick={handleOpenCreateModal}>
               <i className="bi bi-plus-lg" aria-hidden="true" />

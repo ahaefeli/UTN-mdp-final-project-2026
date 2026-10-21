@@ -17,6 +17,7 @@ import {
   EmptyState,
   StatusBadge,
   Tabs,
+  EntityThumb,
 } from '../../components/ui';
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
@@ -370,10 +371,14 @@ export default function PlanillerosAdminPage() {
             <EmptyState title="No hay planilleros registrados en el sistema." />
           ) : (
             <DataTable columns={ACTIVE_COLUMNS}>
-              {scorers.map((sc) => (
+              {scorers.map((sc) => {
+                const name = sc.name || `${sc.first_name || ''} ${sc.last_name || ''}`.trim();
+                return (
                 <tr key={sc.id}>
                   <td className={styles.nameCell}>
-                    {sc.name || `${sc.first_name || ''} ${sc.last_name || ''}`}
+                    <EntityThumb src={sc.photo_url} name={name}>
+                      {name || 'Sin especificar'}
+                    </EntityThumb>
                   </td>
                   <td>{formatDni(sc.dni) || 'Sin especificar'}</td>
                   <td>{sc.email || 'Sin especificar'}</td>
@@ -384,17 +389,22 @@ export default function PlanillerosAdminPage() {
                     />
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </DataTable>
           )
         ) : requests.length === 0 ? (
           <EmptyState title="No hay solicitudes de registro pendientes." />
         ) : (
           <DataTable columns={REQUEST_COLUMNS}>
-            {requests.map((req) => (
+            {requests.map((req) => {
+              const name = `${req.admin_first_name || ''} ${req.admin_last_name || ''}`.trim();
+              return (
               <tr key={req.id}>
                 <td className={styles.nameCell}>
-                  {req.admin_first_name} {req.admin_last_name}
+                  <EntityThumb name={name}>
+                    {name || 'Sin especificar'}
+                  </EntityThumb>
                 </td>
                 <td>{req.admin_email}</td>
                 <td>
@@ -439,7 +449,8 @@ export default function PlanillerosAdminPage() {
                   )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </DataTable>
         )}
 

@@ -16,6 +16,7 @@ import {
   LoadingState,
   EmptyState,
   Tabs,
+  EntityThumb,
 } from '../../components/ui';
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
@@ -43,7 +44,7 @@ const COACH_COLUMNS = [
   { key: 'actions', label: 'Acciones', width: '120px' },
 ];
 
-export default function GestionClubPage() {
+export default function GestiónClubPage() {
   const router = useRouter();
   const { user, role, isAuthenticated, isInitialized, updateSession } = useAuth();
 
@@ -509,7 +510,11 @@ export default function GestionClubPage() {
           <DataTable columns={isReadOnly ? USER_COLUMNS : COACH_COLUMNS}>
             {activeUsers.map((u) => (
               <tr key={u.id}>
-                <td className={styles.cellStrong}>{u.name || '-'}</td>
+                <td className={styles.cellStrong}>
+                  <EntityThumb src={u.photo_url} name={u.name || u.username}>
+                    {u.name || '-'}
+                  </EntityThumb>
+                </td>
                 <td>{u.username}</td>
                 <td>{formatDni(u.dni) || '-'}</td>
                 <td>{u.email || '-'}</td>

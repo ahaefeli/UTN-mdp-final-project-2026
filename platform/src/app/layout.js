@@ -15,8 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "VoleyHub - Plataforma",
-  description: "Plataforma de gestión de Clubes de Voley",
+  title: {
+    default: "Inicio | VoleyHub",
+    template: "%s | VoleyHub",
+  },
+  description: "Plataforma de gestión de la liga: clubes, equipos, partidos y usuarios.",
 };
 
 export default function RootLayout({ children }) {

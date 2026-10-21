@@ -18,6 +18,7 @@ import {
   EmptyState,
   StatusBadge,
   Tabs,
+  EntityThumb,
 } from '../../components/ui';
 import dirStyles from '../../components/ui/AdminDirectory.module.css';
 import styles from './page.module.css';
@@ -441,7 +442,11 @@ export default function ClubesAdminPage() {
             <DataTable columns={ACTIVE_CLUB_COLUMNS}>
               {clubs.map((club) => (
                 <tr key={club.id}>
-                  <td className={styles.cellStrong}>{club.name}</td>
+                  <td className={styles.cellStrong}>
+                    <EntityThumb src={club.logo_url} name={club.name}>
+                      {club.name}
+                    </EntityThumb>
+                  </td>
                   <td>{club.address || 'Sin especificar'}</td>
                   <td>{club.phone || 'Sin especificar'}</td>
                   <td>{club.email || 'Sin especificar'}</td>
@@ -462,8 +467,12 @@ export default function ClubesAdminPage() {
             {requests.map((req) => (
               <tr key={req.id}>
                 <td>
-                  <div className={styles.cellStrong}>{req.club_name}</div>
-                  <div className={styles.cellMuted}>{req.club_email}</div>
+                  <EntityThumb src={req.club_logo_url} name={req.club_name}>
+                    <div>
+                      <div className={styles.cellStrong}>{req.club_name}</div>
+                      <div className={styles.cellMuted}>{req.club_email}</div>
+                    </div>
+                  </EntityThumb>
                 </td>
                 <td>
                   <div>{req.club_address || 'Sin especificar'}</div>
