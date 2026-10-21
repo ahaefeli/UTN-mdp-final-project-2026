@@ -170,18 +170,22 @@ export default function ReglamentoPage() {
 
       </header>
 
-      {/* 2. HERO SECTION */}
-      <main className="flex-grow max-w-7xl mx-auto w-full px-4 md:px-8 py-10">
-        
-        <section className="mb-12 select-none">
-          <h1 className="text-4xl md:text-5xl font-black text-[#001F54] tracking-tight mb-3">
-            Documentación Oficial
+      <section
+        style={{ backgroundImage: "url('/images/equipos/clubesafiliados.jpg')" }}
+        className="relative w-full h-[220px] md:h-[250px] overflow-hidden flex items-center justify-center bg-cover bg-center"
+      >
+        <div className="absolute inset-0 w-full h-full bg-slate-50/85"></div>
+        <div className="relative z-10 flex flex-col items-center text-center px-4 w-full">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#001F54] uppercase tracking-tight leading-none mb-4">
+            Reglamento
           </h1>
-          <p className="text-slate-600 text-sm sm:text-base font-semibold max-w-2xl leading-relaxed">
+          <p className="text-slate-800 text-sm sm:text-base font-medium max-w-2xl leading-relaxed">
             Accedé a los reglamentos, normativas y formularios para participar en los torneos oficiales de VoleyHub.
           </p>
-        </section>
+        </div>
+      </section>
 
+      <main className="flex-grow max-w-7xl mx-auto w-full px-4 md:px-8 py-10">
         {/* 3. MAIN CONTENT GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-8">
           

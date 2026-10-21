@@ -99,10 +99,16 @@ export default function ResultadosPage() {
         )}
       </header>
 
-      <section className="relative w-full bg-[#001F54] text-white py-14 px-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight">Resultados</h1>
-          <p className="mt-3 text-blue-100 font-semibold max-w-2xl">
+      <section
+        style={{ backgroundImage: "url('/images/equipos/clubesafiliados.jpg')" }}
+        className="relative w-full h-[220px] md:h-[250px] overflow-hidden flex items-center justify-center bg-cover bg-center"
+      >
+        <div className="absolute inset-0 w-full h-full bg-slate-50/85"></div>
+        <div className="relative z-10 flex flex-col items-center text-center px-4 w-full">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#001F54] uppercase tracking-tight leading-none mb-4">
+            Resultados
+          </h1>
+          <p className="text-slate-800 text-sm sm:text-base font-medium max-w-2xl leading-relaxed">
             Elegí una competencia para ver el fixture, los resultados y la tabla de posiciones.
           </p>
         </div>
