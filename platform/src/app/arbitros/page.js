@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../services/apiClient';
 import { copyText } from '../../utils/copyText';
+import { formatDni } from '../../utils/identity';
 import buttonStyles from '../../components/ui/Button.module.css';
 import {
   PageHeader,
@@ -374,7 +375,7 @@ export default function ArbitrosAdminPage() {
                   <td className={styles.nameCell}>
                     {ref.name || `${ref.first_name || ''} ${ref.last_name || ''}`}
                   </td>
-                  <td>{ref.dni || 'Sin especificar'}</td>
+                  <td>{formatDni(ref.dni) || 'Sin especificar'}</td>
                   <td>{ref.email || 'Sin especificar'}</td>
                   <td>
                     <StatusBadge
@@ -556,7 +557,7 @@ export default function ArbitrosAdminPage() {
                 <div className={dirStyles.detailItem}>
                   <span className={dirStyles.detailLabel}>DNI</span>
                   <span className={dirStyles.detailValue}>
-                    {selectedRequest.admin_dni || 'Sin especificar'}
+                    {formatDni(selectedRequest.admin_dni) || 'Sin especificar'}
                   </span>
                 </div>
                 <div className={dirStyles.detailItem}>

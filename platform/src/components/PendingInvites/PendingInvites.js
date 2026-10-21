@@ -6,11 +6,43 @@ import { ROLE_TRANSLATIONS } from '../../utils/roles';
 import { Alert, Button, Modal } from '../ui';
 import styles from './PendingInvites.module.css';
 
-function formatWhen(value) {
-  if (!value) return 'sin fecha';
+function parseDate(value) {
+  if (!value) return null;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'sin fecha';
-  return date.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatWhen(value) {
+  const date = parseDate(value);
+  if (!date) return 'sin fecha';
+  return date.toLocaleString('es-AR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function relativeWhen(value) {
+  const date = parseDate(value);
+  if (!date) return '';
+  const elapsed = Date.now() - date.getTime();
+  const abs = Math.abs(elapsed);
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const lead = elapsed < 0 ? 'En' : 'Hace';
+
+  if (abs < minute) return 'Hace un momento';
+
+  const [amount, singular, plural] = abs < hour
+    ? [Math.max(1, Math.round(abs / minute)), 'minuto', 'minutos']
+    : abs < day
+      ? [Math.max(1, Math.round(abs / hour)), 'hora', 'horas']
+      : [Math.max(1, Math.round(abs / day)), 'día', 'días'];
+
+  return `${lead} ${amount} ${amount === 1 ? singular : plural}`;
 }
 
 function isExpired(link) {
@@ -72,12 +104,17 @@ export default function PendingInvites({ role, refreshKey = 0 }) {
       <ul className={styles.list}>
         {links.map((link) => {
           const tokenTail = String(link.token || '').slice(-6);
+          const ago = relativeWhen(link.created_at);
           return (
             <li key={link.id} className={styles.item}>
-              <span>
-                {link.recipient_label || ROLE_TRANSLATIONS[link.role] || role} · creado {formatWhen(link.created_at)}
-                {tokenTail ? ` · …${tokenTail}` : ''}
-              </span>
+              <div className={styles.identity}>
+                <p className={styles.who}>{link.recipient_label || ROLE_TRANSLATIONS[link.role] || role}</p>
+                <p className={styles.when}>
+                  <time dateTime={link.created_at || undefined}>{formatWhen(link.created_at)}</time>
+                  {ago ? <span className={styles.ago}>{ago}</span> : null}
+                </p>
+                {tokenTail ? <p className={styles.token}>Termina en {tokenTail}</p> : null}
+              </div>
               <Button size="sm" variant="secondary" disabled={busyId === link.id} onClick={() => setRevokeTarget(link)}>
                 Revocar
               </Button>

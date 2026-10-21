@@ -154,6 +154,7 @@ class LoginView(View):
                 'club_id': membership['club_id'],
                 'club_name': membership['club_name'],
                 'club_logo_url': membership['club_logo_url'],
+                'photo_url': user.photo_url,
                 'name': f"{user.first_name} {user.last_name}".strip()
             }
         }, status=200)

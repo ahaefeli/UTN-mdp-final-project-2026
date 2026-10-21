@@ -68,10 +68,35 @@
   font-size: 0.8125rem;
 }
 
+.photo,
+.photoInitials {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.photo {
+  object-fit: cover;
+  background: var(--surface);
+}
+
+.photoInitials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
 .clubMark,
 .clubInitials {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 50%;
   border: 1px solid var(--border);
   flex-shrink: 0;
@@ -82,13 +107,19 @@
   background: var(--surface);
 }
 
+.clubFact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .clubInitials {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: var(--surface);
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: 0.55rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }

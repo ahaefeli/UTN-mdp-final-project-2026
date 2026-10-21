@@ -56,6 +56,7 @@ class User(AbstractUser):
 
     gender = models.CharField(max_length=1, choices=[('M', 'Masculino'), ('F', 'Femenino')], null=True, blank=True)
     is_federated = models.BooleanField(default=False)
+    photo_url = models.URLField(max_length=500, null=True, blank=True)
     club = models.ForeignKey('Club', on_delete=models.SET_NULL, null=True, blank=True)
 
 class Club(models.Model):

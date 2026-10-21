@@ -7,6 +7,7 @@ import userService from '../../services/userService';
 import apiClient from '../../services/apiClient';
 import { ROLE_TRANSLATIONS } from '../../utils/roles';
 import { formatCategory } from '../../utils/labels';
+import { formatDni } from '../../utils/identity';
 import {
   PageHeader,
   Button,
@@ -231,7 +232,7 @@ export default function UsuariosPage() {
                     {ROLE_TRANSLATIONS[u.role] || u.role}
                   </StatusBadge>
                 </td>
-                <td>{u.dni || '-'}</td>
+                <td>{formatDni(u.dni) || '-'}</td>
                 <td className={styles.clubCell}>{u.club_name || '-'}</td>
                 <td>
                   <StatusBadge variant={u.enable ? 'success' : 'neutral'}>

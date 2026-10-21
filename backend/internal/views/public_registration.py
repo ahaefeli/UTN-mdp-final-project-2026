@@ -129,7 +129,7 @@ class PublicClubRegistrationView(View):
             except ValueError as upload_err:
                 return JsonResponse({'error': str(upload_err)}, status=400)
             except Exception:
-                return JsonResponse({'error': 'No pudimos guardar el escudo. Probá con otra imagen.'}, status=400)
+                return JsonResponse({'error': 'No pudimos guardar el archivo. Probá de nuevo.'}, status=400)
 
         # 5. Update ClubRegistrationRequest with form data
         req_obj.club_name = club_name or req_obj.club_name

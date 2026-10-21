@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { getApiBaseUrl } from '../../services/apiClient';
-import { dniError, emailError, normalizeDni, passwordError, usernameError } from '../../utils/identity';
+import { dniError, emailError, formatDni, normalizeDni, passwordError, usernameError } from '../../utils/identity';
+import { logoFileError } from '../../utils/uploads';
+import { clubInitials } from '../../utils/clubMark';
 import {
   PageHeader,
   Button,
@@ -43,7 +45,7 @@ const COACH_COLUMNS = [
 
 export default function GestionClubPage() {
   const router = useRouter();
-  const { user, role, isAuthenticated, isInitialized } = useAuth();
+  const { user, role, isAuthenticated, isInitialized, updateSession } = useAuth();
 
   // Acceso y Estados Principales
   const [isVerifying, setIsVerifying] = useState(true);
@@ -71,6 +73,11 @@ export default function GestionClubPage() {
     password: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clubLogoUrl, setClubLogoUrl] = useState('');
+  const [clubName, setClubName] = useState('');
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState('');
+  const [isSavingLogo, setIsSavingLogo] = useState(false);
 
   // Validación de Rol CLUB_ADMIN y redirección inmediata
   useEffect(() => {
@@ -119,6 +126,10 @@ export default function GestionClubPage() {
 
       setClubId(userClubId);
       setOrganizationId(userOrgId);
+      setClubName(profile.club_name || '');
+      setClubLogoUrl(profile.club_logo_url || '');
+      setLogoPreview(profile.club_logo_url || '');
+      setLogoFile(null);
 
       await fetchClubUsers(userClubId, token);
     } catch (err) {
@@ -154,6 +165,56 @@ export default function GestionClubPage() {
       setErrorMsg(err.message || 'Error al cargar usuarios.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleLogoChange = (e) => {
+    const next = e.target.files && e.target.files[0];
+    if (!next) {
+      setLogoFile(null);
+      setLogoPreview(clubLogoUrl || '');
+      return;
+    }
+    const invalidFile = logoFileError(next);
+    if (invalidFile) {
+      setErrorMsg(invalidFile);
+      e.target.value = '';
+      setLogoFile(null);
+      setLogoPreview(clubLogoUrl || '');
+      return;
+    }
+    setErrorMsg('');
+    setLogoFile(next);
+    setLogoPreview(URL.createObjectURL(next));
+  };
+
+  const handleSaveLogo = async () => {
+    if (!logoFile || !clubId) return;
+    setIsSavingLogo(true);
+    setErrorMsg('');
+    try {
+      const token = localStorage.getItem('lnv_token');
+      const payload = new FormData();
+      payload.append('logo', logoFile);
+      const res = await fetch(getApiUrl(`internal/clubes/${clubId}/`), {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: payload,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error || 'No se pudo guardar el escudo.');
+      }
+      const nextUrl = body.data?.logo_url || '';
+      setClubLogoUrl(nextUrl);
+      setLogoPreview(nextUrl);
+      setLogoFile(null);
+      updateSession({ club_logo_url: nextUrl || null, club_name: clubName || user?.club_name || null });
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || 'No se pudo guardar el escudo.');
+    } finally {
+      setIsSavingLogo(false);
     }
   };
 
@@ -330,7 +391,7 @@ export default function GestionClubPage() {
       name: u.name || '',
       username: u.username || '',
       email: u.email || '',
-      dni: u.dni || '',
+      dni: formatDni(u.dni),
       password: '', // la contraseña queda vacía a menos que se desee cambiar
     });
     setShowEditModal(true);
@@ -406,6 +467,32 @@ export default function GestionClubPage() {
           </div>
         )}
 
+        <section className={styles.shieldCard} aria-labelledby="club-shield-title">
+          <h2 id="club-shield-title" className={styles.shieldTitle}>Escudo del club</h2>
+          <div className={styles.shieldRow}>
+            {logoPreview ? (
+              <img src={logoPreview} alt={clubName ? `Escudo de ${clubName}` : 'Escudo del club'} className={styles.shield} />
+            ) : (
+              <span className={styles.shieldInitials} aria-hidden="true">{clubInitials(clubName)}</span>
+            )}
+            <div className={styles.shieldActions}>
+              <input
+                id="club-shield"
+                type="file"
+                className={styles.fileInput}
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                onChange={handleLogoChange}
+                disabled={isSavingLogo || !clubId}
+              />
+              <label htmlFor="club-shield" className={styles.fileButton}>Elegir escudo</label>
+              <span className={styles.fileName}>{logoFile ? logoFile.name : 'JPG, PNG o WEBP de hasta 10 MB'}</span>
+              <Button type="button" onClick={handleSaveLogo} disabled={isSavingLogo || !logoFile}>
+                {isSavingLogo ? 'Guardando...' : 'Guardar escudo'}
+              </Button>
+            </div>
+          </div>
+        </section>
+
         <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
         {isLoading ? (
@@ -424,7 +511,7 @@ export default function GestionClubPage() {
               <tr key={u.id}>
                 <td className={styles.cellStrong}>{u.name || '-'}</td>
                 <td>{u.username}</td>
-                <td>{u.dni || '-'}</td>
+                <td>{formatDni(u.dni) || '-'}</td>
                 <td>{u.email || '-'}</td>
                 {!isReadOnly && (
                   <td className={styles.cellActions}>
@@ -501,7 +588,7 @@ export default function GestionClubPage() {
                 type="text"
                 placeholder="Ej: 22334455"
                 value={formData.dni}
-                onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, dni: formatDni(e.target.value) })}
                 className={dirStyles.input}
                 disabled={isSubmitting}
               />
@@ -592,7 +679,7 @@ export default function GestionClubPage() {
                 id="edit-coach-dni"
                 type="text"
                 value={formData.dni}
-                onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, dni: formatDni(e.target.value) })}
                 className={dirStyles.input}
                 disabled={isSubmitting}
               />

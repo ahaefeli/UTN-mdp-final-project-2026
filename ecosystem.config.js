@@ -47,6 +47,7 @@ module.exports = {
         CSRF_TRUSTED_ORIGINS: `https://${landingUrl},https://${platformUrl}`,
         DEFAULT_FROM_EMAIL: 'no-reply@voleyhub.com',
         BUCKET_NAME: 'club-photo-bucket',
+        GOOGLE_APPLICATION_CREDENTIALS: path.join(root, 'secrets', 'gcs-club-photo.json'),
         PYTHONUNBUFFERED: '1',
       },
     },

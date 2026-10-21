@@ -53,6 +53,14 @@ apiClient.interceptors.request.use(
     // Evita errores durante Server-Side Rendering (SSR) en Next.js
     config.baseURL = getApiBaseUrl();
 
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      if (config.headers && typeof config.headers.set === 'function') {
+        config.headers.set('Content-Type', false);
+      } else if (config.headers) {
+        delete config.headers['Content-Type'];
+      }
+    }
+
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('lnv_token');
       if (token) {

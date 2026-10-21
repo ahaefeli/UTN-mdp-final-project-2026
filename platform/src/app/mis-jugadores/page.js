@@ -6,7 +6,7 @@ import authService from '../../services/authService';
 import playerService from '../../services/playerService';
 import { userService } from '../../services/userService';
 import teamService from '../../services/teamService';
-import { dniError, emailError, normalizeDni, passwordError, usernameError } from '../../utils/identity';
+import { dniError, emailError, formatDni, normalizeDni, passwordError, usernameError } from '../../utils/identity';
 import { uploadFileError } from '../../utils/uploads';
 import {
   PageHeader,
@@ -429,7 +429,7 @@ export default function MisJugadoresPage() {
                     {paginatedPlayers.map((player) => (
                       <tr key={player.id}>
                         <td>{getPlayerName(player)}</td>
-                        <td>{player.dni || '-'}</td>
+                        <td>{formatDni(player.dni) || '-'}</td>
                         <td>{formatGender(player.gender)}</td>
                         <td>{player.email || '-'}</td>
                         <td>{renderMedicalBadge(player)}</td>
@@ -489,7 +489,7 @@ export default function MisJugadoresPage() {
                                 {paginatedTeamPlayers.map((player) => (
                                   <tr key={player.id}>
                                     <td>{getPlayerName(player)}</td>
-                                    <td>{player.dni || '-'}</td>
+                                    <td>{formatDni(player.dni) || '-'}</td>
                                     <td>{player.email || '-'}</td>
                                     <td>{renderMedicalBadge(player)}</td>
                                     <td>{renderPlayerStatusBadge(player)}</td>
@@ -586,7 +586,7 @@ export default function MisJugadoresPage() {
                 type="text"
                 placeholder="Ej: 45678912"
                 value={formData.dni}
-                onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, dni: formatDni(e.target.value) })}
                 className={dirStyles.input}
                 disabled={isSubmitting}
               />

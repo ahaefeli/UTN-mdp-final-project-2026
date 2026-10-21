@@ -1,10 +1,10 @@
 export const FILE_ERROR =
-  'El archivo tiene que ser PDF, JPG, PNG o WEBP, y no puede pesar más de 5 MB.';
-export const LOGO_ERROR = 'El escudo tiene que ser una imagen JPG, PNG o WEBP de hasta 2 MB.';
+  'El archivo tiene que ser PDF, JPG, PNG o WEBP, y no puede pesar más de 10 MB.';
+export const LOGO_ERROR = 'La imagen tiene que ser JPG, PNG o WEBP y no puede pesar más de 10 MB.';
 
 const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 10 * 1024 * 1024;
 
 export function uploadFileError(file) {
   if (!file) return null;
@@ -30,7 +30,7 @@ export function logoFileError(file) {
   if (
     !imageExtensions.includes(extension) ||
     !imageTypes.includes(contentType) ||
-    file.size > 2 * 1024 * 1024 ||
+    file.size > MAX_BYTES ||
     file.size <= 0
   ) {
     return LOGO_ERROR;

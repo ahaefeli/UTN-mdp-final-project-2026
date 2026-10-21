@@ -1,5 +1,14 @@
 /* Presentation helpers — main layout uses AdminDirectory + ui components */
 
+.logoPreview {
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
 .cellStrong {
   font-weight: 700;
 }

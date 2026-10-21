@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../services/apiClient';
 import { copyText } from '../../utils/copyText';
 import { phoneError } from '../../utils/phone';
+import { logoFileError } from '../../utils/uploads';
 import buttonStyles from '../../components/ui/Button.module.css';
 import {
   PageHeader,
@@ -57,7 +58,7 @@ const REQUEST_COLUMNS = [
 
 export default function ClubesAdminPage() {
   const router = useRouter();
-  const { role, isAuthenticated, isInitialized } = useAuth();
+  const { user, role, isAuthenticated, isInitialized, updateSession } = useAuth();
 
   // Tabs
   const [activeTab, setActiveTab] = useState('activeClubs'); // 'activeClubs' | 'pendingRequests'
@@ -91,6 +92,8 @@ export default function ClubesAdminPage() {
   const [editAddress, setEditAddress] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState('');
 
   // Invitation Link state
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
@@ -144,13 +147,37 @@ export default function ClubesAdminPage() {
     setEditAddress(club.address || '');
     setEditPhone(club.phone || '');
     setEditEmail(club.email || '');
+    setLogoFile(null);
+    setLogoPreview(club.logo_url || '');
     setIsEditModalOpen(true);
   };
 
   const handleCloseEditModal = () => {
     setSelectedClub(null);
     setIsEditModalOpen(false);
+    setLogoFile(null);
+    setLogoPreview('');
     setErrorMsg('');
+  };
+
+  const handleLogoChange = (e) => {
+    const next = e.target.files && e.target.files[0];
+    if (!next) {
+      setLogoFile(null);
+      setLogoPreview(selectedClub?.logo_url || '');
+      return;
+    }
+    const invalidFile = logoFileError(next);
+    if (invalidFile) {
+      setErrorMsg(invalidFile);
+      e.target.value = '';
+      setLogoFile(null);
+      setLogoPreview(selectedClub?.logo_url || '');
+      return;
+    }
+    setErrorMsg('');
+    setLogoFile(next);
+    setLogoPreview(URL.createObjectURL(next));
   };
 
   // Submit Edit Club (PUT)
@@ -168,13 +195,19 @@ export default function ClubesAdminPage() {
     setIsSubmitting(true);
     setErrorMsg('');
     try {
-      await apiClient.put(`internal/clubes/${selectedClub.id}/`, {
-        name: editName.trim(),
-        address: editAddress.trim(),
-        phone: editPhone.trim(),
-        email: editEmail.trim(),
-        organization_id: selectedClub.organization_id,
-      });
+      const payload = new FormData();
+      payload.append('name', editName.trim());
+      payload.append('address', editAddress.trim());
+      payload.append('phone', editPhone.trim());
+      payload.append('email', editEmail.trim());
+      if (selectedClub.organization_id) {
+        payload.append('organization_id', selectedClub.organization_id);
+      }
+      if (logoFile) payload.append('logo', logoFile);
+      const updated = await apiClient.put(`internal/clubes/${selectedClub.id}/`, payload);
+      if (user?.club_id && String(user.club_id) === String(selectedClub.id)) {
+        updateSession({ club_logo_url: updated.data?.data?.logo_url ?? null });
+      }
       setSuccessMsg('Club actualizado exitosamente.');
       handleCloseEditModal();
       loadData();
@@ -536,6 +569,22 @@ export default function ClubesAdminPage() {
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
                 className={dirStyles.input}
+              />
+            </div>
+            <div className={dirStyles.formGroup}>
+              <label className={dirStyles.label} htmlFor="edit-club-logo">
+                Escudo
+              </label>
+              {logoPreview ? (
+                <img src={logoPreview} alt="Escudo del club" className={styles.logoPreview} />
+              ) : null}
+              <input
+                id="edit-club-logo"
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                onChange={handleLogoChange}
+                className={dirStyles.input}
+                disabled={isSubmitting}
               />
             </div>
             <div className={dirStyles.formGroup}>

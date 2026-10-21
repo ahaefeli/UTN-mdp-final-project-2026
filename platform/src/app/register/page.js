@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import apiClient from '../../services/apiClient';
 import { phoneError } from '../../utils/phone';
-import { dniError, emailError, normalizeDni } from '../../utils/identity';
+import { dniError, emailError, formatDni, normalizeDni } from '../../utils/identity';
 import { logoFileError } from '../../utils/uploads';
 import { Button, Alert, LoadingState } from '../../components/ui';
 import styles from './page.module.css';
@@ -57,7 +57,7 @@ function PublicRegisterForm() {
           setLastName(data.admin_last_name || '');
           setAdminEmail(data.admin_email || '');
           setAdminUsername(data.admin_username || '');
-          setAdminDni(data.admin_dni || '');
+          setAdminDni(formatDni(data.admin_dni));
           
           // Capturar y guardar el rol enviado por el backend
           const roleFromBackend = data.role || 'CLUB_ADMIN';
@@ -439,7 +439,7 @@ function PublicRegisterForm() {
               <input
                 type="text"
                 value={adminDni}
-                onChange={(e) => setAdminDni(e.target.value)}
+                onChange={(e) => setAdminDni(formatDni(e.target.value))}
                 className={styles.input}
                 disabled={isSubmitting}
                 placeholder="Ej: 12345678"

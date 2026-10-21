@@ -8,6 +8,7 @@ pillow==11.3.0
 bcrypt==5.0.0
 cryptography==46.0.2
 gunicorn==23.0.0
+google-cloud-storage==3.17.1
 channels==4.3.1
 PyJWT==2.10.1
 pytest==8.4.1

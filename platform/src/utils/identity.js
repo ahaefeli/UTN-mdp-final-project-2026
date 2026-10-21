@@ -7,6 +7,12 @@ export function normalizeDni(value) {
   return String(value || '').replace(/[.\s-]/g, '').trim();
 }
 
+export function formatDni(value) {
+  const digits = normalizeDni(value).replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
 export function passwordError(value) {
   if (!value || String(value).length < 8) return PASSWORD_ERROR;
   return null;

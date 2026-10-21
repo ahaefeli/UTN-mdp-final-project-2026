@@ -6,7 +6,15 @@ from core.phone import phone_error
 from core.textfold import fold
 
 def serialize_club(club):
-    return {'id': club.id, 'name': club.name, 'address': club.address, 'phone': club.phone, 'email': club.email, 'organization_id': club.organization_id}
+    return {
+        'id': club.id,
+        'name': club.name,
+        'address': club.address,
+        'phone': club.phone,
+        'email': club.email,
+        'organization_id': club.organization_id,
+        'logo_url': club.logo_url,
+    }
 
 class ClubView(BaseCrudView):
     model = Club
@@ -43,9 +51,26 @@ class ClubView(BaseCrudView):
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)
 
     def put(self, request, obj_id=None, *args, **kwargs):
+        if request.user.role not in ('ADMIN', 'CLUB_ADMIN'):
+            return JsonResponse({'error': 'No tenés permiso para hacer esto.'}, status=403)
         cid = obj_id or request.GET.get('club_id')
         if not cid: return JsonResponse({'error': 'Falta el identificador del club.'}, status=400)
-        data = parse_body(request)
+        is_multipart = request.content_type and request.content_type.startswith('multipart/form-data')
+        if is_multipart:
+            from django.http.multipartparser import MultiPartParser
+            data, files = MultiPartParser(request.META, request, request.upload_handlers).parse()
+            data = data.dict()
+        else:
+            data = parse_body(request)
+            files = {}
+        data.pop('logo_url', None)
+        data.pop('logo', None)
+        logo_file = files.get('logo') if files else None
+        if request.user.role == 'CLUB_ADMIN':
+            if str(cid) != str(request.user.club_id):
+                return JsonResponse({'error': 'No tenés permiso para hacer esto.'}, status=403)
+            if data or not logo_file:
+                return JsonResponse({'error': 'Solo podés cambiar el escudo de tu club.'}, status=403)
         invalid_phone = phone_error(data.get('phone')) if 'phone' in data else None
         if invalid_phone:
             return JsonResponse({'error': invalid_phone}, status=400)
@@ -53,6 +78,9 @@ class ClubView(BaseCrudView):
             c = self.model.objects.get(id=cid, organization=request.user.organization)
             for k, v in data.items():
                 if hasattr(c, k): setattr(c, k, v)
+            if logo_file:
+                from core.utils.storage import upload_to_gcs
+                c.logo_url = upload_to_gcs(logo_file, logo_file.name, 'club_logo', logo=True)
             c.save(); return JsonResponse({'data': serialize_club(c)}, status=200)
         except self.model.DoesNotExist: return JsonResponse({'error': 'No encontrado.'}, status=404)
         except Exception as e: return JsonResponse({'error': str(e)}, status=400)

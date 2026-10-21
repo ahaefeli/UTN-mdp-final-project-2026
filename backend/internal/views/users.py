@@ -46,6 +46,7 @@ def serialize_user(user):
         'coach_certificate': user.coach_certificate,
         'club_id': membership['club_id'],
         'club_name': membership['club_name'],
+        'photo_url': user.photo_url,
         'club_logo_url': membership['club_logo_url'],
         'team_id': membership['team_id'],
         'team_info': membership['team_info'],
@@ -194,7 +195,7 @@ class UserView(BaseCrudView):
                     return JsonResponse({'error': 'No podés asignar un rol con más permisos.'}, status=403)
                 data.pop('club_id', None)
                 data.pop('club', None)
-            if request.user.role == 'COACH':
+            if request.user.role == 'COACH' and request.user.id != u.id:
                 if u.role != 'PLAYER' or u.club_id != request.user.club_id:
                     return JsonResponse({'error': 'No tenés permiso para hacer esto.'}, status=403)
                 
@@ -227,10 +228,17 @@ class UserView(BaseCrudView):
             if invalid_phone:
                 return JsonResponse({'error': invalid_phone}, status=400)
             
+            data.pop('photo_url', None)
+            photo_file = files.get('photo') if files else None
+            if photo_file and request.user.id != u.id:
+                return JsonResponse({'error': 'Solo podés cambiar tu propia foto.'}, status=403)
+
             for k, v in data.items():
                 if hasattr(u, k): setattr(u, k, v)
                 
             from core.utils.storage import upload_to_gcs
+            if photo_file:
+                u.photo_url = upload_to_gcs(photo_file, photo_file.name, 'profile_image', logo=True)
             medical_file = files.get('medical_certificate') or files.get('medical_clearance')
             if medical_file:
                 url = upload_to_gcs(medical_file, medical_file.name, "medical_certificate")

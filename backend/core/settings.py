@@ -139,6 +139,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Un archivo de 10 MB más el overhead del multipart.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 

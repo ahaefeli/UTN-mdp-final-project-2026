@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import authService from '../../services/authService';
 import userService from '../../services/userService';
+import { useAuth } from '../../context/AuthContext';
 import { ROLE_TRANSLATIONS } from '../../utils/roles';
 import { clubInitials } from '../../utils/clubMark';
 import { phoneError } from '../../utils/phone';
-import { uploadFileError } from '../../utils/uploads';
+import { formatDni } from '../../utils/identity';
+import { logoFileError, uploadFileError } from '../../utils/uploads';
 import {
   PageHeader,
   Button,
@@ -34,8 +36,15 @@ function documentFor(profile) {
   return null;
 }
 
+function personInitials(first, last, username) {
+  const fromName = clubInitials(`${first || ''} ${last || ''}`);
+  if (fromName) return fromName;
+  return clubInitials(username);
+}
+
 export default function MisDatosPage() {
   const router = useRouter();
+  const { updateSession } = useAuth();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -48,6 +57,8 @@ export default function MisDatosPage() {
   const [dni, setDni] = useState('');
   const [username, setUsername] = useState('');
   const [file, setFile] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -83,7 +94,16 @@ export default function MisDatosPage() {
         setDni(profile.dni || '');
         setUsername(profile.username || '');
         setFile(null);
+        setPhotoFile(null);
+        setPhotoPreview('');
         setFieldErrors({ firstName: '', lastName: '' });
+        updateSession({
+          photo_url: profile.photo_url ?? null,
+          club_id: profile.club_id ?? null,
+          club_name: profile.club_name ?? null,
+          club_logo_url: profile.club_logo_url ?? null,
+          name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.username,
+        });
       }
     } catch (err) {
       console.error('Error al obtener perfil:', err);
@@ -110,6 +130,26 @@ export default function MisDatosPage() {
     setFile(next);
   };
 
+  const handlePhotoChange = (e) => {
+    const next = e.target.files && e.target.files.length > 0 ? e.target.files[0] : null;
+    if (!next) {
+      setPhotoFile(null);
+      setPhotoPreview('');
+      return;
+    }
+    const invalidFile = logoFileError(next);
+    if (invalidFile) {
+      setErrorMsg(invalidFile);
+      e.target.value = '';
+      setPhotoFile(null);
+      setPhotoPreview('');
+      return;
+    }
+    setErrorMsg('');
+    setPhotoFile(next);
+    setPhotoPreview(URL.createObjectURL(next));
+  };
+
   const savedFirstName = user?.first_name || '';
   const savedLastName = user?.last_name || '';
   const savedPhone = user?.phone || '';
@@ -117,7 +157,8 @@ export default function MisDatosPage() {
     firstName !== savedFirstName ||
     lastName !== savedLastName ||
     phone !== savedPhone ||
-    file !== null;
+    file !== null ||
+    photoFile !== null;
 
   const needsDocument = user && (user.role === 'PLAYER' || user.role === 'COACH');
   const documentUrl = documentFor(user);
@@ -153,6 +194,10 @@ export default function MisDatosPage() {
       formData.append('last_name', lastName.trim());
       formData.append('phone', phone.trim());
 
+      if (photoFile) {
+        formData.append('photo', photoFile);
+      }
+
       if (file) {
         if (user.role === 'PLAYER') {
           formData.append('medical_clearance', file);
@@ -164,6 +209,8 @@ export default function MisDatosPage() {
       await userService.updateProfile(user.id, formData);
       setSuccessMsg('Perfil actualizado con éxito.');
       setFile(null);
+      setPhotoFile(null);
+      setPhotoPreview('');
 
       await loadUserProfile({ silent: true });
     } catch (err) {
@@ -226,17 +273,17 @@ export default function MisDatosPage() {
 
         <section className={chrome.card} aria-labelledby="profile-identity-title">
           <div className={styles.identity}>
-            {user?.club_logo_url ? (
+            {photoPreview || user?.photo_url ? (
               <img
-                src={user.club_logo_url}
-                alt={user.club_name ? `Escudo de ${user.club_name}` : 'Escudo del club'}
-                className={styles.clubMark}
+                src={photoPreview || user.photo_url}
+                alt={`Foto de ${displayName}`}
+                className={styles.photo}
               />
-            ) : user?.club_name ? (
-              <span className={styles.clubInitials} aria-hidden="true">
-                {clubInitials(user.club_name)}
+            ) : (
+              <span className={styles.photoInitials} aria-hidden="true">
+                {personInitials(firstName, lastName, username)}
               </span>
-            ) : null}
+            )}
             <div>
               <h2 id="profile-identity-title" className={styles.identityName}>
                 {displayName}
@@ -257,7 +304,7 @@ export default function MisDatosPage() {
             </div>
             <div className={styles.fact}>
               <dt>DNI / Documento</dt>
-              <dd>{dni || '—'}</dd>
+              <dd>{formatDni(dni) || '—'}</dd>
             </div>
             <div className={styles.fact}>
               <dt>Rol</dt>
@@ -267,14 +314,26 @@ export default function MisDatosPage() {
               <dt>Club</dt>
               <dd>
                 {user?.club_name ? (
-                  <span className={styles.clubFact}>{user.club_name}</span>
+                  <span className={styles.clubFact}>
+                    {user.club_logo_url ? (
+                      <img
+                        src={user.club_logo_url}
+                        alt=""
+                        className={styles.clubMark}
+                      />
+                    ) : (
+                      <span className={styles.clubInitials} aria-hidden="true">
+                        {clubInitials(user.club_name)}
+                      </span>
+                    )}
+                    {user.club_name}
+                  </span>
                 ) : (
                   'Sin club'
                 )}
               </dd>
             </div>
           </dl>
-          <p className={chrome.muted}>Usuario, documento, rol y club los define la liga.</p>
         </section>
 
         <section className={chrome.card} aria-labelledby="profile-contact-title">
@@ -338,6 +397,28 @@ export default function MisDatosPage() {
                     {fieldErrors.lastName}
                   </p>
                 ) : null}
+              </div>
+            </div>
+
+            <div className={chrome.formGroup}>
+              <label className={chrome.label} htmlFor="profile-photo">
+                Foto de perfil
+              </label>
+              <div className={styles.fileField}>
+                <input
+                  id="profile-photo"
+                  type="file"
+                  className={styles.fileInput}
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoChange}
+                  disabled={isSubmitting}
+                />
+                <label htmlFor="profile-photo" className={styles.fileButton}>
+                  Elegir foto
+                </label>
+                <span className={styles.fileName}>
+                  {photoFile ? photoFile.name : 'JPG, PNG o WEBP de hasta 10 MB'}
+                </span>
               </div>
             </div>
 

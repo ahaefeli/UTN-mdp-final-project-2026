@@ -82,9 +82,6 @@ export const userService = {
     try {
       const response = await apiClient.put('internal/usuarios/', formData, {
         params: { user_id: id },
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
       });
       return response.data;
     } catch (error) {

@@ -37,3 +37,4 @@ next-env.d.ts
 /plataforma/.next
 /plataforma/node_modules
 __pycache__/
+/secrets/
